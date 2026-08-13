@@ -1,0 +1,9 @@
+{
+  "name": "agrivibe",
+  "version": "1.0.0",
+  "description": "🌾 AgriVibe Marketplace",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Setup complete!'"
+  }
+}
