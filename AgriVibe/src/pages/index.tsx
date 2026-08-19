@@ -11,12 +11,13 @@ import React from 'react';
 
 export default function Home() {
   return (
-    <div className="bg-premium-dark min-h-screen flex flex-col items-center justify-center text-center px-4">
-      {/* ⚠️ Make sure all your headers, text strings, and button elements sit cleanly right inside this container block! */}
-      <h1 className="text-gradient-gold text-4xl font-bold mb-4">Fresh From Farms. Delivered to Your Campus.</h1>
-      <p className="text-white max-w-xl mb-6">Buy directly from verified vendors and local farmers with secure payments and fast delivery.</p>
+    <div style={{ backgroundColor: '#0f0f1a', minHeight: 'screen', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ffffff', textAlign: 'center', padding: '20px' }}>
+      <h1 style={{ fontSize: '32px', color: '#f5a623', marginBottom: '10px' }}>AgriVibe Marketplace</h1>
+      <p style={{ color: '#ffffff' }}>Connecting Campuses to Verified Local Vendors</p>
     </div>
   );
+
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
