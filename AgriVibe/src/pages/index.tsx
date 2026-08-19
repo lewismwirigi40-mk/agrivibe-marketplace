@@ -9,6 +9,13 @@ import AIChat from '../components/AIChat';
 import api from '../services/api';
 
 export default function Home() {
+  return (
+    <div className="bg-premium-dark min-h-screen text-center flex flex-col items-center justify-center container-premium">
+      {/* Your navbar, text headers, buttons, and floating element blocks go inside here */}
+    </div>
+  );
+
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
