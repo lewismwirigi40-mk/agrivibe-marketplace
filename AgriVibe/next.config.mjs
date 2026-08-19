@@ -9,12 +9,6 @@ const nextConfig = {
       },
     ],
   },
-  // Tells Turbopack exactly where your hidden app/pages folders reside
-  experimental: {
-    turbo: {
-      root: '../../',
-    }
-  }
 };
 
 export default nextConfig;
