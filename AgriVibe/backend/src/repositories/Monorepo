@@ -1,0 +1,209 @@
+AgriVibe/
+├── apps/              # All applications
+│   ├── web/          # Customer frontend
+│   ├── admin/        # Admin dashboard
+│   ├── vendor/       # Vendor dashboard
+│   ├── customer/     # Customer dashboard
+│   └── driver/       # Driver dashboard
+├── packages/          # Shared packages
+│   ├── ui/           # UI components
+│   ├── config/       # Shared config
+│   ├── types/        # TypeScript types
+│   ├── utils/        # Utilities
+│   └── database/     # Database models
+├── backend/           # Backend API
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── services/
+│   │   └── ...
+│   ├── storage/      # File storage
+│   │   ├── uploads/
+│   │   ├── logs/
+│   │   ├── cache/
+│   │   └── sessions/
+│   └── tests/
+├── services/          # Microservices
+│   ├── auth-service/
+│   ├── payment-service/
+│   └── delivery-service/
+├── mobile/            # Mobile apps
+├── integrations/      # Third-party integrations
+├── docs/              # Documentation
+├── deployment/        # Deployment configs
+├── database/          # Database migrations
+└── scripts/           # Automation scripts
+
+
+
+AgriVibe/
+├── integrations/              # ALL third-party integrations
+│   ├── mpesa/                 # M-Pesa payment
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── client.js
+│   │   │   ├── webhook.js
+│   │   │   └── utils.js
+│   │   └── tests/
+│   │
+│   ├── stripe/                # Stripe payment
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── client.js
+│   │   │   └── webhook.js
+│   │   └── tests/
+│   │
+│   ├── cloudinary/            # Image upload
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   └── upload.js
+│   │   └── tests/
+│   │
+│   ├── google-maps/           # Maps & geocoding
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── geocode.js
+│   │   │   └── distance.js
+│   │   └── tests/
+│   │
+│   ├── whatsapp/              # WhatsApp Business API
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   └── messenger.js
+│   │   └── tests/
+│   │
+│   ├── email/                 # Email service (SendGrid, etc.)
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── templates.js
+│   │   │   └── sender.js
+│   │   └── tests/
+│   │
+│   ├── sms/                   # SMS service (Twilio, etc.)
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   └── sender.js
+│   │   └── tests/
+│   │
+│   ├── firebase/              # Firebase (Auth, Push Notifications)
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── auth.js
+│   │   │   └── notifications.js
+│   │   └── tests/
+│   │
+│   ├── aws-s3/                # AWS S3 storage
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   └── upload.js
+│   │   └── tests/
+│   │
+│   ├── elasticsearch/         # Search engine
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   └── search.js
+│   │   └── tests/
+│   │
+│   └── rabbitmq/              # Message queue
+│       ├── src/
+│       │   ├── index.js
+│       │   ├── producer.js
+│       │   └── consumer.js
+│       └── tests/
+
+
+
+
+
+
+AgriVibe/
+├── integrations/
+│   ├── mpesa/
+│   │   ├── src/
+│   │   │   ├── index.js        # Main export
+│   │   │   ├── client.js       # API client
+│   │   │   ├── webhook.js      # Webhook handler
+│   │   │   ├── stkpush.js      # STK Push logic
+│   │   │   └── utils.js        # Helpers
+│   │   ├── tests/
+│   │   ├── package.json
+│   │   └── README.md
+│   │
+│   ├── stripe/
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── client.js
+│   │   │   ├── webhook.js
+│   │   │   └── subscriptions.js
+│   │   └── tests/
+│   │
+│   ├── cloudinary/
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── upload.js
+│   │   │   └── optimize.js
+│   │   └── tests/
+│   │
+│   ├── google-maps/
+│   │   ├── src/
+│   │   │   ├── index.js
+│   │   │   ├── geocode.js
+│   │   │   ├── distance.js
+│   │   │   └── autocomplete.js
+│   │   └── tests/
+│   │
+│   ├── notifications/
+│   │   ├── email/
+│   │   │   ├── src/
+│   │   │   │   ├── index.js
+│   │   │   │   ├── templates.js
+│   │   │   │   └── sender.js
+│   │   │   └── tests/
+│   │   ├── sms/
+│   │   │   ├── src/
+│   │   │   │   ├── index.js
+│   │   │   │   └── sender.js
+│   │   │   └── tests/
+│   │   └── whatsapp/
+│   │       ├── src/
+│   │       │   ├── index.js
+│   │       │   └── messenger.js
+│   │       └── tests/
+│   │
+│   └── analytics/
+│       ├── google-analytics/
+│       │   ├── src/
+│       │   │   ├── index.js
+│       │   │   └── tracker.js
+│       │   └── tests/
+│       └── mixpanel/
+│           ├── src/
+│           │   ├── index.js
+│           │   └── tracker.js
+│           └── tests/
+│
+├── backend/
+│   └── src/
+│       └── services/
+│           ├── paymentService.js   # Uses integrations/mpesa, stripe
+│           ├── uploadService.js    # Uses integrations/cloudinary
+│           ├── notificationService.js # Uses integrations/notifications
+│           ├── mapService.js       # Uses integrations/google-maps
+│           └── analyticsService.js # Uses integrations/analytics
+│
+├── apps/
+│   └── web/
+│       └── src/
+│           └── components/
+│               ├── PaymentButton.jsx  # Calls backend payment API
+│               ├── UploadButton.jsx   # Calls backend upload API
+│               └── LocationPicker.jsx # Calls backend maps API
+│
+└── docs/
+    └── integrations/
+        ├── mpesa.md
+        ├── stripe.md
+        ├── cloudinary.md
+        └── ...
