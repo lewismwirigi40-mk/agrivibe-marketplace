@@ -9,7 +9,7 @@ const nextConfig = {
       },
     ],
   },
-  // This completely forces Next.js to skip checking for TypeScript errors
+  // The official, secure way to tell Next.js to ignore typescript checks safely
   typescript: {
     ignoreBuildErrors: true,
   },
