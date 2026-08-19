@@ -144,7 +144,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-premium-dark flex items-center justify-center">
+      <div className="bg-premium-dark min-h-screen flex flex-col items-center justify-center text-center container-premium px-4">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-float">🌾</div>
           <div className="text-white text-xl font-semibold">Loading AgriVibe...</div>
