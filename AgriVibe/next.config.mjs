@@ -2,7 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['://unsplash.com', '://pexels.com'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -10,6 +9,12 @@ const nextConfig = {
       },
     ],
   },
+  // Tells Turbopack exactly where your hidden app/pages folders reside
+  experimental: {
+    turbo: {
+      root: '../../',
+    }
+  }
 };
 
 export default nextConfig;
