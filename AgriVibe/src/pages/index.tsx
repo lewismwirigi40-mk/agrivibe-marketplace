@@ -7,15 +7,16 @@ import PremiumButton from '../components/PremiumButton';
 import FloatingButtons from '../components/FloatingButtons';
 import AIChat from '../components/AIChat';
 import api from '../services/api';
+import React from 'react';
 
 export default function Home() {
   return (
-    <div className="bg-premium-dark min-h-screen text-center flex flex-col items-center justify-center container-premium">
-      {/* Your navbar, text headers, buttons, and floating element blocks go inside here */}
+    <div className="bg-premium-dark min-h-screen flex flex-col items-center justify-center text-center px-4">
+      {/* ⚠️ Make sure all your headers, text strings, and button elements sit cleanly right inside this container block! */}
+      <h1 className="text-gradient-gold text-4xl font-bold mb-4">Fresh From Farms. Delivered to Your Campus.</h1>
+      <p className="text-white max-w-xl mb-6">Buy directly from verified vendors and local farmers with secure payments and fast delivery.</p>
     </div>
   );
-
-
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
