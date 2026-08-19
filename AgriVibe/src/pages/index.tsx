@@ -11,9 +11,8 @@ import React from 'react';
 
 export default function Home() {
   return (
-    
     <div style={{ backgroundColor: '#0f0f1a', minHeight: 'screen', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ffffff', textAlign: 'center', padding: '20px' }}>
-      <h1 style={{ fontSize: '32px', color: '#23f543', marginBottom: '10px' }}>AgriVibe Marketplace</h1>
+      <h1 style={{ fontSize: '32px', color: '#f5a623', marginBottom: '10px' }}>AgriVibe Marketplace</h1>
       <p style={{ color: '#ffffff' }}>Connecting Campuses to Verified Local Vendors</p>
     </div>
   );
@@ -161,9 +160,8 @@ export default function Home() {
       <AIChat />
       <FloatingButtons />
 
-    {/* ====== HERO SECTION ====== */}
-<section className="relative overflow-hidden px-4 pt-32 pb-20 md:pt-40 md:pb-28 min-h-[90vh] flex flex-col items-center justify-center text-center w-full">
-
+      {/* ====== HERO SECTION ====== */}
+      <section className="relative overflow-hidden px-4 pt-32 pb-20 md:pt-40 md:pb-28 min-h-[90vh] flex items-center">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-110"
           style={{
