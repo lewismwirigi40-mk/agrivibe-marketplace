@@ -10,14 +10,6 @@ import api from '../services/api';
 import React from 'react';
 
 export default function Home() {
-  return (
-    <div style={{ backgroundColor: '#0f0f1a', minHeight: 'screen', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ffffff', textAlign: 'center', padding: '20px' }}>
-      <h1 style={{ fontSize: '32px', color: '#f5a623', marginBottom: '10px' }}>AgriVibe Marketplace</h1>
-      <p style={{ color: '#ffffff' }}>Connecting Campuses to Verified Local Vendors</p>
-    </div>
-  );
-
-
   const [searchQuery, setSearchQuery] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
@@ -172,7 +164,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/80 to-emerald-900/80" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f1a] via-transparent to-transparent" />
         
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}

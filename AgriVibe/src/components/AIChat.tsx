@@ -104,14 +104,15 @@ export default function AIChat() {
     <>
       {/* Chat Button */}
       <button
-        onClick={toggleChat}
-        className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-green-600 to-emerald-500 text-white p-4 rounded-full shadow-2xl hover:shadow-xl transition-all duration-300 transform hover:scale-110 flex items-center gap-2"
-        aria-label="Chat with AgriVibe AI"
-      >
-        <span className="text-2xl">🤖</span>
-        <span className="hidden md:inline font-medium">Ask AI</span>
-      </button>
-
+  onClick={toggleChat}
+  className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 flex items-center gap-3 group"
+  aria-label="Chat with AgriVibe AI"
+>
+  <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">🤖</span>
+  <span className="font-semibold text-sm hidden md:block">AgriVibe AI Assistant</span>
+  <span className="font-semibold text-sm md:hidden">AI</span>
+  <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+</button>
       {/* Chat Window */}
       {isOpen && (
         <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] bg-gray-900/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[500px]">

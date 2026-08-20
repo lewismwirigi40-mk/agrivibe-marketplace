@@ -28,113 +28,127 @@ export default function Navbar() {
     router.push('/');
   };
 
+  const navItems = [
+    { name: 'Marketplace', href: '/marketplace' },
+    { name: 'Guides', href: '/guides' },
+    { name: 'Sell', href: '/vendor/register' },
+    { name: 'About', href: '/about' },
+    { name: 'Contact', href: '/contact' },
+  ];
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      isScrolled ? 'bg-[#0f0f1a]/95 backdrop-blur-xl shadow-2xl border-b border-white/5' : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-green-700">
-            <span>🌾</span>
-            <span className="hidden sm:inline">AgriVibe</span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <span className="text-3xl group-hover:scale-110 transition-transform duration-300">🌾</span>
+            <span className="text-2xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent hidden sm:block">
+              AgriVibe
+            </span>
           </Link>
 
-          {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-2xl mx-6">
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search products, vendors, categories..."
-                className="w-full px-4 py-2.5 pl-10 bg-gray-100 rounded-full border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
-              />
-              <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
-            </div>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  router.pathname === item.href
+                    ? 'bg-green-600/20 text-green-400'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
 
           {/* Desktop Right */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link href="/marketplace" className="text-gray-600 hover:text-green-600 transition text-sm font-medium">
-              Marketplace
-            </Link>
-            
-            <Link href="/vendor/register" className="text-gray-600 hover:text-green-600 transition text-sm font-medium">
-              Sell
-            </Link>
-            <Link href="/cart" className="text-gray-600 hover:text-green-600 transition text-sm font-medium">
-              🛒 <span className="hidden lg:inline">Cart</span>
-            </Link>
-            <Link href="/guides" className="text-gray-600 hover:text-green-600 transition text-sm font-medium">
-              Guides
-            </Link>
+          <div className="hidden md:flex items-center gap-3">
             {isLoggedIn ? (
-              <div className="flex items-center gap-3">
-                <Link href="/dashboard" className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
+              <>
+                <Link href="/dashboard" className="text-sm text-gray-300 hover:text-white transition px-3 py-2">
                   Dashboard
                 </Link>
-                <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition text-sm">
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-red-400 hover:text-red-300 transition px-3 py-2"
+                >
                   Logout
                 </button>
-              </div>
+              </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login" className="text-gray-600 hover:text-green-600 transition text-sm font-medium px-3 py-2">
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm text-gray-300 hover:text-white transition px-4 py-2 rounded-xl hover:bg-white/5"
+                >
                   Login
                 </Link>
-                <Link href="/register" className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
-                  Register
+                <Link
+                  href="/register"
+                  className="bg-gradient-to-r from-green-600 to-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:shadow-xl hover:shadow-green-500/30 transition-all duration-300 hover:scale-105"
+                >
+                  Get Started
                 </Link>
-              </div>
+              </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-gray-700 focus:outline-none"
+            className="md:hidden text-gray-300 hover:text-white focus:outline-none p-2 rounded-xl hover:bg-white/5 transition"
           >
-            <span className="text-2xl">{isMenuOpen ? '✕' : '☰'}</span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {isMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 py-4 shadow-lg">
-          <div className="flex flex-col space-y-3">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full px-4 py-2 bg-gray-100 rounded-full border border-gray-200 focus:border-green-500 outline-none"
-            />
-            <Link href="/marketplace" className="text-gray-700 hover:text-green-600 transition py-1" onClick={() => setIsMenuOpen(false)}>
-              Marketplace
-            </Link>
-            <Link href="/guides" className="text-gray-700 hover:text-green-600 transition py-1" onClick={() => setIsMenuOpen(false)}>
-              Guides
-            </Link>
-            <Link href="/vendor/register" className="text-gray-700 hover:text-green-600 transition py-1" onClick={() => setIsMenuOpen(false)}>
-              Become a Vendor
-            </Link>
-            <Link href="/cart" className="text-gray-700 hover:text-green-600 transition py-1" onClick={() => setIsMenuOpen(false)}>
-              🛒 Cart
-            </Link>
+        <div className="md:hidden bg-[#0f0f1a]/98 backdrop-blur-xl border-t border-white/5 px-4 py-4">
+          <div className="flex flex-col space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsMenuOpen(false)}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition ${
+                  router.pathname === item.href
+                    ? 'bg-green-600/20 text-green-400'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
             {isLoggedIn ? (
               <>
-                <Link href="/dashboard" className="bg-green-600 text-white text-center px-4 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/dashboard" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
                   Dashboard
                 </Link>
-                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="text-red-500 text-left py-1">
+                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="px-4 py-3 rounded-xl text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition text-left">
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className="text-gray-700 hover:text-green-600 transition py-1" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/login" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 rounded-xl text-sm text-gray-300 hover:text-white hover:bg-white/5 transition">
                   Login
                 </Link>
-                <Link href="/register" className="bg-green-600 text-white text-center px-4 py-2 rounded-lg" onClick={() => setIsMenuOpen(false)}>
-                  Register
+                <Link href="/register" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 rounded-xl text-sm bg-gradient-to-r from-green-600 to-emerald-500 text-white text-center font-semibold hover:shadow-xl hover:shadow-green-500/30 transition">
+                  Get Started
                 </Link>
               </>
             )}
@@ -144,4 +158,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
