@@ -573,57 +573,58 @@ export default function Home() {
       </section>
 
       {/* ====== FOOTER ====== */}
-      <footer className="footer-premium py-20">
-        <div className="container-premium">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
-                  <span className="text-white text-xl">🌾</span>
-                </div>
-                <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed">Connecting farmers, vendors, and students across Kenyan campuses.</p>
-              <div className="flex gap-4 mt-6">
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Facebook</a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Twitter</a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Instagram</a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">YouTube</a>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4 text-lg">Marketplace</h4>
-              <ul className="space-y-3 text-sm text-gray-400">
-                <li><Link href="/marketplace" className="footer-link">All Products</Link></li>
-                <li><Link href="/marketplace" className="footer-link">Categories</Link></li>
-                <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
-                <li><Link href="/marketplace" className="footer-link">Deals</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4 text-lg">Company</h4>
-              <ul className="space-y-3 text-sm text-gray-400">
-                <li><Link href="/about" className="footer-link">About Us</Link></li>
-                <li><Link href="/contact" className="footer-link">Contact</Link></li>
-                <li><Link href="/careers" className="footer-link">Careers</Link></li>
-                <li><Link href="/blog" className="footer-link">Blog</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-white mb-4 text-lg">Support</h4>
-              <ul className="space-y-3 text-sm text-gray-400">
-                <li><Link href="/help" className="footer-link">Help Center</Link></li>
-                <li><Link href="/terms" className="footer-link">Terms</Link></li>
-                <li><Link href="/privacy" className="footer-link">Privacy</Link></li>
-                <li><Link href="/faq" className="footer-link">FAQ</Link></li>
-              </ul>
-            </div>
+<footer className="footer-premium py-20">
+  <div className="container-premium">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
+            <span className="text-white text-xl">🌾</span>
           </div>
-          <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
-            <p>© 2026 AgriVibe KE Farm Solutions. All rights reserved.</p>
-          </div>
+          <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
         </div>
-      </footer>
+        <p className="text-gray-400 text-sm leading-relaxed">Connecting farmers, vendors, and students across Kenyan campuses.</p>
+        {/* ✅ FIXED: Social links as text instead of icons */}
+        <div className="flex gap-4 mt-6">
+          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Facebook</a>
+          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Twitter</a>
+          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Instagram</a>
+          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">YouTube</a>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-bold text-white mb-4 text-lg">Marketplace</h4>
+        <ul className="space-y-3 text-sm text-gray-400">
+          <li><Link href="/marketplace" className="footer-link">All Products</Link></li>
+          <li><Link href="/marketplace" className="footer-link">Categories</Link></li>
+          <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
+          <li><Link href="/marketplace" className="footer-link">Deals</Link></li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold text-white mb-4 text-lg">Company</h4>
+        <ul className="space-y-3 text-sm text-gray-400">
+          <li><Link href="/about" className="footer-link">About Us</Link></li>
+          <li><Link href="/contact" className="footer-link">Contact</Link></li>
+          <li><Link href="/careers" className="footer-link">Careers</Link></li>
+          <li><Link href="/blog" className="footer-link">Blog</Link></li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold text-white mb-4 text-lg">Support</h4>
+        <ul className="space-y-3 text-sm text-gray-400">
+          <li><Link href="/help" className="footer-link">Help Center</Link></li>
+          <li><Link href="/terms" className="footer-link">Terms</Link></li>
+          <li><Link href="/privacy" className="footer-link">Privacy</Link></li>
+          <li><Link href="/faq" className="footer-link">FAQ</Link></li>
+        </ul>
+      </div>
+    </div>
+    <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
+      <p>© 2026 AgriVibe KE Farm Solutions. All rights reserved.</p>
+    </div>
+  </div>
+   </footer>
     </div>
   );
 }
