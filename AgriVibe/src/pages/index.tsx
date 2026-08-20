@@ -1,7 +1,9 @@
+// src/pages/index.tsx
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -15,8 +17,22 @@ import {
   User,
   Sparkles,
   ArrowRight,
-  Leaf// ✅ Add this
+  Leaf,
+  Award,
+  Mail,
+  Globe,
+  Clock,
+  CheckCircle,
+  Zap,
+  Layers,
+  Users,
+  DollarSign,
+  MapPin,
+  Phone,
 } from 'lucide-react';
+import {
+FaFacebook, FaTwitter, FaInstagram, FaYoutube 
+} from 'react-icons/fa';
 import api from '../services/api';
 
 export default function Home() {
@@ -25,6 +41,7 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showCartNotification, setShowCartNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
   
   // REAL DATA STATES
@@ -37,7 +54,6 @@ export default function Home() {
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -45,7 +61,8 @@ export default function Home() {
   });
   
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.98]);
+  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, 100]);
 
   // FETCH REAL DATA
   useEffect(() => {
@@ -86,26 +103,10 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // REAL ADD TO CART FUNCTION - REDIRECTS TO MARKETPLACE
   const handleAddToCart = (productId: string) => {
-    // If user is not logged in, redirect to login
-    // For now, redirect to marketplace with product in URL
     router.push(`/marketplace?add=${productId}`);
   };
 
-  // OR - If you want to show notification and then redirect
-  const handleAddToCartWithNotification = (productId: string) => {
-    setNotificationMessage('✅ Product added to cart!');
-    setShowCartNotification(true);
-    
-    // After showing notification, redirect to marketplace
-    setTimeout(() => {
-      setShowCartNotification(false);
-      router.push('/marketplace');
-    }, 1500);
-  };
-
-  // REAL SEARCH FUNCTION
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -115,12 +116,10 @@ export default function Home() {
     }
   };
 
-  // REAL CATEGORY CLICK - Redirect to marketplace with category filter
   const handleCategoryClick = (categoryName: string) => {
     router.push(`/marketplace?category=${encodeURIComponent(categoryName)}`);
   };
 
-  // REAL PRODUCT CLICK - Redirect to product detail
   const handleProductClick = (productId: string) => {
     router.push(`/product/${productId}`);
   };
@@ -128,103 +127,114 @@ export default function Home() {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-premium-dark flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-2xl font-bold text-gray-800">🌾 AgriVibe</div>
-          <div className="text-gray-500 mt-2">Loading fresh produce...</div>
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-20 h-20 border-4 border-agrivibe-gold border-t-transparent rounded-full mx-auto mb-6"
+          />
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-2xl font-bold text-white"
+          >
+            🌾 AgriVibe
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-gray-400 mt-2"
+          >
+            Loading fresh produce...
+          </motion.div>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div ref={containerRef} className="min-h-screen bg-premium-light overflow-x-hidden">
       {/* ====== NAVBAR ====== */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-lg' : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-transform duration-300">
-                  <span className="text-white text-xl">🌾</span>
-                </div>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                AgriVibe
-              </span>
-            </Link>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center space-x-8">
-              <form onSubmit={handleSearch} className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search for fresh produce..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 px-4 py-2.5 rounded-full border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none bg-gray-50/80"
-                />
-                <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-green-600 transition-colors">
-                  <Search className="w-5 h-5" />
-                </button>
-              </form>
-              <Link href="/marketplace" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Marketplace</Link>
-              <Link href="/guides" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Guides</Link>
-              <Link href="/vendor/register" className="text-gray-700 hover:text-green-600 font-medium transition-colors">Sell</Link>
-              <Link href="/about" className="text-gray-700 hover:text-green-600 font-medium transition-colors">About</Link>
-              <Link 
-                href="/login" 
-                className="flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all hover:scale-105"
-              >
-                <User className="w-4 h-4" />
-                Get Started
-              </Link>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+      <nav className={`nav-premium ${isScrolled ? 'shadow-premium' : ''}`}>
+        <div className="container-premium flex items-center justify-between h-full">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <motion.div 
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6 }}
+              className="relative"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+              <div className="w-12 h-12 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-2xl flex items-center justify-center shadow-green">
+                <span className="text-white text-2xl">🌾</span>
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-agrivibe-gold rounded-full animate-pulse" />
+            </motion.div>
+            <div>
+              <span className="text-2xl font-bold text-gradient-green">AgriVibe</span>
+              <span className="block text-[10px] text-gray-400 font-medium tracking-widest uppercase">Marketplace</span>
+            </div>
+          </Link>
+
+          {/* Desktop Menu */}
+          <div className="hidden lg:flex items-center gap-8">
+            <form onSubmit={handleSearch} className="search-premium w-80">
+              <input 
+                type="text" 
+                placeholder="Search fresh produce..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button type="submit">
+                <Search className="w-5 h-5 text-gray-400" />
+              </button>
+            </form>
+            <Link href="/marketplace" className="nav-link">Marketplace</Link>
+            <Link href="/guides" className="nav-link">Guides</Link>
+            <Link href="/vendor/register" className="nav-link">Sell</Link>
+            <Link href="/about" className="nav-link">About</Link>
+            <Link href="/login" className="btn-premium">
+              <User className="w-4 h-4" />
+              Get Started
+            </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
         {/* Mobile Menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="md:hidden bg-white border-t border-gray-100 shadow-xl"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-2xl"
             >
-              <div className="px-4 py-6 space-y-4">
-                <form onSubmit={handleSearch} className="relative">
+              <div className="container-premium py-6 space-y-4">
+                <form onSubmit={handleSearch} className="search-premium">
                   <input 
                     type="text" 
-                    placeholder="Search for fresh produce..." 
+                    placeholder="Search fresh produce..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
                   />
-                  <button type="submit" className="absolute right-3 top-3 text-gray-400">
-                    <Search className="w-5 h-5" />
+                  <button type="submit">
+                    <Search className="w-5 h-5 text-gray-400" />
                   </button>
                 </form>
-                <Link href="/marketplace" className="block text-gray-700 hover:text-green-600 font-medium">Marketplace</Link>
-                <Link href="/guides" className="block text-gray-700 hover:text-green-600 font-medium">Guides</Link>
-                <Link href="/vendor/register" className="block text-gray-700 hover:text-green-600 font-medium">Sell</Link>
-                <Link href="/about" className="block text-gray-700 hover:text-green-600 font-medium">About</Link>
-                <Link 
-                  href="/login" 
-                  className="block text-center bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold"
-                >
+                <Link href="/marketplace" className="block nav-link">Marketplace</Link>
+                <Link href="/guides" className="block nav-link">Guides</Link>
+                <Link href="/vendor/register" className="block nav-link">Sell</Link>
+                <Link href="/about" className="block nav-link">About</Link>
+                <Link href="/login" className="btn-premium w-full justify-center">
                   Get Started
                 </Link>
               </div>
@@ -236,26 +246,19 @@ export default function Home() {
       {/* ====== HERO SECTION ====== */}
       <motion.section 
         style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative min-h-screen flex items-center overflow-hidden"
+        className="hero-premium min-h-screen flex items-center relative overflow-hidden"
       >
-        {/* Background */}
-        <div className="absolute inset-0">
-          <img 
-            src="https://images.pexels.com/photos/1233318/pexels-photo-1233318.jpeg?auto=compress&cs=tinysrgb&w=1920" 
-            alt="Fresh farm produce" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-green-900/90 via-green-800/80 to-emerald-900/70" />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-          <div className="max-w-3xl">
+        {/* Background Decoration */}
+        <div className="absolute inset-0 hero-glow" />
+        
+        <div className="container-premium relative z-10 py-32">
+          <div className="max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.8 }}
             >
-              <span className="inline-flex items-center gap-2 bg-green-500/20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-semibold border border-green-400/30 mb-6">
+              <span className="badge-premium text-sm">
                 <Sparkles className="w-4 h-4" />
                 🌱 Fresh from the Farm — Direct to You
               </span>
@@ -264,12 +267,12 @@ export default function Home() {
             <motion.h1 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6"
+              transition={{ duration: 0.8, delay: 0.1 }}
+              className="heading-1 mt-6"
             >
               Fresh From Farms.
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400">
+              <span className="text-gradient-gold">
                 Delivered to Your Campus.
               </span>
             </motion.h1>
@@ -277,8 +280,8 @@ export default function Home() {
             <motion.p 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl text-white/90 mb-8 max-w-2xl leading-relaxed"
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-premium mt-6 max-w-2xl"
             >
               Buy directly from verified vendors and local farmers with secure payments and last-mile delivery across all Kenyan universities.
             </motion.p>
@@ -286,70 +289,108 @@ export default function Home() {
             <motion.div 
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4"
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 mt-8"
             >
-              <Link 
-                href="/marketplace" 
-                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/30 hover:-translate-y-1 transition-all duration-300"
-              >
-                <ShoppingBag className="w-5 h-5" />
+              <Link href="/marketplace" className="btn-gold text-lg px-10 py-5">
+                <ShoppingBag className="w-6 h-6" />
                 Start Shopping
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-6 h-6" />
               </Link>
-              <Link 
-                href="/vendor/register" 
-                className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-bold text-lg border border-white/20 hover:bg-white/20 hover:scale-105 transition-all duration-300"
-              >
-                <TrendingUp className="w-5 h-5" />
+              <Link href="/vendor/register" className="btn-premium-secondary text-lg px-10 py-5">
+                <TrendingUp className="w-6 h-6" />
                 Become a Vendor
               </Link>
             </motion.div>
 
-            {/* Trust indicators */}
+            {/* Trust Badges */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-wrap gap-8 mt-12"
+              className="flex flex-wrap gap-6 mt-10"
             >
               {[
                 { icon: Shield, label: 'Secure Payments' },
                 { icon: Truck, label: 'Fast Delivery' },
                 { icon: Star, label: 'Quality Guarantee' },
+                { icon: Clock, label: '24/7 Support' },
               ].map((item, index) => (
-                <div key={index} className="flex items-center gap-2 text-white/80">
-                  <item.icon className="w-5 h-5 text-yellow-400" />
-                  <span>{item.label}</span>
-                </div>
+                <motion.div 
+                  key={index}
+                  whileHover={{ scale: 1.1 }}
+                  className="flex items-center gap-2 text-gray-600 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200"
+                >
+                  <item.icon className="w-5 h-5 text-agrivibe-green" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </motion.div>
               ))}
             </motion.div>
           </div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-gray-400 text-sm flex flex-col items-center gap-2"
+          >
+            <span>Scroll to explore</span>
+            <ChevronRight className="w-5 h-5 rotate-90" />
+          </motion.div>
+        </motion.div>
       </motion.section>
 
       {/* ====== STATS SECTION ====== */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="section-premium bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-50/50 to-emerald-50/50" />
+        <div className="container-premium relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <span className="badge-premium">
+              <Award className="w-4 h-4" />
+              Platform Statistics
+            </span>
+            <h2 className="heading-2 mt-4">
+              Trusted by Thousands
+              <br />
+              <span className="text-gradient-green">Across Kenya</span>
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { number: stats.totalProducts || '10K+', label: 'Products Available' },
-              { number: stats.totalVendors || '500+', label: 'Verified Vendors' },
-              { number: stats.totalCampuses || '22', label: 'Campuses' },
-              { number: stats.satisfaction || '98%', label: 'Satisfaction Rate' },
+              { number: stats.totalProducts || 10000, label: 'Products Available', icon: Layers, suffix: '+' },
+              { number: stats.totalVendors || 500, label: 'Verified Vendors', icon: Users, suffix: '+' },
+              { number: stats.totalCampuses || 22, label: 'Campuses', icon: MapPin, suffix: '' },
+              { number: stats.satisfaction || 98, label: 'Satisfaction Rate', icon: Star, suffix: '%' },
             ].map((stat, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="text-center"
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="card-premium p-8 text-center"
               >
-                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  {stat.number}
+                <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="w-8 h-8 text-agrivibe-green" />
                 </div>
-                <div className="text-gray-600 mt-1">{stat.label}</div>
+                <div className="text-4xl font-bold text-gradient-green">
+                  {stat.number}{stat.suffix}
+                </div>
+                <div className="text-gray-600 mt-1 font-medium">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -357,22 +398,22 @@ export default function Home() {
       </section>
 
       {/* ====== CATEGORIES SECTION ====== */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section-premium bg-premium-light">
+        <div className="container-premium">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <span className="inline-flex items-center gap-2 bg-green-100 text-green-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="badge-premium">
               <Leaf className="w-4 h-4" />
-              Browse by Category
+              Categories
             </span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Find What You're Looking For
+            <h2 className="heading-2 mt-4">
+              Browse by Category
             </h2>
-            <p className="text-gray-600 mt-2">Explore our diverse range of fresh produce</p>
+            <p className="text-muted mt-2">Find exactly what you're looking for</p>
           </motion.div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
@@ -384,19 +425,18 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   viewport={{ once: true }}
-                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileHover={{ y: -12, scale: 1.05 }}
                   onClick={() => handleCategoryClick(category.name)}
-                  className="bg-white rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                  className="category-card cursor-pointer"
                 >
-                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="category-icon text-2xl">
                     {category.icon || '📦'}
                   </div>
-                  <h3 className="font-semibold text-gray-900">{category.name}</h3>
-                  <p className="text-sm text-gray-500">{category.count || `${Math.floor(Math.random() * 100)}+`}</p>
+                  <h3 className="font-bold text-gray-900">{category.name}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{category.count || '50+'}</p>
                 </motion.div>
               ))
             ) : (
-              // Fallback categories if API returns empty
               ['Vegetables', 'Fruits', 'Meat', 'Dairy', 'Grains', 'Organic'].map((name, index) => (
                 <motion.div
                   key={index}
@@ -404,14 +444,15 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
                   viewport={{ once: true }}
-                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileHover={{ y: -12, scale: 1.05 }}
                   onClick={() => handleCategoryClick(name)}
-                  className="bg-white rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                  className="category-card cursor-pointer"
                 >
-                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <div className="category-icon text-2xl">
                     {['🥬', '🍎', '🥩', '🥛', '🌾', '🫐'][index]}
                   </div>
-                  <h3 className="font-semibold text-gray-900">{name}</h3>
+                  <h3 className="font-bold text-gray-900">{name}</h3>
+                  <p className="text-sm text-gray-500 mt-1">50+</p>
                 </motion.div>
               ))
             )}
@@ -420,8 +461,8 @@ export default function Home() {
       </section>
 
       {/* ====== FEATURED PRODUCTS ====== */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section-premium bg-white">
+        <div className="container-premium">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -429,20 +470,20 @@ export default function Home() {
             className="flex justify-between items-center mb-12"
           >
             <div>
-              <span className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+              <span className="badge-gold">
                 <Sparkles className="w-4 h-4" />
                 Featured Products
               </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+              <h2 className="heading-2 mt-4">
                 Handpicked Fresh Produce
               </h2>
             </div>
             <Link 
               href="/marketplace" 
-              className="inline-flex items-center gap-2 text-green-600 font-semibold hover:text-green-700 transition-colors"
+              className="btn-ghost"
             >
               View All
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
 
@@ -455,41 +496,36 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  whileHover={{ y: -12 }}
+                  whileHover={{ y: -16 }}
                   onClick={() => handleProductClick(product.id)}
-                  className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer"
+                  className="card-product"
                 >
-                  <div className="relative h-64 overflow-hidden">
+                  <div className="product-image">
                     <img 
                       src={product.image || product.cover_image || 'https://images.unsplash.com/photo-1488459716781-31db5d0e8b2d?w=600&h=400&fit=crop'} 
                       alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                     {product.badge && (
                       <div className="absolute top-4 left-4">
-                        <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-xs font-bold px-3 py-1.5 rounded-full text-white shadow-lg">
-                          {product.badge}
-                        </span>
+                        <span className="badge-gold">{product.badge}</span>
                       </div>
                     )}
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex text-yellow-400">
-                        {'⭐'.repeat(Math.round(product.rating || 4.5))}
-                      </div>
-                      <span className="text-sm text-gray-500">({product.rating || 4.5})</span>
+                  <div className="product-card-content">
+                    <div className="product-rating">
+                      {'⭐'.repeat(Math.round(product.rating || 4.5))}
+                      <span className="text-gray-500">({product.rating || 4.5})</span>
                     </div>
-                    <h3 className="font-semibold text-gray-900 text-lg mb-1">{product.name}</h3>
-                    <p className="text-gray-500 text-sm mb-3">{product.vendor || 'Vendor'}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-green-600">KES {product.price}</span>
+                    <h3 className="product-title">{product.name}</h3>
+                    <p className="text-gray-500 text-sm">{product.vendor || 'Vendor'}</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="product-price">KES {product.price}</span>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddToCart(product.id);
                         }}
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-300 active:scale-95"
+                        className="btn-premium text-sm"
                       >
                         Add to Cart
                       </button>
@@ -499,130 +535,117 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            // Empty state - redirect to marketplace
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">🛒</div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-2">No Products Yet</h3>
-              <p className="text-gray-500 mb-6">Start shopping to see products here</p>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center py-20"
+            >
+              <div className="text-8xl mb-6">🛒</div>
+              <h3 className="heading-3 text-gray-800">No Products Yet</h3>
+              <p className="text-gray-500 text-lg mb-8">Start shopping to see products here</p>
               <Link 
                 href="/marketplace"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                className="btn-premium text-lg px-10 py-5"
               >
-                <ShoppingBag className="w-5 h-5" />
+                <ShoppingBag className="w-6 h-6" />
                 Go to Marketplace
               </Link>
-            </div>
+            </motion.div>
           )}
         </div>
       </section>
 
       {/* ====== NEWSLETTER ====== */}
-      <section className="py-20 bg-gradient-to-r from-green-800 to-emerald-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="section-premium bg-premium-dark text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1233318/pexels-photo-1233318.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center mix-blend-overlay opacity-10" />
+        <div className="container-premium relative text-center max-w-2xl">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-block text-white/80 text-sm font-semibold uppercase tracking-wider mb-4 border border-white/20 px-4 py-2 rounded-full">
+            <span className="badge-premium bg-white/10 text-white border-white/20">
               🚀 Stay Updated
             </span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Subscribe to <span className="text-yellow-400">AgriVibe</span>
+            <h2 className="heading-2 mt-6">
+              Subscribe to <span className="text-gradient-gold">AgriVibe</span>
             </h2>
-            <p className="text-green-100 mb-6">Get the latest deals, new products, and campus updates delivered to your inbox</p>
+            <p className="text-gray-300 mt-4">Get the latest deals, new products, and campus updates</p>
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
                 router.push('/marketplace');
               }}
-              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+              className="flex flex-col sm:flex-row gap-3 mt-6"
             >
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-5 py-4 rounded-xl border-0 focus:ring-2 focus:ring-yellow-400 outline-none text-gray-800 placeholder-gray-400"
+                className="input-premium bg-white/10 text-white placeholder-gray-400 border-white/20"
                 required
               />
-              <button 
-                type="submit"
-                className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-8 py-4 rounded-xl font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-yellow-400/30"
-              >
+              <button type="submit" className="btn-gold">
                 Subscribe
               </button>
             </form>
-            <p className="text-green-200 text-xs mt-3">No spam. Unsubscribe anytime.</p>
+            <p className="text-gray-400 text-sm mt-3">No spam. Unsubscribe anytime.</p>
           </motion.div>
         </div>
       </section>
 
       {/* ====== FOOTER ====== */}
-      <footer className="bg-gray-900 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="footer-premium py-20">
+        <div className="container-premium">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-2xl">🌾</span>
-                <span className="text-xl font-bold">AgriVibe</span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
+                  <span className="text-white text-xl">🌾</span>
+                </div>
+                <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
               </div>
-              <p className="text-gray-400 text-sm">Connecting farmers, vendors, and students across Kenyan campuses.</p>
-              <div className="flex gap-4 mt-4">
-               <div className="flex gap-4 mt-4">
-  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Facebook</a>
-  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Twitter</a>
-  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Instagram</a>
-  <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">YouTube</a>
-</div>
+              <p className="text-gray-400 text-sm leading-relaxed">Connecting farmers, vendors, and students across Kenyan campuses.</p>
+              <div className="flex gap-4 mt-6">
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Facebook className="w-5 h-5" /></a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Twitter className="w-5 h-5" /></a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Instagram className="w-5 h-5" /></a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Youtube className="w-5 h-5" /></a>
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Marketplace</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/marketplace" className="hover:text-white transition-colors">All Products</Link></li>
-                <li><Link href="/marketplace" className="hover:text-white transition-colors">Categories</Link></li>
-                <li><Link href="/vendors" className="hover:text-white transition-colors">Vendors</Link></li>
-                <li><Link href="/marketplace" className="hover:text-white transition-colors">Deals</Link></li>
+              <h4 className="font-bold text-white mb-4 text-lg">Marketplace</h4>
+              <ul className="space-y-3 text-sm text-gray-400">
+                <li><Link href="/marketplace" className="footer-link">All Products</Link></li>
+                <li><Link href="/marketplace" className="footer-link">Categories</Link></li>
+                <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
+                <li><Link href="/marketplace" className="footer-link">Deals</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+              <h4 className="font-bold text-white mb-4 text-lg">Company</h4>
+              <ul className="space-y-3 text-sm text-gray-400">
+                <li><Link href="/about" className="footer-link">About Us</Link></li>
+                <li><Link href="/contact" className="footer-link">Contact</Link></li>
+                <li><Link href="/careers" className="footer-link">Careers</Link></li>
+                <li><Link href="/blog" className="footer-link">Blog</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><Link href="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/faq" className="hover:text-white transition-colors">FAQ</Link></li>
+              <h4 className="font-bold text-white mb-4 text-lg">Support</h4>
+              <ul className="space-y-3 text-sm text-gray-400">
+                <li><Link href="/help" className="footer-link">Help Center</Link></li>
+                <li><Link href="/terms" className="footer-link">Terms</Link></li>
+                <li><Link href="/privacy" className="footer-link">Privacy</Link></li>
+                <li><Link href="/faq" className="footer-link">FAQ</Link></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
+          <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
             <p>© 2026 AgriVibe KE Farm Solutions. All rights reserved.</p>
           </div>
         </div>
       </footer>
-
-      {/* Cart Notification */}
-      <AnimatePresence>
-        {showCartNotification && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-3"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            <span className="font-semibold">{notificationMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
