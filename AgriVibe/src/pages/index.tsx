@@ -1,4 +1,3 @@
-// pages/index.tsx or app/page.tsx
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -14,10 +13,9 @@ import {
   Menu,
   X,
   User,
-  Leaf,
-  
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
-
 import api from '../services/api';
 
 export default function Home() {
