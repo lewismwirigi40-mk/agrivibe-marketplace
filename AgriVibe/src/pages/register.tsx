@@ -79,27 +79,28 @@ export default function Register() {
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-agrivibe-green/20 to-transparent rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-tl from-agrivibe-gold/20 to-transparent rounded-full blur-3xl animate-float-slow" />
         
-        {/* Floating Particles */}
-        {[...Array(40)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-white/10 rounded-full"
-            initial={{ 
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-            }}
-            animate={{
-              y: [null, -100],
-              opacity: [0, 1, 0],
-            }}
-            transition={{
-              duration: Math.random() * 10 + 5,
-              repeat: Infinity,
-              delay: Math.random() * 10,
-            }}
-          />
-        ))}
-      </div>
+        {/* Floating Particles - Temporarily disabled for build */}
+{/* <div className="absolute inset-0 overflow-hidden">
+  {[...Array(30)].map((_, i) => (
+    <motion.div
+      key={i}
+      className="absolute w-1 h-1 bg-white/10 rounded-full"
+      initial={{ 
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+      }}
+      animate={{
+        y: [null, -100],
+        opacity: [0, 1, 0],
+      }}
+      transition={{
+        duration: Math.random() * 10 + 5,
+        repeat: Infinity,
+        delay: Math.random() * 10,
+      }}
+    />
+  ))}
+</div> */}
 
       {/* Main Container */}
       <motion.div
