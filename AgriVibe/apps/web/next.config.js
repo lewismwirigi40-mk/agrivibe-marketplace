@@ -1,7 +1,6 @@
-/** @type {import('next').NextConfig} */
+﻿/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  
   images: {
     remotePatterns: [
       {
@@ -23,13 +22,9 @@ const nextConfig = {
       },
     ],
   },
-  
-  // Allow the build to complete even with TypeScript errors
   typescript: {
     ignoreBuildErrors: true,
   },
-  
-  // Allow the build to complete even with ESLint errors
   eslint: {
     ignoreDuringBuilds: true,
   },
