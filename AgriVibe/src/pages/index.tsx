@@ -15,7 +15,7 @@ import {
   User,
   Sparkles,
   ArrowRight,
-  Leaf, // ✅ Add this
+  Leaf// ✅ Add this
 } from 'lucide-react';
 import api from '../services/api';
 
