@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-
 import { 
   ShoppingBag, 
   TrendingUp, 
@@ -19,28 +18,17 @@ import {
   ArrowRight,
   Leaf,
   Award,
-  Mail,
-  Globe,
   Clock,
-  CheckCircle,
-  Zap,
   Layers,
   Users,
-  DollarSign,
-  MapPin,
-  Phone,
+  MapPin
 } from 'lucide-react';
-import {
-FaFacebook, FaTwitter, FaInstagram, FaYoutube 
-} from 'react-icons/fa';
 import api from '../services/api';
 
 export default function Home() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showCartNotification, setShowCartNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
   
@@ -61,8 +49,6 @@ export default function Home() {
   });
   
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.98]);
-  const heroY = useTransform(scrollYProgress, [0, 0.5], [0, 100]);
 
   // FETCH REAL DATA
   useEffect(() => {
@@ -245,10 +231,9 @@ export default function Home() {
 
       {/* ====== HERO SECTION ====== */}
       <motion.section 
-        style={{ opacity: heroOpacity, scale: heroScale }}
+        style={{ opacity: heroOpacity }}
         className="hero-premium min-h-screen flex items-center relative overflow-hidden"
       >
-        {/* Background Decoration */}
         <div className="absolute inset-0 hero-glow" />
         
         <div className="container-premium relative z-10 py-32">
@@ -303,7 +288,6 @@ export default function Home() {
               </Link>
             </motion.div>
 
-            {/* Trust Badges */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -329,7 +313,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -505,11 +488,6 @@ export default function Home() {
                       src={product.image || product.cover_image || 'https://images.unsplash.com/photo-1488459716781-31db5d0e8b2d?w=600&h=400&fit=crop'} 
                       alt={product.name}
                     />
-                    {product.badge && (
-                      <div className="absolute top-4 left-4">
-                        <span className="badge-gold">{product.badge}</span>
-                      </div>
-                    )}
                   </div>
                   <div className="product-card-content">
                     <div className="product-rating">
@@ -607,10 +585,10 @@ export default function Home() {
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">Connecting farmers, vendors, and students across Kenyan campuses.</p>
               <div className="flex gap-4 mt-6">
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Facebook className="w-5 h-5" /></a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Twitter className="w-5 h-5" /></a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Instagram className="w-5 h-5" /></a>
-                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors"><Youtube className="w-5 h-5" /></a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Facebook</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Twitter</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Instagram</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">YouTube</a>
               </div>
             </div>
             <div>
