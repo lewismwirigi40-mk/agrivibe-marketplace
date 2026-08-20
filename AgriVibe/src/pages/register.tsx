@@ -458,4 +458,6 @@ export default function Register() {
       </motion.div>
     </div>
   );
+  </div>
+  )
 }
