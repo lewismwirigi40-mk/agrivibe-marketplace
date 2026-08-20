@@ -1,4 +1,28 @@
+// src/components/AIChat.tsx
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  MessageCircle, 
+  X, 
+  Send, 
+  Bot, 
+  Sparkles,
+  Minimize2,
+  Maximize2,
+  ChevronDown,
+  Phone,
+  Mail,
+  Clock,
+  Shield,
+  Zap,
+  Mic,
+  Paperclip,
+  Smile,
+  ArrowUp,
+  Loader2,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 import api from '../services/api';
 
 interface Message {
@@ -10,6 +34,7 @@ interface Message {
 
 export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -20,6 +45,7 @@ export default function AIChat() {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,13 +84,10 @@ export default function AIChat() {
     setIsTyping(true);
 
     try {
-      // ✅ ONLY use the backend API - NO LOCAL FALLBACK
       const response = await api.post('/ai/chat', { message: userInput });
       
-    
-      // Check if the response is an unanswered message
       if (response.data.message.includes("I'm still learning") || response.data.message.includes("I don't have an answer")) {
-      await saveUnansweredQuestion(userInput);
+        await saveUnansweredQuestion(userInput);
       }
       
       const aiMessage: Message = {
@@ -100,108 +123,206 @@ export default function AIChat() {
     }
   };
 
+  const quickSuggestions = [
+    'Order status',
+    'Delivery fee',
+    'Payment methods',
+    'Become a vendor',
+    'Mango benefits',
+    'Fresh produce'
+  ];
+
   return (
     <>
-      {/* Chat Button */}
-      <button
-  onClick={toggleChat}
-  className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 flex items-center gap-3 group"
-  aria-label="Chat with AgriVibe AI"
->
-  <span className="text-2xl group-hover:rotate-12 transition-transform duration-300">🤖</span>
-  <span className="font-semibold text-sm hidden md:block">AgriVibe AI Assistant</span>
-  <span className="font-semibold text-sm md:hidden">AI</span>
-  <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
-</button>
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] bg-gray-900/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[500px]">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🌾</span>
-              <div>
-                <h3 className="text-white font-semibold">AgriVibe AI</h3>
-                <p className="text-gray-400 text-xs">Online • Ready to help</p>
-              </div>
+      {/* ====== FLOATING CHAT BUTTON ====== */}
+      <motion.button
+        onClick={toggleChat}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+        className={`fixed bottom-8 right-8 z-50 group ${
+          isOpen ? 'hidden' : 'flex'
+        }`}
+      >
+        <div className="relative">
+          {/* Glow Effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green to-emerald-500 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          {/* Button Body */}
+          <div className="relative flex items-center gap-3 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-agrivibe-green/40 hover:shadow-agrivibe-green/60 transition-all duration-300">
+            <div className="relative">
+              <Bot className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white" />
             </div>
-            <button
-              onClick={toggleChat}
-              className="text-gray-400 hover:text-white transition"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[350px]">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] p-3 rounded-2xl ${
-                    msg.sender === 'user'
-                      ? 'bg-yellow-400 text-gray-900'
-                      : 'bg-white/10 text-white'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                  <p className="text-[10px] opacity-50 mt-1">
-                    {msg.timestamp.toLocaleTimeString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 text-white p-3 rounded-2xl">
-                  <div className="flex gap-1">
-                    <span className="animate-bounce">●</span>
-                    <span className="animate-bounce delay-100">●</span>
-                    <span className="animate-bounce delay-200">●</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Suggestions */}
-          <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
-            {['Order status', 'Delivery fee', 'Payment methods', 'Become a vendor', 'Mango benefits'].map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => handleQuickSuggestion(suggestion)}
-                className="flex-shrink-0 bg-white/5 hover:bg-white/10 text-gray-300 text-xs px-3 py-1.5 rounded-full border border-white/10 transition"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="p-3 border-t border-white/10 flex gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask me anything..."
-              className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-400 focus:border-yellow-400 outline-none transition"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim()}
-              className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 px-4 py-2 rounded-xl font-semibold transition disabled:opacity-50"
-            >
-              Send
-            </button>
+            <span className="font-bold text-sm hidden sm:inline">AgriVibe AI</span>
+            <span className="font-bold text-sm sm:hidden">AI</span>
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              Online
+            </div>
           </div>
         </div>
-      )}
+      </motion.button>
+
+      {/* ====== CHAT WINDOW ====== */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              height: isMinimized ? 'auto' : 'auto'
+            }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className={`fixed bottom-8 right-8 z-50 w-[400px] max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden ${
+              isMinimized ? 'h-auto' : 'h-[560px]'
+            }`}
+          >
+            {/* ====== HEADER ====== */}
+            <div className="relative bg-gradient-to-r from-agrivibe-green to-emerald-500 p-4">
+              <div className="absolute inset-0 bg-white/5" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse border-2 border-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-sm">AgriVibe AI</h3>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-white/80 text-xs">Online • Ready to help</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setIsMinimized(!isMinimized)}
+                    className="p-1.5 rounded-lg hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+                  >
+                    {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={toggleChat}
+                    className="p-1.5 rounded-lg hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* ====== MESSAGES ====== */}
+            {!isMinimized && (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[320px] bg-gray-50 dark:bg-gray-800/50">
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] p-3 rounded-2xl ${
+                          msg.sender === 'user'
+                            ? 'bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white'
+                            : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-md'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                        <p className={`text-[10px] mt-1 ${
+                          msg.sender === 'user' ? 'text-white/70' : 'text-gray-400 dark:text-gray-500'
+                        }`}>
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex justify-start">
+                      <div className="bg-white dark:bg-gray-800 shadow-md p-3 rounded-2xl">
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-agrivibe-green rounded-full animate-bounce" />
+                          <span className="w-2 h-2 bg-agrivibe-green rounded-full animate-bounce delay-100" />
+                          <span className="w-2 h-2 bg-agrivibe-green rounded-full animate-bounce delay-200" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* ====== QUICK SUGGESTIONS ====== */}
+                <div className="px-4 py-2 border-t border-gray-100 dark:border-white/5">
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                    {quickSuggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        onClick={() => handleQuickSuggestion(suggestion)}
+                        className="flex-shrink-0 px-3 py-1.5 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 text-xs rounded-full border border-gray-200 dark:border-white/10 transition-all duration-200 hover:scale-105"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ====== INPUT ====== */}
+                <div className="p-3 border-t border-gray-100 dark:border-white/5 bg-white dark:bg-gray-900">
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1 relative">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                        placeholder="Ask me anything..."
+                        className="w-full px-4 py-2.5 pr-12 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10 outline-none transition-all resize-none"
+                      />
+                      <button
+                        onClick={() => setInput(input + ' 😊')}
+                        className="absolute right-3 bottom-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                      >
+                        <Smile className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleSend}
+                      disabled={!input.trim()}
+                      className="flex-shrink-0 w-11 h-11 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group"
+                    >
+                      <ArrowUp className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Shield className="w-3 h-3" />
+                        Encrypted
+                      </span>
+                      <span>•</span>
+                      <span>Powered by AgriVibe AI</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                      <span className="text-xs text-gray-400">Online</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

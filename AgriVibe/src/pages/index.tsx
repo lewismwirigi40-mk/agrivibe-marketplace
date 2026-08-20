@@ -21,7 +21,8 @@ import {
   Clock,
   Layers,
   Users,
-  MapPin
+  MapPin,
+  ChevronDown
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -146,7 +147,7 @@ export default function Home() {
       <nav className={`nav-premium ${isScrolled ? 'shadow-premium' : ''}`}>
         <div className="container-premium flex items-center justify-between h-full">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
+          <Link href="/" className="flex items-center gap-3 group flex-shrink-0">
             <motion.div 
               whileHover={{ rotate: 360 }}
               transition={{ duration: 0.6 }}
@@ -163,9 +164,18 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Desktop Menu */}
+          {/* Desktop Primary Menu - Center */}
           <div className="hidden lg:flex items-center gap-8">
-            <form onSubmit={handleSearch} className="search-premium w-80">
+            <Link href="/marketplace" className="nav-link">Marketplace</Link>
+            <Link href="/guides" className="nav-link">Guides</Link>
+            <Link href="/vendor/register" className="nav-link">Sell</Link>
+            <Link href="/about" className="nav-link">About</Link>
+            <Link href="/contact" className="nav-link">Contact</Link>
+          </div>
+
+          {/* Desktop Secondary Menu - Right */}
+          <div className="hidden lg:flex items-center gap-4">
+            <form onSubmit={handleSearch} className="search-premium w-64">
               <input 
                 type="text" 
                 placeholder="Search fresh produce..." 
@@ -176,12 +186,11 @@ export default function Home() {
                 <Search className="w-5 h-5 text-gray-400" />
               </button>
             </form>
-            <Link href="/marketplace" className="nav-link">Marketplace</Link>
-            <Link href="/guides" className="nav-link">Guides</Link>
-            <Link href="/vendor/register" className="nav-link">Sell</Link>
-            <Link href="/about" className="nav-link">About</Link>
             <Link href="/login" className="btn-premium">
               <User className="w-4 h-4" />
+              Login
+            </Link>
+            <Link href="/register" className="btn-gold text-sm">
               Get Started
             </Link>
           </div>
@@ -189,23 +198,53 @@ export default function Home() {
           {/* Mobile Menu Button */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-colors z-50"
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
+      </nav>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-2xl"
+      {/* ====== MOBILE MENU - SLIDES FROM LEFT ====== */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            />
+            
+            {/* Menu Panel - Slides from left */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed top-0 left-0 w-80 h-full bg-white shadow-2xl z-50 lg:hidden overflow-y-auto"
             >
-              <div className="container-premium py-6 space-y-4">
-                <form onSubmit={handleSearch} className="search-premium">
+              <div className="p-6">
+                {/* Mobile Logo */}
+                <div className="flex items-center justify-between mb-8">
+                  <Link href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                    <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
+                      <span className="text-white text-xl">🌾</span>
+                    </div>
+                    <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
+                  </Link>
+                  <button 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-2 rounded-lg hover:bg-gray-100"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Mobile Search */}
+                <form onSubmit={handleSearch} className="search-premium mb-6">
                   <input 
                     type="text" 
                     placeholder="Search fresh produce..." 
@@ -216,18 +255,81 @@ export default function Home() {
                     <Search className="w-5 h-5 text-gray-400" />
                   </button>
                 </form>
-                <Link href="/marketplace" className="block nav-link">Marketplace</Link>
-                <Link href="/guides" className="block nav-link">Guides</Link>
-                <Link href="/vendor/register" className="block nav-link">Sell</Link>
-                <Link href="/about" className="block nav-link">About</Link>
-                <Link href="/login" className="btn-premium w-full justify-center">
-                  Get Started
-                </Link>
+
+                {/* Mobile Primary Menu */}
+                <div className="space-y-1">
+                  <Link 
+                    href="/marketplace" 
+                    className="block px-4 py-3 rounded-xl hover:bg-green-50 text-gray-700 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Marketplace
+                  </Link>
+                  <Link 
+                    href="/guides" 
+                    className="block px-4 py-3 rounded-xl hover:bg-green-50 text-gray-700 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Guides
+                  </Link>
+                  <Link 
+                    href="/vendor/register" 
+                    className="block px-4 py-3 rounded-xl hover:bg-green-50 text-gray-700 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sell
+                  </Link>
+                  <Link 
+                    href="/about" 
+                    className="block px-4 py-3 rounded-xl hover:bg-green-50 text-gray-700 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    About
+                  </Link>
+                  <Link 
+                    href="/contact" 
+                    className="block px-4 py-3 rounded-xl hover:bg-green-50 text-gray-700 font-medium transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Contact
+                  </Link>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-gray-100 my-6" />
+
+                {/* Mobile Secondary Menu */}
+                <div className="space-y-3">
+                  <Link 
+                    href="/login" 
+                    className="block w-full text-center btn-premium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link 
+                    href="/register" 
+                    className="block w-full text-center btn-gold"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
+                </div>
+
+                {/* Mobile Footer Links */}
+                <div className="border-t border-gray-100 mt-6 pt-6">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <Link href="/terms" className="text-gray-500 hover:text-agrivibe-green transition-colors">Terms</Link>
+                    <Link href="/privacy" className="text-gray-500 hover:text-agrivibe-green transition-colors">Privacy</Link>
+                    <Link href="/help" className="text-gray-500 hover:text-agrivibe-green transition-colors">Help</Link>
+                    <Link href="/faq" className="text-gray-500 hover:text-agrivibe-green transition-colors">FAQ</Link>
+                  </div>
+                </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ====== HERO SECTION ====== */}
       <motion.section 
@@ -572,59 +674,76 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ====== FOOTER ====== */}
-<footer className="footer-premium py-20">
-  <div className="container-premium">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-12">
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
-            <span className="text-white text-xl">🌾</span>
+      {/* ====== PREMIUM FOOTER ====== */}
+      <footer className="footer-premium py-16">
+        <div className="container-premium">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
+                  <span className="text-white text-xl">🌾</span>
+                </div>
+                <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
+                Connecting farmers, vendors, and students across Kenyan campuses.
+              </p>
+              <div className="flex gap-4 mt-6">
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Facebook</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Twitter</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Instagram</a>
+                <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">YouTube</a>
+              </div>
+            </div>
+
+            {/* Marketplace */}
+            <div>
+              <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Marketplace</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/marketplace" className="footer-link">All Products</Link></li>
+                <li><Link href="/marketplace" className="footer-link">Categories</Link></li>
+                <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
+                <li><Link href="/marketplace" className="footer-link">Deals</Link></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Company</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/about" className="footer-link">About Us</Link></li>
+                <li><Link href="/contact" className="footer-link">Contact</Link></li>
+                <li><Link href="/careers" className="footer-link">Careers</Link></li>
+                <li><Link href="/blog" className="footer-link">Blog</Link></li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h4 className="font-bold text-white mb-4 text-sm uppercase tracking-wider">Support</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/help" className="footer-link">Help Center</Link></li>
+                <li><Link href="/terms" className="footer-link">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="footer-link">Privacy Policy</Link></li>
+                <li><Link href="/faq" className="footer-link">FAQ</Link></li>
+              </ul>
+            </div>
           </div>
-          <span className="text-xl font-bold text-gradient-green">AgriVibe</span>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-gray-500">
+              © 2026 AgriVibe KE Farm Solutions. All rights reserved.
+            </p>
+            <div className="flex gap-6 text-sm">
+              <Link href="/terms" className="text-gray-500 hover:text-agrivibe-gold transition-colors">Terms</Link>
+              <Link href="/privacy" className="text-gray-500 hover:text-agrivibe-gold transition-colors">Privacy</Link>
+              <Link href="/cookies" className="text-gray-500 hover:text-agrivibe-gold transition-colors">Cookies</Link>
+            </div>
+          </div>
         </div>
-        <p className="text-gray-400 text-sm leading-relaxed">Connecting farmers, vendors, and students across Kenyan campuses.</p>
-        {/* ✅ FIXED: Social links as text instead of icons */}
-        <div className="flex gap-4 mt-6">
-          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Facebook</a>
-          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Twitter</a>
-          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">Instagram</a>
-          <a href="#" className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm">YouTube</a>
-        </div>
-      </div>
-      <div>
-        <h4 className="font-bold text-white mb-4 text-lg">Marketplace</h4>
-        <ul className="space-y-3 text-sm text-gray-400">
-          <li><Link href="/marketplace" className="footer-link">All Products</Link></li>
-          <li><Link href="/marketplace" className="footer-link">Categories</Link></li>
-          <li><Link href="/vendors" className="footer-link">Vendors</Link></li>
-          <li><Link href="/marketplace" className="footer-link">Deals</Link></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold text-white mb-4 text-lg">Company</h4>
-        <ul className="space-y-3 text-sm text-gray-400">
-          <li><Link href="/about" className="footer-link">About Us</Link></li>
-          <li><Link href="/contact" className="footer-link">Contact</Link></li>
-          <li><Link href="/careers" className="footer-link">Careers</Link></li>
-          <li><Link href="/blog" className="footer-link">Blog</Link></li>
-        </ul>
-      </div>
-      <div>
-        <h4 className="font-bold text-white mb-4 text-lg">Support</h4>
-        <ul className="space-y-3 text-sm text-gray-400">
-          <li><Link href="/help" className="footer-link">Help Center</Link></li>
-          <li><Link href="/terms" className="footer-link">Terms</Link></li>
-          <li><Link href="/privacy" className="footer-link">Privacy</Link></li>
-          <li><Link href="/faq" className="footer-link">FAQ</Link></li>
-        </ul>
-      </div>
-    </div>
-    <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
-      <p>© 2026 AgriVibe KE Farm Solutions. All rights reserved.</p>
-    </div>
-  </div>
-   </footer>
+      </footer>
     </div>
   );
 }
