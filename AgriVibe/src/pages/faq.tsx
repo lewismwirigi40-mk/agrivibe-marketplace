@@ -168,28 +168,28 @@ export default function FAQ() {
           <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1233318/pexels-photo-1233318.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center mix-blend-overlay opacity-20" />
         </div>
 
-        {/* Floating Particles */}
-        <div className="absolute inset-0 overflow-hidden">
-          {[...Array(30)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white/10 rounded-full"
-              initial={{ 
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * window.innerHeight,
-              }}
-              animate={{
-                y: [null, -100],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: Math.random() * 10 + 5,
-                repeat: Infinity,
-                delay: Math.random() * 10,
-              }}
-            />
-          ))}
-        </div>
+        {/* Floating Particles - Temporarily disabled for build */}
+{/* <div className="absolute inset-0 overflow-hidden">
+  {[...Array(30)].map((_, i) => (
+    <motion.div
+      key={i}
+      className="absolute w-2 h-2 bg-white/10 rounded-full"
+      initial={{ 
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+      }}
+      animate={{
+        y: [null, -100],
+        opacity: [0, 1, 0],
+      }}
+      transition={{
+        duration: Math.random() * 10 + 5,
+        repeat: Infinity,
+        delay: Math.random() * 10,
+      }}
+    />
+  ))}
+</div> */}
 
         <div className="container-premium relative z-10 py-20">
           <motion.div
