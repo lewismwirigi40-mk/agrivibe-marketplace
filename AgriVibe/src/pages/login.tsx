@@ -71,12 +71,8 @@ export default function Login() {
     <div className="min-h-screen bg-premium-dark flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient Orbs */}
         <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-gradient-to-br from-agrivibe-green/20 to-transparent rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-gradient-to-tr from-agrivibe-gold/20 to-transparent rounded-full blur-3xl animate-float-slow" />
-        
-        
-      
       </div>
 
       {/* Main Container */}
@@ -86,7 +82,6 @@ export default function Login() {
         transition={{ duration: 0.6 }}
         className="relative w-full max-w-md"
       >
-        {/* 3D Card Effect */}
         <motion.div
           whileHover={{ 
             scale: 1.02,
@@ -96,15 +91,10 @@ export default function Login() {
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
           className="relative"
         >
-          {/* Glow Behind Card */}
           <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green/20 via-agrivibe-gold/20 to-agrivibe-green/20 rounded-3xl blur-2xl" />
           
-          {/* Main Card */}
           <div className="relative bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-            {/* Shimmer Border Effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
-            
-            {/* Premium Header Decoration */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-agrivibe-green via-agrivibe-gold to-agrivibe-green" />
             
             <div className="p-8 md:p-10">
@@ -125,7 +115,6 @@ export default function Login() {
                 <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
                 <p className="text-gray-400 mt-1">Login to your AgriVibe account</p>
                 
-                {/* Decorative Divider */}
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <div className="w-12 h-px bg-gradient-to-r from-transparent to-agrivibe-gold/50" />
                   <Sparkles className="w-4 h-4 text-agrivibe-gold" />
@@ -307,7 +296,7 @@ export default function Login() {
                 </motion.div>
               </form>
 
-              {/* Register Link */}
+              {/* Register Link - Fixed: Now properly clickable */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
