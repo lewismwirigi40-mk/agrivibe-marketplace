@@ -100,6 +100,37 @@ app.get('/ping', (req, res) => {
   });
 });
 
+// ============================================
+// START SERVER - MOVED TO THE TOP TO ENSURE IT RUNS
+// ============================================
+const server = app.listen(PORT, () => {
+    console.log(`✅ AgriVibe Backend running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔄 Server is ready and waiting for requests...`);
+});
+
+// ============================================
+// KEEP PROCESS ALIVE - Error Handlers
+// ============================================
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Rejection:', err);
+});
+
+process.on('SIGINT', () => {
+    console.log('👋 Shutting down gracefully...');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
+});
+
+// ============================================
+// DATABASE CONNECTION (Non-blocking)
+// ============================================
 // Test database connection
 sequelize.authenticate()
     .then(() => console.log('✅ Database connected!'))
@@ -222,30 +253,4 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
     console.error('❌ Error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
-});
-
-// ============================================
-// START SERVER
-// ============================================
-app.listen(PORT, () => {
-    console.log(`✅ AgriVibe Backend running on port ${PORT}`);
-    console.log(`📍 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔄 Server is ready and waiting for requests...`);
-});
-
-// ============================================
-// KEEP PROCESS ALIVE - Error Handlers
-// ============================================
-process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (err) => {
-    console.error('❌ Unhandled Rejection:', err);
-});
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-    console.log('👋 Shutting down gracefully...');
-    process.exit(0);
 });
