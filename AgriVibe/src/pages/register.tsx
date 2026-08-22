@@ -300,29 +300,24 @@ export default function Register() {
                   transition={{ delay: 0.5 }}
                   className="flex items-start gap-3"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setAgreeTerms(!agreeTerms)}
-                    className="mt-0.5 flex-shrink-0"
-                  >
-                    <div className={`w-5 h-5 rounded border-2 transition-all duration-300 flex items-center justify-center ${
-                      agreeTerms 
-                        ? 'bg-agrivibe-green border-agrivibe-green' 
-                        : 'border-gray-500 hover:border-gray-400'
-                    }`}>
-                      {agreeTerms && <CheckCircle className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                  </button>
-                  <p className="text-sm text-gray-400">
-                    I agree to the{' '}
-                    <Link href="/terms" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
-                      Terms of Service
-                    </Link>
-                    {' '}and{' '}
-                    <Link href="/privacy" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
-                      Privacy Policy
-                    </Link>
-                  </p>
+                  <label className="flex items-start gap-3 cursor-pointer">
+  <input
+    type="checkbox"
+    checked={agreeTerms}
+    onChange={(e) => setAgreeTerms(e.target.checked)}
+    className="w-5 h-5 mt-0.5 accent-agrivibe-green cursor-pointer"
+  />
+  <p className="text-sm text-gray-400">
+    I agree to the{' '}
+    <Link href="/terms" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
+      Terms of Service
+    </Link>
+    {' '}and{' '}
+    <Link href="/privacy" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
+      Privacy Policy
+    </Link>
+  </p>
+</label>
                 </motion.div>
 
                 {/* Error */}
