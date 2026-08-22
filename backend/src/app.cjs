@@ -11,7 +11,6 @@ const result = dotenv.config({
 });
 
 console.log("Dotenv result:", result);
-
 console.log("========== M-Pesa Environment Check ==========");
 console.log("MPESA_CONSUMER_KEY =", process.env.MPESA_CONSUMER_KEY);
 console.log("MPESA_CONSUMER_SECRET =", process.env.MPESA_CONSUMER_SECRET ? "[LOADED]" : "undefined");
@@ -32,8 +31,6 @@ const Store = require('./models/Store.cjs');
 const Product = require('./models/Product.cjs');
 const Order = require('./models/Order.cjs');
 const Cart = require('./models/Cart.cjs');
-// Add this with the other imports around line 37
-const userRoutes = require('./routes/userRoutes.cjs');
 const Wallet = require('./models/Wallet.cjs');
 const Delivery = require('./models/Delivery.cjs');
 const Review = require('./models/Review.cjs');
@@ -42,28 +39,22 @@ const Category = require('./models/Category.cjs');
 const Notification = require('./models/Notification.cjs');
 const Guide = require('./models/Guide.cjs');
 const GuidePurchase = require('./models/GuidePurchase.cjs');
+const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
+
 // Import routes
 const authRoutes = require('./routes/authRoutes.cjs');
-// Import routes - ADD THIS WITH OTHER IMPORTS
-
-const { initEmail } = require('./services/emailService.cjs');
-const { initMpesa } = require('./services/paymentService.cjs');
-const { initSms } = require('./services/smsService.cjs');
+const userRoutes = require('./routes/userRoutes.cjs');
 const productRoutes = require('./routes/productRoutes.cjs');
 const storeRoutes = require('./routes/storeRoutes.cjs');
 const cartRoutes = require('./routes/cartRoutes.cjs');
 const orderRoutes = require('./routes/orderRoutes.cjs');
 const smsRoutes = require('./routes/smsRoutes.cjs');
-
-const escrowService = require('./services/escrowService.cjs');
 const testRoutes = require('./routes/testRoutes.cjs');
-const { initMaps } = require('./services/mapsService.cjs');
 const categoryRoutes = require('./routes/categoryRoutes.cjs');
 const reviewRoutes = require('./routes/reviewRoutes.cjs');
 const walletRoutes = require('./routes/walletRoutes.cjs');
 const deliveryRoutes = require('./routes/deliveryRoutes.cjs');
 const aiRoutes = require('./routes/aiRoutes.cjs');
-const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
 const locationRoutes = require('./routes/locationRoutes.cjs');
 const paymentRoutes = require('./routes/paymentRoutes.cjs');
 const webhookRoutes = require('./routes/webhookRoutes.cjs');
@@ -72,9 +63,16 @@ const adminRoutes = require('./routes/adminRoutes.cjs');
 const notificationRoutes = require('./routes/notificationRoutes.cjs');
 const campusRoutes = require('./routes/campusRoutes.cjs');
 const escrowRoutes = require('./routes/escrowRoutes.cjs');
-const { initWhatsApp } = require('./services/whatsappService.cjs');
 const guideRoutes = require('./routes/guideRoutes.cjs');
 const uploadRoutes = require('./routes/uploadRoutes.cjs');
+
+// Services
+const { initEmail } = require('./services/emailService.cjs');
+const { initMpesa } = require('./services/paymentService.cjs');
+const { initSms } = require('./services/smsService.cjs');
+const { initMaps } = require('./services/mapsService.cjs');
+const { initWhatsApp } = require('./services/whatsappService.cjs');
+const escrowService = require('./services/escrowService.cjs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -158,12 +156,11 @@ try {
 console.log('📌 Registering routes...');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/sms', smsRoutes);
-// API Routes - ADD THIS WITH OTHER ROUTES
-
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -177,8 +174,6 @@ app.use('/api/test', testRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/escrow', escrowRoutes);
-// Add this with the other route registrations
-app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 console.log("✅ Payment routes registered");
 app.use('/api/webhooks', webhookRoutes);
@@ -229,8 +224,28 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
+// ============================================
+// START SERVER
+// ============================================
 app.listen(PORT, () => {
     console.log(`✅ AgriVibe Backend running on port ${PORT}`);
     console.log(`📍 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔄 Server is ready and waiting for requests...`);
+});
+
+// ============================================
+// KEEP PROCESS ALIVE - Error Handlers
+// ============================================
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Rejection:', err);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+    console.log('👋 Shutting down gracefully...');
+    process.exit(0);
 });
