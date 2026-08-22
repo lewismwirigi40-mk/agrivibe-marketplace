@@ -5,7 +5,6 @@ import '../styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
-    // Remove server-side injected CSS (if any)
     const jssStyles = document.querySelector('#jss-server-side');
     if (jssStyles) {
       jssStyles.parentElement?.removeChild(jssStyles);
@@ -15,10 +14,8 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <link 
-          rel="icon" 
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" 
-        />
+        <link rel="icon" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
         <title>AgriVibe</title>
       </Head>
       <Component {...pageProps} />
