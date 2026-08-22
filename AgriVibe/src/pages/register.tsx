@@ -347,23 +347,23 @@ export default function Register() {
                   transition={{ delay: 0.55 }}
                 >
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-                        Creating Account...
-                      </>
-                    ) : (
-                      <>
-                        <Award className="w-5 h-5" />
-                        Register
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
+  type="submit"
+  disabled={loading}
+  className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+>
+  {loading ? (
+    <>
+      <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
+      Creating Account...
+    </>
+  ) : (
+    <>
+      <Award className="w-5 h-5" />
+      Register
+      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+    </>
+  )}
+</button>
                 </motion.div>
               </form>
 
