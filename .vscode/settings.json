@@ -1,4 +1,16 @@
 {
+<<<<<<< HEAD
+=======
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+>>>>>>> a1a55efdb2eab951fcb918ea5149fbec0519b7cf
   "platformio-ide.autoOpenPlatformIOIniFile": false,
   "platformio-ide.disablePIOHomeStartup": true,
   "singular-blockly.theme": "light"

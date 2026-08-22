@@ -1,0 +1,236 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+const path = require('path');
+const dotenv = require('dotenv');
+
+const result = dotenv.config({
+    path: path.resolve(__dirname, '.env')
+});
+
+console.log("Dotenv result:", result);
+
+console.log("========== M-Pesa Environment Check ==========");
+console.log("MPESA_CONSUMER_KEY =", process.env.MPESA_CONSUMER_KEY);
+console.log("MPESA_CONSUMER_SECRET =", process.env.MPESA_CONSUMER_SECRET ? "[LOADED]" : "undefined");
+console.log("MPESA_PASSKEY =", process.env.MPESA_PASSKEY ? "[LOADED]" : "undefined");
+console.log("MPESA_SHORTCODE =", process.env.MPESA_SHORTCODE);
+console.log("MPESA_ENVIRONMENT =", process.env.MPESA_ENVIRONMENT);
+console.log("MPESA_CALLBACK_URL =", process.env.MPESA_CALLBACK_URL);
+console.log("==============================================");
+
+// Database
+const sequelize = require('./config/database.cjs');
+
+// ============================================
+// MODELS - Import all models so Sequelize knows them
+// ============================================
+const User = require('./models/User.cjs');
+const Store = require('./models/Store.cjs');
+const Product = require('./models/Product.cjs');
+const Order = require('./models/Order.cjs');
+const Cart = require('./models/Cart.cjs');
+// Add this with the other imports around line 37
+const userRoutes = require('./routes/userRoutes.cjs');
+const Wallet = require('./models/Wallet.cjs');
+const Delivery = require('./models/Delivery.cjs');
+const Review = require('./models/Review.cjs');
+const Campus = require('./models/Campus.cjs');
+const Category = require('./models/Category.cjs');
+const Notification = require('./models/Notification.cjs');
+const Guide = require('./models/Guide.cjs');
+const GuidePurchase = require('./models/GuidePurchase.cjs');
+// Import routes
+const authRoutes = require('./routes/authRoutes.cjs');
+// Import routes - ADD THIS WITH OTHER IMPORTS
+
+const { initEmail } = require('./services/emailService.cjs');
+const { initMpesa } = require('./services/paymentService.cjs');
+const { initSms } = require('./services/smsService.cjs');
+const productRoutes = require('./routes/productRoutes.cjs');
+const storeRoutes = require('./routes/storeRoutes.cjs');
+const cartRoutes = require('./routes/cartRoutes.cjs');
+const orderRoutes = require('./routes/orderRoutes.cjs');
+const smsRoutes = require('./routes/smsRoutes.cjs');
+
+const escrowService = require('./services/escrowService.cjs');
+const testRoutes = require('./routes/testRoutes.cjs');
+const { initMaps } = require('./services/mapsService.cjs');
+const categoryRoutes = require('./routes/categoryRoutes.cjs');
+const reviewRoutes = require('./routes/reviewRoutes.cjs');
+const walletRoutes = require('./routes/walletRoutes.cjs');
+const deliveryRoutes = require('./routes/deliveryRoutes.cjs');
+const aiRoutes = require('./routes/aiRoutes.cjs');
+const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
+const locationRoutes = require('./routes/locationRoutes.cjs');
+const paymentRoutes = require('./routes/paymentRoutes.cjs');
+const webhookRoutes = require('./routes/webhookRoutes.cjs');
+const analyticsRoutes = require('./routes/analyticsRoutes.cjs');
+const adminRoutes = require('./routes/adminRoutes.cjs');
+const notificationRoutes = require('./routes/notificationRoutes.cjs');
+const campusRoutes = require('./routes/campusRoutes.cjs');
+const escrowRoutes = require('./routes/escrowRoutes.cjs');
+const { initWhatsApp } = require('./services/whatsappService.cjs');
+const guideRoutes = require('./routes/guideRoutes.cjs');
+const uploadRoutes = require('./routes/uploadRoutes.cjs');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+console.log('🔍 productRoutes is:', productRoutes);
+console.log('🔍 productRoutes type:', typeof productRoutes);
+
+// Middleware
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(morgan('combined'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(path.join(__dirname, '../storage/uploads')));
+
+// ============================================
+// SIMPLE TEST ROUTE - NO AUTH REQUIRED
+// ============================================
+app.get('/ping', (req, res) => {
+  console.log('🏓 PING RECEIVED!');
+  res.json({
+    message: 'pong',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test database connection
+sequelize.authenticate()
+    .then(() => console.log('✅ Database connected!'))
+    .catch(err => console.error('❌ Database connection error:', err.message));
+
+// Sync models with database
+sequelize.sync({ alter: false })
+    .then(() => console.log('✅ Database synced!'))
+    .catch(err => console.error('❌ Sync error:', err.message));
+
+// Initialize M-Pesa
+try {
+    initMpesa(process.env);
+    console.log('✅ M-Pesa initialized');
+} catch (error) {
+    console.error('❌ M-Pesa initialization failed:', error.message);
+}
+
+// Initialize Google Maps
+try {
+    initMaps(process.env);
+    console.log('✅ Google Maps service initialized');
+} catch (error) {
+    console.error('❌ Google Maps initialization failed:', error.message);
+}
+
+// Initialize SMS
+try {
+    initSms(process.env);
+    console.log('✅ SMS service initialized');
+} catch (error) {
+    console.error('❌ SMS initialization failed:', error.message);
+}
+
+// Initialize WhatsApp
+try {
+    initWhatsApp(process.env);
+    console.log('✅ WhatsApp initialized');
+} catch (error) {
+    console.error('❌ WhatsApp initialization failed:', error.message);
+}
+
+// Initialize Email
+try {
+    initEmail(process.env);
+    console.log('✅ Email service initialized');
+} catch (error) {
+    console.error('❌ Email initialization failed:', error.message);
+}
+
+// ============================================
+// API ROUTES
+// ============================================
+console.log('📌 Registering routes...');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/stores', storeRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/sms', smsRoutes);
+// API Routes - ADD THIS WITH OTHER ROUTES
+
+app.use('/api/orders', orderRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/location', locationRoutes);
+app.use('/api/campuses', campusRoutes);
+app.use('/api/wallet', walletRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/deliveries', deliveryRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/test', testRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/escrow', escrowRoutes);
+// Add this with the other route registrations
+app.use('/api/users', userRoutes);
+app.use('/api/payments', paymentRoutes);
+console.log("✅ Payment routes registered");
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/guides', guideRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Test route
+app.get('/api/cart/test', (req, res) => {
+    res.json({ message: 'Cart routes are working!' });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
+// ============================================
+// DIRECT SMS TEST ROUTE (BYPASSES ROUTE FILE)
+// ============================================
+app.post('/api/sms-direct', async (req, res) => {
+    console.log('🔥 DIRECT SMS ROUTE HIT!');
+    try {
+        const { phoneNumber, message } = req.body;
+        if (!phoneNumber || !message) {
+            return res.status(400).json({ error: 'Phone and message required' });
+        }
+        const { sendSms } = require('./services/smsService.cjs');
+        const result = await sendSms(phoneNumber, message);
+        res.json(result);
+    } catch (error) {
+        console.error('Direct SMS error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error('❌ Error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`✅ AgriVibe Backend running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/health`);
+});

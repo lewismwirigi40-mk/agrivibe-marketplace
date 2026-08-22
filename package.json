@@ -1,6 +1,7 @@
 {
   "name": "agrivibe",
   "version": "1.0.0",
+<<<<<<< HEAD
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -65,3 +66,11 @@
     "typescript": "^5.0.0"
   }
 }
+=======
+  "description": "🌾 AgriVibe Marketplace",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Setup complete!'"
+  }
+}
+>>>>>>> a1a55efdb2eab951fcb918ea5149fbec0519b7cf
