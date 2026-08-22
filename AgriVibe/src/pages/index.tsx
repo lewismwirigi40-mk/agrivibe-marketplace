@@ -555,96 +555,143 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ====== FEATURED PRODUCTS ====== */}
-      <section className="section-premium bg-white">
-        <div className="container-premium">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex justify-between items-center mb-12"
-          >
-            <div>
-              <span className="badge-gold">
-                <Sparkles className="w-4 h-4" />
-                Featured Products
-              </span>
-              <h2 className="heading-2 mt-4">
-                Handpicked Fresh Produce
-              </h2>
-            </div>
-            <Link 
-              href="/marketplace" 
-              className="btn-ghost"
-            >
-              View All
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </motion.div>
+     {/* ====== FEATURED PRODUCTS ====== */}
+<section className="section-premium bg-white">
+  <div className="container-premium">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="flex justify-between items-center mb-12"
+    >
+      <div>
+        <span className="badge-gold">
+          <Sparkles className="w-4 h-4" />
+          Featured Products
+        </span>
+        <h2 className="heading-2 mt-4">
+          Handpicked Fresh Produce
+        </h2>
+      </div>
+      <Link 
+        href="/marketplace" 
+        className="btn-ghost"
+      >
+        View All
+        <ArrowRight className="w-4 h-4" />
+      </Link>
+    </motion.div>
 
-          {products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  whileHover={{ y: -16 }}
-                  onClick={() => handleProductClick(product.id)}
-                  className="card-product"
-                >
-                  <div className="product-image">
-                    <img 
-                      src={product.image || product.cover_image || 'https://images.unsplash.com/photo-1488459716781-31db5d0e8b2d?w=600&h=400&fit=crop'} 
-                      alt={product.name}
-                    />
-                  </div>
-                  <div className="product-card-content">
-                    <div className="product-rating">
-                      {'⭐'.repeat(Math.round(product.rating || 4.5))}
-                      <span className="text-gray-500">({product.rating || 4.5})</span>
-                    </div>
-                    <h3 className="product-title">{product.name}</h3>
-                    <p className="text-gray-500 text-sm">{product.vendor || 'Vendor'}</p>
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="product-price">KES {product.price}</span>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product.id);
-                        }}
-                        className="btn-premium text-sm"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+    {/* Featured Products Grid - Display Only */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[
+        {
+          id: 1,
+          name: 'Fresh Organic Tomatoes',
+          price: 150,
+          rating: 4.8,
+          vendor: 'Green Farm',
+          location: 'Nyeri',
+          image: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&h=400&fit=crop&auto=format',
+          badge: 'Bestseller',
+          is_organic: true,
+        },
+        {
+          id: 2,
+          name: 'Premium Hass Avocado',
+          price: 200,
+          rating: 4.9,
+          vendor: 'Avocado Paradise',
+          location: 'Kiambu',
+          image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=600&h=400&fit=crop&auto=format',
+          badge: 'Premium',
+          is_organic: true,
+        },
+        {
+          id: 3,
+          name: 'Organic Kale Bunch',
+          price: 80,
+          rating: 4.7,
+          vendor: 'Healthy Greens',
+          location: 'Nairobi',
+          image: 'https://images.unsplash.com/photo-1524179094475-0a6c6a89df4a?w=600&h=400&fit=crop&auto=format',
+          badge: 'Organic',
+          is_organic: true,
+        },
+        {
+          id: 4,
+          name: 'Sweet Pineapple',
+          price: 180,
+          rating: 4.6,
+          vendor: 'Tropical Fruits',
+          location: 'Thika',
+          image: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=600&h=400&fit=crop&auto=format',
+          badge: 'Fresh',
+          is_organic: false,
+        },
+      ].map((product, index) => (
+        <motion.div
+          key={product.id}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+          viewport={{ once: true }}
+          whileHover={{ y: -12 }}
+          className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer"
+          onClick={() => router.push(`/product/${product.id}`)}
+        >
+          {/* Product Image */}
+          <div className="relative h-56 overflow-hidden">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            {/* Badges */}
+            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+              <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                {product.badge}
+              </span>
+              {product.is_organic && (
+                <span className="bg-agrivibe-green text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                  🌱 Organic
+                </span>
+              )}
             </div>
-          ) : (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="text-center py-20"
-            >
-              <div className="text-8xl mb-6">🛒</div>
-              <h3 className="heading-3 text-gray-800">No Products Yet</h3>
-              <p className="text-gray-500 text-lg mb-8">Start shopping to see products here</p>
-              <Link 
-                href="/marketplace"
-                className="btn-premium text-lg px-10 py-5"
-              >
-                <ShoppingBag className="w-6 h-6" />
-                Go to Marketplace
-              </Link>
-            </motion.div>
-          )}
-        </div>
-      </section>
+
+            {/* Rating */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <span className="text-white text-sm font-semibold">{product.rating}</span>
+            </div>
+          </div>
+
+          {/* Product Details - Display Only, No Add to Cart */}
+          <div className="p-5">
+            <h3 className="font-bold text-gray-900 text-lg group-hover:text-agrivibe-green transition-colors line-clamp-1">
+              {product.name}
+            </h3>
+            <p className="text-sm text-gray-500">{product.vendor}</p>
+            <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {product.location}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+              <span className="text-2xl font-bold text-agrivibe-green">KES {product.price}</span>
+              <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                ⭐ Popular
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* ====== NEWSLETTER ====== */}
       <section className="section-premium bg-premium-dark text-white relative overflow-hidden">
