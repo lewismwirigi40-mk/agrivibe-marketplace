@@ -126,259 +126,247 @@ export default function Register() {
               </motion.div>
 
               {/* Registration Form */}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Name Fields */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.25 }}
-                  className="grid grid-cols-2 gap-3"
-                >
-                  <div className="relative group">
-                    <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
-                      focusedField === 'first_name' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
-                    <input
-                      name="first_name"
-                      placeholder="First Name"
-                      value={formData.first_name}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('first_name')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-10 pr-3 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'first_name' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      required
-                    />
-                  </div>
-                  <div className="relative group">
-                    <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
-                      focusedField === 'last_name' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
-                    <input
-                      name="last_name"
-                      placeholder="Last Name"
-                      value={formData.last_name}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('last_name')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-10 pr-3 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'last_name' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      required
-                    />
-                  </div>
-                </motion.div>
+<form onSubmit={handleSubmit} className="space-y-4">
+  {/* Name Fields */}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.25 }}
+    className="grid grid-cols-2 gap-3"
+  >
+    <div className="relative group">
+      <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
+        focusedField === 'first_name' ? 'text-agrivibe-green' : 'text-gray-400'
+      }`} />
+      <input
+        name="first_name"
+        placeholder="First Name"
+        value={formData.first_name}
+        onChange={handleChange}
+        onFocus={() => setFocusedField('first_name')}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-10 pr-3 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
+          focusedField === 'first_name' 
+            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
+            : 'border-white/10 hover:border-white/20'
+        }`}
+        required
+      />
+    </div>
+    <div className="relative group">
+      <User className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-300 ${
+        focusedField === 'last_name' ? 'text-agrivibe-green' : 'text-gray-400'
+      }`} />
+      <input
+        name="last_name"
+        placeholder="Last Name"
+        value={formData.last_name}
+        onChange={handleChange}
+        onFocus={() => setFocusedField('last_name')}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-10 pr-3 py-3 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
+          focusedField === 'last_name' 
+            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
+            : 'border-white/10 hover:border-white/20'
+        }`}
+        required
+      />
+    </div>
+  </motion.div>
 
-                {/* Email */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <div className="relative group">
-                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                      focusedField === 'email' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="Email Address"
-                      value={formData.email}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('email')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-11 pr-4 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'email' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      required
-                    />
-                  </div>
-                </motion.div>
+  {/* Email */}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.3 }}
+  >
+    <div className="relative group">
+      <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
+        focusedField === 'email' ? 'text-agrivibe-green' : 'text-gray-400'
+      }`} />
+      <input
+        name="email"
+        type="email"
+        placeholder="Email Address"
+        value={formData.email}
+        onChange={handleChange}
+        onFocus={() => setFocusedField('email')}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-11 pr-4 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
+          focusedField === 'email' 
+            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
+            : 'border-white/10 hover:border-white/20'
+        }`}
+        required
+      />
+    </div>
+  </motion.div>
 
-                {/* Phone */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  <div className="relative group">
-                    <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                      focusedField === 'phone' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
-                    <input
-                      name="phone"
-                      type="tel"
-                      placeholder="Phone Number (e.g., 254700000000)"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('phone')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-11 pr-4 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'phone' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      required
-                    />
-                  </div>
-                </motion.div>
+  {/* Phone */}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.35 }}
+  >
+    <div className="relative group">
+      <Phone className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
+        focusedField === 'phone' ? 'text-agrivibe-green' : 'text-gray-400'
+      }`} />
+      <input
+        name="phone"
+        type="tel"
+        placeholder="Phone Number (e.g., 254700000000)"
+        value={formData.phone}
+        onChange={handleChange}
+        onFocus={() => setFocusedField('phone')}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-11 pr-4 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
+          focusedField === 'phone' 
+            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
+            : 'border-white/10 hover:border-white/20'
+        }`}
+        required
+      />
+    </div>
+  </motion.div>
 
-                {/* Password */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <div className="relative group">
-                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                      focusedField === 'password' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
-                    <input
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      onFocus={() => setFocusedField('password')}
-                      onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-11 pr-12 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'password' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
-                      }`}
-                      required
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
-                </motion.div>
+  {/* Password */}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.4 }}
+  >
+    <div className="relative group">
+      <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
+        focusedField === 'password' ? 'text-agrivibe-green' : 'text-gray-400'
+      }`} />
+      <input
+        name="password"
+        type={showPassword ? 'text' : 'password'}
+        placeholder="Password"
+        value={formData.password}
+        onChange={handleChange}
+        onFocus={() => setFocusedField('password')}
+        onBlur={() => setFocusedField(null)}
+        className={`w-full pl-11 pr-12 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
+          focusedField === 'password' 
+            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
+            : 'border-white/10 hover:border-white/20'
+        }`}
+        required
+        minLength={6}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+      >
+        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+    </div>
+    <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+  </motion.div>
 
-                {/* Role Selection */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.45 }}
-                >
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                    I want to join as a
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3.5 bg-white/5 border-2 border-white/10 rounded-xl text-white focus:border-agrivibe-green outline-none transition-all duration-300 appearance-none cursor-pointer hover:border-white/20"
-                    >
-                      {roleOptions.map((option) => (
-                        <option key={option.value} value={option.value} className="bg-gray-800 text-white">
-                          {option.label} — {option.description}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 rotate-90 pointer-events-none" />
-                  </div>
-                </motion.div>
+  {/* Role Selection */}
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.45 }}
+  >
+    <label className="block text-sm font-medium text-gray-300 mb-1.5">
+      I want to join as a
+    </label>
+    <div className="relative">
+      <select
+        name="role"
+        value={formData.role}
+        onChange={handleChange}
+        className="w-full px-4 py-3.5 bg-white/5 border-2 border-white/10 rounded-xl text-white focus:border-agrivibe-green outline-none transition-all duration-300 appearance-none cursor-pointer hover:border-white/20"
+      >
+        {roleOptions.map((option) => (
+          <option key={option.value} value={option.value} className="bg-gray-800 text-white">
+            {option.label} — {option.description}
+          </option>
+        ))}
+      </select>
+      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 rotate-90 pointer-events-none" />
+    </div>
+  </motion.div>
 
-                {/* Terms */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-start gap-3"
-                >
-                  <label className="flex items-start gap-3 cursor-pointer">
-  <input
-    type="checkbox"
-    checked={agreeTerms}
-    onChange={(e) => setAgreeTerms(e.target.checked)}
-    className="w-5 h-5 mt-0.5 accent-agrivibe-green cursor-pointer"
-  />
-  <p className="text-sm text-gray-400">
-    I agree to the{' '}
-    <Link href="/terms" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
-      Terms of Service
-    </Link>
-    {' '}and{' '}
-    <Link href="/privacy" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
-      Privacy Policy
+  {/* Terms & Conditions - FIXED: Now clickable */}
+  <div className="flex items-start gap-3">
+    <input
+      type="checkbox"
+      id="terms"
+      checked={agreeTerms}
+      onChange={(e) => setAgreeTerms(e.target.checked)}
+      className="w-5 h-5 mt-0.5 accent-agrivibe-green cursor-pointer flex-shrink-0"
+    />
+    <label htmlFor="terms" className="text-sm text-gray-400 cursor-pointer">
+      I agree to the{' '}
+      <Link href="/terms" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
+        Terms of Service
+      </Link>
+      {' '}and{' '}
+      <Link href="/privacy" className="text-agrivibe-gold hover:text-yellow-300 transition-colors">
+        Privacy Policy
+      </Link>
+    </label>
+  </div>
+
+  {/* Error */}
+  <AnimatePresence>
+    {error && (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        className="bg-red-500/20 text-red-300 text-sm p-4 rounded-xl border border-red-500/30 flex items-start gap-3"
+      >
+        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+        <span>{error}</span>
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* Register Button - FIXED: Now clickable */}
+  <button
+    type="submit"
+    disabled={loading}
+    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+  >
+    {loading ? (
+      <>
+        <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
+        Creating Account...
+      </>
+    ) : (
+      <>
+        <Award className="w-5 h-5" />
+        Register
+        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+      </>
+    )}
+  </button>
+</form>
+
+{/* Login Link - FIXED: Now clickable */}
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.6 }}
+  className="text-center mt-6"
+>
+  <p className="text-gray-400">
+    Already have an account?{' '}
+    <Link 
+      href="/login" 
+      className="text-agrivibe-gold font-semibold hover:text-yellow-300 transition-colors hover:underline inline-block"
+    >
+      Login
     </Link>
   </p>
-</label>
-                </motion.div>
-
-                {/* Error */}
-                <AnimatePresence>
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="bg-red-500/20 text-red-300 text-sm p-4 rounded-xl border border-red-500/30 flex items-start gap-3"
-                    >
-                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                      <span>{error}</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Register Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.55 }}
-                >
-                  <button
-  type="submit"
-  disabled={loading}
-  className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
->
-  {loading ? (
-    <>
-      <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-      Creating Account...
-    </>
-  ) : (
-    <>
-      <Award className="w-5 h-5" />
-      Register
-      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-    </>
-  )}
-</button>
-                </motion.div>
-              </form>
-
-              {/* Login Link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="text-center mt-6"
-              >
-                <p className="text-gray-400">
-                  Already have an account?{' '}
-                  <Link 
-                    href="/login" 
-                    className="text-agrivibe-gold font-semibold hover:text-yellow-300 transition-colors hover:underline"
-                  >
-                    Login
-                  </Link>
-                </p>
-              </motion.div>
+</motion.div>
 
               {/* Trust Badges */}
               <motion.div
