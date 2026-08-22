@@ -3,11 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
+import {
+  Search,
+  Filter,
+  Grid,
+  List,
   ChevronDown,
   ShoppingBag,
   Star,
@@ -32,9 +32,6 @@ import {
 import api from '../services/api';
 import AIChat from '../components/AIChat';
 
-// Featured Products (Dummy data for visual display)
-
-
 export default function Marketplace() {
   const router = useRouter();
   const [products, setProducts] = useState<any[]>([]);
@@ -52,19 +49,21 @@ export default function Marketplace() {
   const [userLocation, setUserLocation] = useState<any>(null);
   const [isLocationDetected, setIsLocationDetected] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-const campuses: Record<string, { lat: number; lng: number }> = {
-  'DeKUT': { lat: -0.4201, lng: 36.9479 },
-  'JKUAT': { lat: -1.0167, lng: 37.1833 },
-  'KU': { lat: -1.1833, lng: 36.9167 },
-  'UON': { lat: -1.2833, lng: 36.8167 },
-  'MMUST': { lat: 0.2869, lng: 34.7522 },
-  'TUK': { lat: -1.2921, lng: 36.8219 },
-  'Kenyatta University': { lat: -1.1833, lng: 36.9167 },
-  'Moi University': { lat: 0.2869, lng: 35.2769 },
-  'Daystar University': { lat: -1.3019, lng: 36.7630 },
-  'Strathmore University': { lat: -1.3037, lng: 36.7816 },
-  'USIU': { lat: -1.2481, lng: 36.8035 },
-};
+
+  const campuses: Record<string, { lat: number; lng: number }> = {
+    'DeKUT': { lat: -0.4201, lng: 36.9479 },
+    'JKUAT': { lat: -1.0167, lng: 37.1833 },
+    'KU': { lat: -1.1833, lng: 36.9167 },
+    'UON': { lat: -1.2833, lng: 36.8167 },
+    'MMUST': { lat: 0.2869, lng: 34.7522 },
+    'TUK': { lat: -1.2921, lng: 36.8219 },
+    'Kenyatta University': { lat: -1.1833, lng: 36.9167 },
+    'Moi University': { lat: 0.2869, lng: 35.2769 },
+    'Daystar University': { lat: -1.3019, lng: 36.7630 },
+    'Strathmore University': { lat: -1.3037, lng: 36.7816 },
+    'USIU': { lat: -1.2481, lng: 36.8035 },
+  };
+
   // Fetch products
   useEffect(() => {
     fetchProducts();
@@ -75,7 +74,7 @@ const campuses: Record<string, { lat: number; lng: number }> = {
   useEffect(() => {
     const { showLocation } = router.query;
     const savedLocation = localStorage.getItem('userLocation');
-    
+
     if (showLocation === 'true' && !savedLocation) {
       setShowLocationPicker(true);
     } else if (savedLocation) {
@@ -93,10 +92,16 @@ const campuses: Record<string, { lat: number; lng: number }> = {
     try {
       setLoading(true);
       const response = await api.get('/products');
-      setProducts(response.data.products || []);
-      setFilteredProducts(response.data.products || []);
+      // Filter out dummy featured products - only show real products with valid IDs
+      const realProducts = (response.data.products || []).filter((p: any) =>
+        !p.id?.toString().startsWith('featured-') && p.id !== 'featured-1' && p.id !== 'featured-2'
+      );
+      setProducts(realProducts);
+      setFilteredProducts(realProducts);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
+      setFilteredProducts([]);
     } finally {
       setLoading(false);
     }
@@ -192,11 +197,7 @@ const campuses: Record<string, { lat: number; lng: number }> = {
     setIsLocationDetected(true);
     setShowLocationPicker(false);
     localStorage.setItem('userLocation', JSON.stringify(location));
-    
-    // Remove the query parameter from URL
     router.replace('/marketplace', undefined, { shallow: true });
-    
-    // Fetch nearby products based on location
     fetchNearbyProducts(location);
   };
 
@@ -210,8 +211,11 @@ const campuses: Record<string, { lat: number; lng: number }> = {
         }
       });
       if (response.data && response.data.length > 0) {
-        setProducts(response.data);
-        setFilteredProducts(response.data);
+        const realProducts = response.data.filter((p: any) =>
+          !p.id?.toString().startsWith('featured-')
+        );
+        setProducts(realProducts);
+        setFilteredProducts(realProducts);
       }
     } catch (error) {
       console.error('Failed to fetch nearby products:', error);
@@ -248,98 +252,97 @@ const campuses: Record<string, { lat: number; lng: number }> = {
 
   return (
     <div className="min-h-screen bg-premium-light">
-      {/* ====== AI CHAT FLOATING BUTTON ====== */}
       <AIChat />
 
-    {/* ====== LOCATION PICKER MODAL ====== */}
-<AnimatePresence>
-  {showLocationPicker && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6"
-      >
-        <div className="text-center mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Navigation className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900">📍 Find Fresh Produce Near You</h2>
-          <p className="text-gray-500 mt-2">
-            We'll show you products from vendors within 15km of your campus
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <button
-            onClick={async () => {
-              try {
-                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                  navigator.geolocation.getCurrentPosition(resolve, reject);
-                });
-                const location = {
-                  latitude: position.coords.latitude,
-                  longitude: position.coords.longitude,
-                };
-                handleLocationSet(location);
-              } catch (error) {
-                console.error('Location error:', error);
-              }
-            }}
-            className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-agrivibe-green/30 transition-all duration-300"
+      {/* ====== LOCATION PICKER MODAL ====== */}
+      <AnimatePresence>
+        {showLocationPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
-            <Crosshair className="w-5 h-5" />
-            Detect My Location
-          </button>
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Navigation className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900">📍 Find Fresh Produce Near You</h2>
+                <p className="text-gray-500 mt-2">
+                  We'll show you products from vendors within 15km of your campus
+                </p>
+              </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-white text-gray-500">Or select your campus</span>
-            </div>
-          </div>
+              <div className="space-y-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject);
+                      });
+                      const location = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                      };
+                      handleLocationSet(location);
+                    } catch (error) {
+                      console.error('Location error:', error);
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-4 rounded-2xl font-semibold hover:shadow-xl hover:shadow-agrivibe-green/30 transition-all duration-300"
+                >
+                  <Crosshair className="w-5 h-5" />
+                  Detect My Location
+                </button>
 
-          <select
-            onChange={(e) => {
-              const campus = e.target.value;
-              if (campus && campuses[campus]) {
-                handleLocationSet({
-                  latitude: campuses[campus].lat,
-                  longitude: campuses[campus].lng,
-                  campus: campus,
-                });
-              }
-            }}
-            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all"
-          >
-            <option value="">Select your campus</option>
-            {Object.keys(campuses).map((campus) => (
-              <option key={campus} value={campus}>{campus}</option>
-            ))}
-          </select>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-3 bg-white text-gray-500">Or select your campus</span>
+                  </div>
+                </div>
 
-          <button
-            onClick={() => {
-              setShowLocationPicker(false);
-              router.push('/marketplace');
-            }}
-            className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            Skip for now (see all products)
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+                <select
+                  onChange={(e) => {
+                    const campus = e.target.value;
+                    if (campus && campuses[campus]) {
+                      handleLocationSet({
+                        latitude: campuses[campus].lat,
+                        longitude: campuses[campus].lng,
+                        campus: campus,
+                      });
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all"
+                >
+                  <option value="">Select your campus</option>
+                  {Object.keys(campuses).map((campus) => (
+                    <option key={campus} value={campus}>{campus}</option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={() => {
+                    setShowLocationPicker(false);
+                    router.push('/marketplace');
+                  }}
+                  className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Skip for now (see all products)
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ====== HEADER ====== */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
@@ -352,7 +355,7 @@ const campuses: Record<string, { lat: number; lng: number }> = {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Marketplace</h1>
                 <p className="text-xs text-gray-500">
-                  {filteredProducts.length} products 
+                  {filteredProducts.length} products
                   {isLocationDetected && userLocation && (
                     <span className="ml-2 text-agrivibe-green">
                       • 📍 {userLocation.campus || 'Nearby'}
@@ -487,7 +490,6 @@ const campuses: Record<string, { lat: number; lng: number }> = {
           )}
         </AnimatePresence>
 
-
         {/* ====== ALL PRODUCTS ====== */}
         {filteredProducts.length === 0 ? (
           <motion.div
@@ -515,7 +517,7 @@ const campuses: Record<string, { lat: number; lng: number }> = {
               <h2 className="text-2xl font-bold text-gray-900">🛍️ All Products</h2>
               <span className="text-sm text-gray-500">{filteredProducts.length} products</span>
             </div>
-            <div className={viewMode === 'grid' 
+            <div className={viewMode === 'grid'
               ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
               : 'space-y-4'
             }>
@@ -541,7 +543,7 @@ const campuses: Record<string, { lat: number; lng: number }> = {
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    
+
                     <div className="absolute top-3 left-3 flex flex-col gap-1">
                       {product.is_featured && (
                         <span className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
