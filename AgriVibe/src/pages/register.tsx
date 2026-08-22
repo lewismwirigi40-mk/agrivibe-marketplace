@@ -72,7 +72,7 @@ export default function Register() {
   ];
 
   return (
-    <div className="min-h-screen bg-premium-dark flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-premium-dark flex items-center justify-center p-4 relative overflow-y-auto">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Gradient Orbs */}
@@ -380,14 +380,14 @@ export default function Register() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="relative w-full group overflow-hidden"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green via-agrivibe-green-light to-agrivibe-green bg-[length:200%_100%] animate-gradient rounded-xl" />
                     <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500" />
                     <div className="relative flex items-center justify-center gap-2 w-full px-6 py-4 text-white font-bold text-lg">
                       {loading ? (
                         <>
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
                           Creating Account...
                         </>
                       ) : (
