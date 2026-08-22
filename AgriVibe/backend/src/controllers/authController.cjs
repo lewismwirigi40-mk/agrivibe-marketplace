@@ -150,3 +150,106 @@ exports.getCurrentUser = async (req, res) => {
         res.status(401).json({ error: 'Invalid token' });
     }
 };
+
+// ============================================
+// USER LOCATION FUNCTIONS (GOOGLE MAPS INTEGRATION)
+// ============================================
+
+// Update User Location
+exports.updateLocation = async (req, res) => {
+    try {
+        const { latitude, longitude, location_address } = req.body;
+        const userId = req.user.id;
+
+        // Validate input
+        if (latitude === undefined || longitude === undefined) {
+            return res.status(400).json({ 
+                error: 'Latitude and longitude are required' 
+            });
+        }
+
+        // Validate range
+        if (latitude < -90 || latitude > 90) {
+            return res.status(400).json({ error: 'Invalid latitude' });
+        }
+        if (longitude < -180 || longitude > 180) {
+            return res.status(400).json({ error: 'Invalid longitude' });
+        }
+
+        // Update user location
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await user.update({
+            latitude: latitude,
+            longitude: longitude,
+            location_address: location_address || user.location_address,
+            location_updated_at: new Date(),
+            location_sharing_enabled: true
+        });
+
+        res.json({
+            message: 'Location updated successfully',
+            user: {
+                id: user.id,
+                latitude: user.latitude,
+                longitude: user.longitude,
+                location_address: user.location_address,
+                location_updated_at: user.location_updated_at
+            }
+        });
+
+    } catch (error) {
+        console.error('Update location error:', error);
+        res.status(500).json({ error: 'Failed to update location' });
+    }
+};
+
+// Get User Location
+exports.getLocation = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'latitude', 'longitude', 'location_address', 'location_updated_at', 'location_sharing_enabled']
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({ location: user });
+
+    } catch (error) {
+        console.error('Get location error:', error);
+        res.status(500).json({ error: 'Failed to get location' });
+    }
+};
+
+// Toggle Location Sharing
+exports.toggleLocationSharing = async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await user.update({
+            location_sharing_enabled: enabled !== undefined ? enabled : !user.location_sharing_enabled
+        });
+
+        res.json({
+            message: 'Location sharing preference updated',
+            location_sharing_enabled: user.location_sharing_enabled
+        });
+
+    } catch (error) {
+        console.error('Toggle location sharing error:', error);
+        res.status(500).json({ error: 'Failed to update preference' });
+    }
+};

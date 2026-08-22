@@ -25,7 +25,8 @@ import {
   Award,
   ChevronRight,
   Image,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 import Navbar from '../../components/Navbar';
 
@@ -54,6 +55,7 @@ export default function VendorRegister() {
     addressLine2: '',
     city: '',
     county: '',
+    storeAddress: '', // ✅ NEW: Full store address for geocoding
     // Payment Details
     paymentMethod: 'mpesa',
     mpesaNumber: '',
@@ -65,7 +67,6 @@ export default function VendorRegister() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error for this field
     if (errors[e.target.name]) {
       setErrors({ ...errors, [e.target.name]: '' });
     }
@@ -103,7 +104,7 @@ export default function VendorRegister() {
     }
     
     if (stepNumber === 3) {
-      if (!formData.addressLine1.trim()) newErrors.addressLine1 = 'Address is required';
+      if (!formData.storeAddress.trim()) newErrors.storeAddress = 'Store address is required';
       if (!formData.city.trim()) newErrors.city = 'City is required';
       if (!formData.county.trim()) newErrors.county = 'County is required';
     }
@@ -559,6 +560,35 @@ export default function VendorRegister() {
                         <h2 className="text-xl font-bold text-gray-900">Store Address</h2>
                         <p className="text-sm text-gray-500">Where is your store located?</p>
                       </div>
+                    </div>
+
+                    {/* ✅ NEW: Store Address Field for Geocoding */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Store Address *
+                      </label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                          name="storeAddress"
+                          placeholder="e.g., Nyeri, Kenya"
+                          value={formData.storeAddress}
+                          onChange={handleChange}
+                          className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
+                            errors.storeAddress ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                          }`}
+                          required
+                        />
+                      </div>
+                      {errors.storeAddress && (
+                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {errors.storeAddress}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        📍 This address will be used to show your products to nearby customers
+                      </p>
                     </div>
 
                     <div>

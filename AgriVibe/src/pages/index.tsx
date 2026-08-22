@@ -379,11 +379,21 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4 mt-8"
             >
-              <Link href="/marketplace" className="btn-gold text-lg px-10 py-5">
-                <ShoppingBag className="w-6 h-6" />
-                Start Shopping
-                <ChevronRight className="w-6 h-6" />
-              </Link>
+              <button
+  onClick={() => {
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+      router.push('/marketplace');
+    } else {
+      router.push('/marketplace?showLocation=true');
+    }
+  }}
+  className="btn-gold text-lg px-10 py-5"
+>
+  <ShoppingBag className="w-6 h-6" />
+  Start Shopping
+  <ChevronRight className="w-6 h-6" />
+</button>
               <Link href="/vendor/register" className="btn-premium-secondary text-lg px-10 py-5">
                 <TrendingUp className="w-6 h-6" />
                 Become a Vendor

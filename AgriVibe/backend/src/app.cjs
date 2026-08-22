@@ -32,6 +32,8 @@ const Store = require('./models/Store.cjs');
 const Product = require('./models/Product.cjs');
 const Order = require('./models/Order.cjs');
 const Cart = require('./models/Cart.cjs');
+// Add this with the other imports around line 37
+const userRoutes = require('./routes/userRoutes.cjs');
 const Wallet = require('./models/Wallet.cjs');
 const Delivery = require('./models/Delivery.cjs');
 const Review = require('./models/Review.cjs');
@@ -175,6 +177,8 @@ app.use('/api/test', testRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/escrow', escrowRoutes);
+// Add this with the other route registrations
+app.use('/api/users', userRoutes);
 app.use('/api/payments', paymentRoutes);
 console.log("✅ Payment routes registered");
 app.use('/api/webhooks', webhookRoutes);

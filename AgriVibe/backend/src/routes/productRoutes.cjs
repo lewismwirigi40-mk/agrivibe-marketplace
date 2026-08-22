@@ -10,6 +10,7 @@ router.get('/test', (req, res) => {
 
 // Public routes
 router.get('/', productController.getAllProducts);
+router.get('/nearby', productController.getNearbyProducts); // ✅ NEW
 router.get('/:id', productController.getProductById);
 router.get('/store/:storeId', productController.getStoreProducts);
 

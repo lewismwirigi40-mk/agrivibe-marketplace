@@ -40,6 +40,10 @@ const Store = sequelize.define('Store', {
         type: DataTypes.STRING(20),
         allowNull: true
     },
+    // Check if these exist in Store model
+address: { type: DataTypes.TEXT, allowNull: true },
+latitude: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
+longitude: { type: DataTypes.DECIMAL(11, 8), allowNull: true },
     // ============================================
     // LOCATION FIELDS (Google Maps Integration)
     // ============================================
