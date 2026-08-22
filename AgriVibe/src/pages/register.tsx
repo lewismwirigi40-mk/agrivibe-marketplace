@@ -64,7 +64,6 @@ export default function Register() {
     }
   };
 
-  // Role options with icons
   const roleOptions = [
     { value: 'customer', label: 'Customer', icon: Users, description: 'Buy fresh produce' },
     { value: 'vendor', label: 'Vendor', icon: Store, description: 'Sell your products' },
@@ -75,41 +74,17 @@ export default function Register() {
     <div className="min-h-screen bg-premium-dark flex items-center justify-center p-4 relative overflow-y-auto">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Gradient Orbs */}
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-agrivibe-green/20 to-transparent rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-gradient-to-tl from-agrivibe-gold/20 to-transparent rounded-full blur-3xl animate-float-slow" />
-        
-        {/* Floating Particles - Temporarily disabled for build */}
-{/* <div className="absolute inset-0 overflow-hidden">
-  {[...Array(30)].map((_, i) => (
-    <motion.div
-      key={i}
-      className="absolute w-1 h-1 bg-white/10 rounded-full"
-      initial={{ 
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-      }}
-      animate={{
-        y: [null, -100],
-        opacity: [0, 1, 0],
-      }}
-      transition={{
-        duration: Math.random() * 10 + 5,
-        repeat: Infinity,
-        delay: Math.random() * 10,
-      }}
-    />
-  ))}
-</div> */}
+      </div>
 
       {/* Main Container */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative w-full max-w-md"
+        className="relative w-full max-w-md my-8"
       >
-        {/* 3D Card Effect */}
         <motion.div
           whileHover={{ 
             scale: 1.02,
@@ -119,15 +94,10 @@ export default function Register() {
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
           className="relative"
         >
-          {/* Glow Behind Card */}
           <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green/20 via-agrivibe-gold/20 to-agrivibe-green/20 rounded-3xl blur-2xl" />
           
-          {/* Main Card */}
           <div className="relative bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-            {/* Shimmer Border Effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
-            
-            {/* Premium Header Decoration */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-agrivibe-green via-agrivibe-gold to-agrivibe-green" />
             
             <div className="p-8 md:p-10">
@@ -148,7 +118,6 @@ export default function Register() {
                 <h1 className="text-3xl font-bold text-white">Create Account</h1>
                 <p className="text-gray-400 mt-1">Join AgriVibe today</p>
                 
-                {/* Decorative Divider */}
                 <div className="flex items-center justify-center gap-3 mt-4">
                   <div className="w-12 h-px bg-gradient-to-r from-transparent to-agrivibe-gold/50" />
                   <Sparkles className="w-4 h-4 text-agrivibe-gold" />
@@ -158,7 +127,7 @@ export default function Register() {
 
               {/* Registration Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Name Fields - Row */}
+                {/* Name Fields */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -205,7 +174,7 @@ export default function Register() {
                   </div>
                 </motion.div>
 
-                {/* Email Field */}
+                {/* Email */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -233,7 +202,7 @@ export default function Register() {
                   </div>
                 </motion.div>
 
-                {/* Phone Field */}
+                {/* Phone */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -261,7 +230,7 @@ export default function Register() {
                   </div>
                 </motion.div>
 
-                {/* Password Field */}
+                {/* Password */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -324,7 +293,7 @@ export default function Register() {
                   </div>
                 </motion.div>
 
-                {/* Terms & Conditions */}
+                {/* Terms */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -356,7 +325,7 @@ export default function Register() {
                   </p>
                 </motion.div>
 
-                {/* Error Message */}
+                {/* Error */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
@@ -380,24 +349,20 @@ export default function Register() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-yellow-400/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green via-agrivibe-green-light to-agrivibe-green bg-[length:200%_100%] animate-gradient rounded-xl" />
-                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500" />
-                    <div className="relative flex items-center justify-center gap-2 w-full px-6 py-4 text-white font-bold text-lg">
-                      {loading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
-                          Creating Account...
-                        </>
-                      ) : (
-                        <>
-                          <Award className="w-5 h-5" />
-                          Register
-                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </div>
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-5 h-5" />
+                        Register
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </button>
                 </motion.div>
               </form>
@@ -446,7 +411,6 @@ export default function Register() {
           </div>
         </motion.div>
 
-        {/* Bottom Decorative Text */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -458,6 +422,4 @@ export default function Register() {
       </motion.div>
     </div>
   );
-  </div>
-  )
 }
