@@ -6,6 +6,9 @@ const compression = require('compression');
 const path = require('path');
 const dotenv = require('dotenv');
 
+// ============================================
+// ENVIRONMENT CONFIGURATION
+// ============================================
 const result = dotenv.config({
     path: path.resolve(__dirname, '.env')
 });
@@ -20,11 +23,31 @@ console.log("MPESA_ENVIRONMENT =", process.env.MPESA_ENVIRONMENT);
 console.log("MPESA_CALLBACK_URL =", process.env.MPESA_CALLBACK_URL);
 console.log("==============================================");
 
-// Database
+// ============================================
+// FORCE CONSOLE LOGS TO FLUSH IMMEDIATELY
+// ============================================
+const originalLog = console.log;
+const originalError = console.error;
+
+console.log = function(...args) {
+    originalLog(...args);
+    if (process.stdout.write) process.stdout.write('');
+};
+
+console.error = function(...args) {
+    originalError(...args);
+    if (process.stderr.write) process.stderr.write('');
+};
+
+console.log('🔥 CONSOLE LOG FLUSH ENABLED');
+
+// ============================================
+// DATABASE CONNECTION
+// ============================================
 const sequelize = require('./config/database.cjs');
 
 // ============================================
-// MODELS - Import all models so Sequelize knows them
+// MODELS
 // ============================================
 const User = require('./models/User.cjs');
 const Store = require('./models/Store.cjs');
@@ -41,7 +64,9 @@ const Guide = require('./models/Guide.cjs');
 const GuidePurchase = require('./models/GuidePurchase.cjs');
 const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
 
-// Import routes
+// ============================================
+// ROUTES
+// ============================================
 const authRoutes = require('./routes/authRoutes.cjs');
 const userRoutes = require('./routes/userRoutes.cjs');
 const productRoutes = require('./routes/productRoutes.cjs');
@@ -66,7 +91,9 @@ const escrowRoutes = require('./routes/escrowRoutes.cjs');
 const guideRoutes = require('./routes/guideRoutes.cjs');
 const uploadRoutes = require('./routes/uploadRoutes.cjs');
 
-// Services
+// ============================================
+// SERVICES
+// ============================================
 const { initEmail } = require('./services/emailService.cjs');
 const { initMpesa } = require('./services/paymentService.cjs');
 const { initSms } = require('./services/smsService.cjs');
@@ -74,13 +101,18 @@ const { initMaps } = require('./services/mapsService.cjs');
 const { initWhatsApp } = require('./services/whatsappService.cjs');
 const escrowService = require('./services/escrowService.cjs');
 
+// ============================================
+// APP INITIALIZATION
+// ============================================
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 console.log('🔍 productRoutes is:', productRoutes);
 console.log('🔍 productRoutes type:', typeof productRoutes);
 
-// Middleware
+// ============================================
+// MIDDLEWARE
+// ============================================
 app.use(helmet());
 app.use(cors());
 app.use(compression());
@@ -90,96 +122,32 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../storage/uploads')));
 
 // ============================================
-// SIMPLE TEST ROUTE - NO AUTH REQUIRED
+// REQUEST LOGGING MIDDLEWARE - CRITICAL FOR DEBUGGING
+// ============================================
+app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.url}`);
+    console.log(`📝 Body:`, req.body);
+    next();
+});
+
+// ============================================
+// TEST ROUTES
 // ============================================
 app.get('/ping', (req, res) => {
-  console.log('🏓 PING RECEIVED!');
-  res.json({
-    message: 'pong',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// ============================================
-// START SERVER - MOVED TO THE TOP TO ENSURE IT RUNS
-// ============================================
-const server = app.listen(PORT, () => {
-    console.log(`✅ AgriVibe Backend running on port ${PORT}`);
-    console.log(`📍 Health check: http://localhost:${PORT}/health`);
-    console.log(`🔄 Server is ready and waiting for requests...`);
-});
-
-// ============================================
-// KEEP PROCESS ALIVE - Error Handlers
-// ============================================
-process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (err) => {
-    console.error('❌ Unhandled Rejection:', err);
-});
-
-process.on('SIGINT', () => {
-    console.log('👋 Shutting down gracefully...');
-    server.close(() => {
-        console.log('✅ Server closed');
-        process.exit(0);
+    console.log('🏓 PING RECEIVED!');
+    res.json({
+        message: 'pong',
+        timestamp: new Date().toISOString()
     });
 });
 
-// ============================================
-// DATABASE CONNECTION (Non-blocking)
-// ============================================
-// Test database connection
-sequelize.authenticate()
-    .then(() => console.log('✅ Database connected!'))
-    .catch(err => console.error('❌ Database connection error:', err.message));
-
-// Sync models with database
-sequelize.sync({ alter: false })
-    .then(() => console.log('✅ Database synced!'))
-    .catch(err => console.error('❌ Sync error:', err.message));
-
-// Initialize M-Pesa
-try {
-    initMpesa(process.env);
-    console.log('✅ M-Pesa initialized');
-} catch (error) {
-    console.error('❌ M-Pesa initialization failed:', error.message);
-}
-
-// Initialize Google Maps
-try {
-    initMaps(process.env);
-    console.log('✅ Google Maps service initialized');
-} catch (error) {
-    console.error('❌ Google Maps initialization failed:', error.message);
-}
-
-// Initialize SMS
-try {
-    initSms(process.env);
-    console.log('✅ SMS service initialized');
-} catch (error) {
-    console.error('❌ SMS initialization failed:', error.message);
-}
-
-// Initialize WhatsApp
-try {
-    initWhatsApp(process.env);
-    console.log('✅ WhatsApp initialized');
-} catch (error) {
-    console.error('❌ WhatsApp initialization failed:', error.message);
-}
-
-// Initialize Email
-try {
-    initEmail(process.env);
-    console.log('✅ Email service initialized');
-} catch (error) {
-    console.error('❌ Email initialization failed:', error.message);
-}
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
 
 // ============================================
 // API ROUTES
@@ -211,22 +179,8 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/guides', guideRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Test route
-app.get('/api/cart/test', (req, res) => {
-    res.json({ message: 'Cart routes are working!' });
-});
-
-// Health check
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
-
 // ============================================
-// DIRECT SMS TEST ROUTE (BYPASSES ROUTE FILE)
+// DIRECT SMS TEST ROUTE
 // ============================================
 app.post('/api/sms-direct', async (req, res) => {
     console.log('🔥 DIRECT SMS ROUTE HIT!');
@@ -244,13 +198,112 @@ app.post('/api/sms-direct', async (req, res) => {
     }
 });
 
-// 404 handler
+// ============================================
+// ERROR HANDLERS
+// ============================================
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
     console.error('❌ Error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
+});
+
+// ============================================
+// DATABASE CONNECTION & SYNC
+// ============================================
+async function startDatabase() {
+    try {
+        await sequelize.authenticate();
+        console.log('✅ Database connected!');
+        
+        await sequelize.sync({ alter: false });
+        console.log('✅ Database synced!');
+
+        // Keep database alive with ping
+        setInterval(() => {
+            sequelize.query('SELECT 1;').catch(() => {});
+        }, 60000);
+
+    } catch (err) {
+        console.error('❌ Database Fatal Error:', err.message);
+        process.exit(1);
+    }
+}
+
+// ============================================
+// START DATABASE
+// ============================================
+startDatabase();
+
+// ============================================
+// INITIALIZE SERVICES
+// ============================================
+try {
+    initMpesa(process.env);
+    console.log('✅ M-Pesa initialized');
+} catch (error) {
+    console.error('❌ M-Pesa initialization failed:', error.message);
+}
+
+try {
+    initMaps(process.env);
+    console.log('✅ Google Maps service initialized');
+} catch (error) {
+    console.error('❌ Google Maps initialization failed:', error.message);
+}
+
+try {
+    initSms(process.env);
+    console.log('✅ SMS service initialized');
+} catch (error) {
+    console.error('❌ SMS initialization failed:', error.message);
+}
+
+try {
+    initWhatsApp(process.env);
+    console.log('✅ WhatsApp initialized');
+} catch (error) {
+    console.error('❌ WhatsApp initialization failed:', error.message);
+}
+
+try {
+    initEmail(process.env);
+    console.log('✅ Email service initialized');
+} catch (error) {
+    console.error('❌ Email initialization failed:', error.message);
+}
+
+// ============================================
+// START SERVER
+// ============================================
+const server = app.listen(PORT, () => {
+    console.log(`✅ AgriVibe Backend running on port ${PORT}`);
+    console.log(`📍 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔄 Server is ready and waiting for requests...`);
+});
+
+// ============================================
+// KEEP PROCESS ALIVE
+// ============================================
+setInterval(() => {}, 1000);
+
+// ============================================
+// ERROR HANDLERS FOR PROCESS
+// ============================================
+process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Rejection:', err);
+});
+
+process.on('SIGINT', () => {
+    console.log('👋 Shutting down gracefully...');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
 });
