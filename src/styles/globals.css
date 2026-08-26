@@ -1,11 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* ===== REST OF YOUR STYLES ===== */
 /* ============================================================
    AGRIVIBE MARKETPLACE — PREMIUM GLOBAL DESIGN SYSTEM
    Powered by AgriVibe KE Farm Solutions
    ============================================================ */
-   
+
 /* Rest of your styles... */
 /* ============================================================
    AGRIVIBE MARKETPLACE — PREMIUM GLOBAL DESIGN SYSTEM
@@ -16,13 +19,11 @@
    1. FONTS
    ============================================================ */
 
-
 /* ============================================================
    2. DESIGN TOKENS
    ============================================================ */
 
 :root {
-
   /* ---------- Brand: AgriVibe Green ---------- */
 
   --agri-green-25: #f7fcf7;
@@ -38,7 +39,6 @@
   --agri-green-900: #124518;
   --agri-green-950: #082b0d;
 
-
   /* ---------- Premium Gold ---------- */
 
   --agri-gold-50: #fffaf0;
@@ -50,20 +50,17 @@
   --agri-gold-600: #d98b12;
   --agri-gold-700: #ad6909;
 
-
   /* ---------- Agricultural Orange ---------- */
 
   --agri-orange-400: #f7a84a;
   --agri-orange-500: #f28c28;
   --agri-orange-600: #dc6d12;
 
-
   /* ---------- Natural Earth ---------- */
 
   --agri-earth-400: #a67c52;
   --agri-earth-500: #8d6745;
   --agri-earth-600: #705039;
-
 
   /* ---------- Neutral ---------- */
 
@@ -81,7 +78,6 @@
   --neutral-900: #171c17;
   --neutral-950: #0b100b;
 
-
   /* ---------- Semantic ---------- */
 
   --success: #2e7d32;
@@ -96,7 +92,6 @@
   --info: #2878b8;
   --info-light: #edf7ff;
 
-
   /* ---------- Surfaces ---------- */
 
   --surface: #ffffff;
@@ -107,7 +102,6 @@
   --surface-dark: #101610;
   --surface-dark-secondary: #172018;
 
-
   /* ---------- Text ---------- */
 
   --text-primary: #171c17;
@@ -116,7 +110,6 @@
   --text-inverse: #ffffff;
   --text-brand: #256b29;
 
-
   /* ---------- Borders ---------- */
 
   --border-light: #edf0eb;
@@ -124,7 +117,6 @@
   --border-dark: #cdd4ca;
   --border-brand: rgba(46, 125, 50, 0.25);
   --border-gold: rgba(245, 166, 35, 0.3);
-
 
   /* ---------- Radius ---------- */
 
@@ -137,30 +129,21 @@
   --radius-3xl: 32px;
   --radius-full: 9999px;
 
-
   /* ---------- Shadows ---------- */
 
-  --shadow-xs:
-    0 1px 3px rgba(16, 32, 16, 0.05);
+  --shadow-xs: 0 1px 3px rgba(16, 32, 16, 0.05);
 
-  --shadow-sm:
-    0 2px 8px rgba(16, 32, 16, 0.06);
+  --shadow-sm: 0 2px 8px rgba(16, 32, 16, 0.06);
 
-  --shadow-md:
-    0 8px 24px rgba(16, 32, 16, 0.08);
+  --shadow-md: 0 8px 24px rgba(16, 32, 16, 0.08);
 
-  --shadow-lg:
-    0 16px 40px rgba(16, 32, 16, 0.10);
+  --shadow-lg: 0 16px 40px rgba(16, 32, 16, 0.1);
 
-  --shadow-xl:
-    0 24px 70px rgba(16, 32, 16, 0.14);
+  --shadow-xl: 0 24px 70px rgba(16, 32, 16, 0.14);
 
-  --shadow-green:
-    0 10px 35px rgba(46, 125, 50, 0.20);
+  --shadow-green: 0 10px 35px rgba(46, 125, 50, 0.2);
 
-  --shadow-gold:
-    0 10px 35px rgba(245, 166, 35, 0.20);
-
+  --shadow-gold: 0 10px 35px rgba(245, 166, 35, 0.2);
 
   /* ---------- Layout ---------- */
 
@@ -174,27 +157,22 @@
   --header-height: 72px;
   --nav-height: 48px;
 
-
   /* ---------- Motion ---------- */
 
-  --ease-standard:
-    cubic-bezier(0.2, 0.65, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0.65, 0.3, 1);
 
-  --ease-spring:
-    cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
   --transition-fast: 160ms var(--ease-standard);
   --transition-base: 280ms var(--ease-standard);
   --transition-slow: 450ms var(--ease-standard);
 }
 
-
 /* ============================================================
    3. DARK MODE
    ============================================================ */
 
 .dark {
-
   --surface: #101610;
   --surface-primary: #101610;
   --surface-secondary: #151c15;
@@ -207,22 +185,17 @@
   --text-inverse: #101610;
 
   --border-light: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.10);
+  --border: rgba(255, 255, 255, 0.1);
   --border-dark: rgba(255, 255, 255, 0.16);
 
-  --shadow-sm:
-    0 2px 8px rgba(0, 0, 0, 0.20);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-  --shadow-md:
-    0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
 
-  --shadow-lg:
-    0 16px 40px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.3);
 
-  --shadow-xl:
-    0 24px 70px rgba(0, 0, 0, 0.40);
+  --shadow-xl: 0 24px 70px rgba(0, 0, 0, 0.4);
 }
-
 
 /* ============================================================
    4. BASE RESET
@@ -250,10 +223,10 @@ body {
   color: var(--text-primary);
 
   font-family:
-    'Inter',
+    "Inter",
     -apple-system,
     BlinkMacSystemFont,
-    'Segoe UI',
+    "Segoe UI",
     Roboto,
     Helvetica,
     Arial,
@@ -304,7 +277,6 @@ ol {
   list-style: none;
 }
 
-
 /* ============================================================
    5. SELECTION
    ============================================================ */
@@ -314,25 +286,18 @@ ol {
   color: var(--agri-green-900);
 }
 
-
 /* ============================================================
    6. TYPOGRAPHY
    ============================================================ */
 
 .font-display {
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 }
 
 .heading-1 {
   margin: 0;
 
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 
   font-size: clamp(2.5rem, 5vw, 4.75rem);
   font-weight: 800;
@@ -343,10 +308,7 @@ ol {
 .heading-2 {
   margin: 0;
 
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 
   font-size: clamp(2rem, 4vw, 3.25rem);
   font-weight: 800;
@@ -357,10 +319,7 @@ ol {
 .heading-3 {
   margin: 0;
 
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 
   font-size: clamp(1.5rem, 3vw, 2.15rem);
   font-weight: 700;
@@ -371,10 +330,7 @@ ol {
 .heading-4 {
   margin: 0;
 
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 
   font-size: 1.35rem;
   font-weight: 700;
@@ -400,13 +356,12 @@ ol {
 }
 
 .text-gradient-green {
-  background:
-    linear-gradient(
-      135deg,
-      var(--agri-green-700),
-      var(--agri-green-500),
-      var(--agri-green-400)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--agri-green-700),
+    var(--agri-green-500),
+    var(--agri-green-400)
+  );
 
   background-clip: text;
   -webkit-background-clip: text;
@@ -416,13 +371,12 @@ ol {
 }
 
 .text-gradient-gold {
-  background:
-    linear-gradient(
-      135deg,
-      var(--agri-gold-600),
-      var(--agri-gold-500),
-      var(--agri-gold-300)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--agri-gold-600),
+    var(--agri-gold-500),
+    var(--agri-gold-300)
+  );
 
   background-clip: text;
   -webkit-background-clip: text;
@@ -431,25 +385,18 @@ ol {
   -webkit-text-fill-color: transparent;
 }
 
-
 /* ============================================================
    7. LAYOUT
    ============================================================ */
 
 .container-premium {
-  width: min(
-    calc(100% - 48px),
-    var(--container-xl)
-  );
+  width: min(calc(100% - 48px), var(--container-xl));
 
   margin-inline: auto;
 }
 
 .container-wide {
-  width: min(
-    calc(100% - 48px),
-    var(--container-2xl)
-  );
+  width: min(calc(100% - 48px), var(--container-2xl));
 
   margin-inline: auto;
 }
@@ -461,7 +408,6 @@ ol {
 .section-compact {
   padding: 56px 0;
 }
-
 
 /* ============================================================
    8. PREMIUM BUTTONS
@@ -483,12 +429,11 @@ ol {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
 
-  background:
-    linear-gradient(
-      135deg,
-      var(--agri-green-700),
-      var(--agri-green-500)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--agri-green-700),
+    var(--agri-green-500)
+  );
 
   color: #ffffff;
 
@@ -509,19 +454,18 @@ ol {
 
 .btn-premium::before,
 .btn-primary::before {
-  content: '';
+  content: "";
 
   position: absolute;
 
   inset: 0;
 
-  background:
-    linear-gradient(
-      110deg,
-      transparent 20%,
-      rgba(255, 255, 255, 0.20) 50%,
-      transparent 80%
-    );
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 80%
+  );
 
   transform: translateX(-120%);
 
@@ -598,13 +542,12 @@ ol {
   border: 0;
   border-radius: var(--radius-md);
 
-  background:
-    linear-gradient(
-      135deg,
-      var(--agri-gold-600),
-      var(--agri-gold-500),
-      var(--agri-gold-400)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--agri-gold-600),
+    var(--agri-gold-500),
+    var(--agri-gold-400)
+  );
 
   color: #1b1608;
 
@@ -619,7 +562,7 @@ ol {
 
 .btn-gold:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 40px rgba(245, 166, 35, 0.30);
+  box-shadow: 0 14px 40px rgba(245, 166, 35, 0.3);
 }
 
 .btn-ghost {
@@ -650,7 +593,6 @@ ol {
   background: var(--surface-tertiary);
   color: var(--agri-green-700);
 }
-
 
 /* ============================================================
    9. CARDS
@@ -712,7 +654,6 @@ ol {
   box-shadow: var(--shadow-lg);
 }
 
-
 /* ============================================================
    10. PRODUCT CARD
    ============================================================ */
@@ -733,8 +674,7 @@ ol {
 
   object-fit: cover;
 
-  transition:
-    transform 600ms var(--ease-standard);
+  transition: transform 600ms var(--ease-standard);
 }
 
 .card-product:hover .product-image img {
@@ -796,7 +736,6 @@ ol {
   font-weight: 700;
 }
 
-
 /* ============================================================
    11. BADGES
    ============================================================ */
@@ -818,7 +757,7 @@ ol {
 
   color: var(--agri-green-700);
 
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   font-weight: 800;
 
   letter-spacing: 0.02em;
@@ -838,7 +777,7 @@ ol {
 
   color: var(--agri-gold-700);
 
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
 
@@ -854,7 +793,7 @@ ol {
 
   color: var(--danger);
 
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
 
@@ -870,10 +809,9 @@ ol {
 
   color: var(--success);
 
-  font-size: 0.70rem;
+  font-size: 0.7rem;
   font-weight: 800;
 }
-
 
 /* ============================================================
    12. GLASS COMPONENTS
@@ -885,12 +823,11 @@ ol {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 
-  border: 1px solid rgba(255, 255, 255, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.7);
 
   border-radius: var(--radius-xl);
 
-  box-shadow:
-    0 12px 40px rgba(16, 32, 16, 0.08);
+  box-shadow: 0 12px 40px rgba(16, 32, 16, 0.08);
 }
 
 .dark .glass-premium {
@@ -899,12 +836,11 @@ ol {
 }
 
 .glass-dark {
-  background:
-    linear-gradient(
-      135deg,
-      rgba(11, 16, 11, 0.94),
-      rgba(24, 37, 24, 0.94)
-    );
+  background: linear-gradient(
+    135deg,
+    rgba(11, 16, 11, 0.94),
+    rgba(24, 37, 24, 0.94)
+  );
 
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -915,7 +851,6 @@ ol {
 
   border-radius: var(--radius-xl);
 }
-
 
 /* ============================================================
    13. HERO SECTIONS
@@ -937,12 +872,7 @@ ol {
       rgba(245, 166, 35, 0.14),
       transparent 30%
     ),
-    linear-gradient(
-      135deg,
-      #f7fbf6 0%,
-      #eef7ee 50%,
-      #fdf9ee 100%
-    );
+    linear-gradient(135deg, #f7fbf6 0%, #eef7ee 50%, #fdf9ee 100%);
 }
 
 .hero-dark {
@@ -951,28 +881,19 @@ ol {
   overflow: hidden;
 
   background:
-    radial-gradient(
-      circle at 20% 20%,
-      rgba(76, 175, 80, 0.20),
-      transparent 35%
-    ),
+    radial-gradient(circle at 20% 20%, rgba(76, 175, 80, 0.2), transparent 35%),
     radial-gradient(
       circle at 80% 10%,
       rgba(245, 166, 35, 0.14),
       transparent 30%
     ),
-    linear-gradient(
-      135deg,
-      #081008,
-      #102012 55%,
-      #172617
-    );
+    linear-gradient(135deg, #081008, #102012 55%, #172617);
 
   color: #ffffff;
 }
 
 .hero-glow::before {
-  content: '';
+  content: "";
 
   position: absolute;
 
@@ -984,16 +905,14 @@ ol {
 
   border-radius: 50%;
 
-  background:
-    radial-gradient(
-      circle,
-      rgba(245, 166, 35, 0.18),
-      transparent 70%
-    );
+  background: radial-gradient(
+    circle,
+    rgba(245, 166, 35, 0.18),
+    transparent 70%
+  );
 
   pointer-events: none;
 }
-
 
 /* ============================================================
    14. SEARCH
@@ -1027,7 +946,7 @@ ol {
   border-color: var(--agri-green-500);
 
   box-shadow:
-    0 0 0 4px rgba(76, 175, 80, 0.10),
+    0 0 0 4px rgba(76, 175, 80, 0.1),
     var(--shadow-md);
 }
 
@@ -1048,7 +967,6 @@ ol {
   color: var(--text-muted);
 }
 
-
 /* ============================================================
    15. NAVIGATION
    ============================================================ */
@@ -1060,8 +978,7 @@ ol {
 
   height: var(--header-height);
 
-  background:
-    rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.92);
 
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -1090,7 +1007,7 @@ ol {
 }
 
 .nav-link::after {
-  content: '';
+  content: "";
 
   position: absolute;
 
@@ -1120,7 +1037,6 @@ ol {
 .nav-link:hover::after {
   transform: scaleX(1);
 }
-
 
 /* ============================================================
    16. CATEGORY COMPONENTS
@@ -1169,16 +1085,14 @@ ol {
 
   border-radius: 20px;
 
-  background:
-    linear-gradient(
-      135deg,
-      var(--agri-green-50),
-      var(--agri-green-100)
-    );
+  background: linear-gradient(
+    135deg,
+    var(--agri-green-50),
+    var(--agri-green-100)
+  );
 
   color: var(--agri-green-700);
 }
-
 
 /* ============================================================
    17. TRUST STRIP
@@ -1201,7 +1115,6 @@ ol {
   font-size: 0.84rem;
   font-weight: 600;
 }
-
 
 /* ============================================================
    18. FORMS
@@ -1242,15 +1155,13 @@ ol {
 .textarea-premium:focus {
   border-color: var(--agri-green-500);
 
-  box-shadow:
-    0 0 0 4px rgba(76, 175, 80, 0.10);
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
 }
 
 .input-premium::placeholder,
 .textarea-premium::placeholder {
   color: var(--text-muted);
 }
-
 
 /* ============================================================
    19. ALERTS
@@ -1301,7 +1212,6 @@ ol {
   font-weight: 600;
 }
 
-
 /* ============================================================
    20. SKELETON LOADING
    ============================================================ */
@@ -1317,19 +1227,18 @@ ol {
 }
 
 .skeleton::after {
-  content: '';
+  content: "";
 
   position: absolute;
 
   inset: 0;
 
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.55),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
 
   transform: translateX(-100%);
 
@@ -1337,13 +1246,12 @@ ol {
 }
 
 .dark .skeleton::after {
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.06),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
 }
 
 @keyframes skeleton-loading {
@@ -1351,7 +1259,6 @@ ol {
     transform: translateX(100%);
   }
 }
-
 
 /* ============================================================
    21. PREMIUM ANIMATIONS
@@ -1502,7 +1409,6 @@ ol {
   animation: pulseGreen 2.5s ease-in-out infinite;
 }
 
-
 /* ============================================================
    22. AI ASSISTANT
    ============================================================ */
@@ -1514,11 +1420,7 @@ ol {
       rgba(76, 175, 80, 0.15),
       transparent 35%
     ),
-    linear-gradient(
-      135deg,
-      #0d1710,
-      #162218
-    );
+    linear-gradient(135deg, #0d1710, #162218);
 
   border: 1px solid rgba(255, 255, 255, 0.08);
 
@@ -1534,7 +1436,7 @@ ol {
 }
 
 .ai-glow::before {
-  content: '';
+  content: "";
 
   position: absolute;
 
@@ -1542,17 +1444,15 @@ ol {
 
   border-radius: inherit;
 
-  background:
-    linear-gradient(
-      135deg,
-      rgba(76, 175, 80, 0.35),
-      transparent 40%,
-      rgba(245, 166, 35, 0.25)
-    );
+  background: linear-gradient(
+    135deg,
+    rgba(76, 175, 80, 0.35),
+    transparent 40%,
+    rgba(245, 166, 35, 0.25)
+  );
 
   z-index: -1;
 }
-
 
 /* ============================================================
    23. STATUS INDICATORS
@@ -1572,24 +1472,20 @@ ol {
 .status-dot.online {
   background: var(--success);
 
-  box-shadow:
-    0 0 0 4px rgba(46, 125, 50, 0.10);
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.1);
 }
 
 .status-dot.warning {
   background: var(--warning);
 
-  box-shadow:
-    0 0 0 4px rgba(217, 139, 18, 0.10);
+  box-shadow: 0 0 0 4px rgba(217, 139, 18, 0.1);
 }
 
 .status-dot.danger {
   background: var(--danger);
 
-  box-shadow:
-    0 0 0 4px rgba(214, 69, 69, 0.10);
+  box-shadow: 0 0 0 4px rgba(214, 69, 69, 0.1);
 }
-
 
 /* ============================================================
    24. DIVIDERS
@@ -1603,12 +1499,11 @@ ol {
 
   border-radius: var(--radius-full);
 
-  background:
-    linear-gradient(
-      90deg,
-      var(--agri-green-600),
-      var(--agri-gold-500)
-    );
+  background: linear-gradient(
+    90deg,
+    var(--agri-green-600),
+    var(--agri-gold-500)
+  );
 }
 
 .divider-full {
@@ -1618,19 +1513,12 @@ ol {
   background: var(--border-light);
 }
 
-
 /* ============================================================
    25. FOOTER
    ============================================================ */
 
 .footer-premium {
-  background:
-    linear-gradient(
-      135deg,
-      #091109,
-      #101a10 55%,
-      #162318
-    );
+  background: linear-gradient(135deg, #091109, #101a10 55%, #162318);
 
   color: rgba(255, 255, 255, 0.78);
 }
@@ -1640,14 +1528,12 @@ ol {
 
   font-size: 0.88rem;
 
-  transition:
-    color var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
 .footer-link:hover {
   color: var(--agri-gold-400);
 }
-
 
 /* ============================================================
    26. PREMIUM SCROLLBAR
@@ -1663,12 +1549,11 @@ ol {
 }
 
 ::-webkit-scrollbar-thumb {
-  background:
-    linear-gradient(
-      180deg,
-      var(--agri-green-600),
-      var(--agri-green-400)
-    );
+  background: linear-gradient(
+    180deg,
+    var(--agri-green-600),
+    var(--agri-green-400)
+  );
 
   border-radius: var(--radius-full);
 
@@ -1676,14 +1561,12 @@ ol {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background:
-    linear-gradient(
-      180deg,
-      var(--agri-green-700),
-      var(--agri-green-500)
-    );
+  background: linear-gradient(
+    180deg,
+    var(--agri-green-700),
+    var(--agri-green-500)
+  );
 }
-
 
 /* ============================================================
    27. FOCUS ACCESSIBILITY
@@ -1702,19 +1585,14 @@ textarea:disabled {
   opacity: 0.55;
 }
 
-
 /* ============================================================
    28. MOBILE OPTIMIZATION
    ============================================================ */
 
 @media (max-width: 1024px) {
-
   .container-premium,
   .container-wide {
-    width: min(
-      calc(100% - 40px),
-      var(--container-xl)
-    );
+    width: min(calc(100% - 40px), var(--container-xl));
   }
 
   .section-premium {
@@ -1723,13 +1601,9 @@ textarea:disabled {
 }
 
 @media (max-width: 768px) {
-
   .container-premium,
   .container-wide {
-    width: min(
-      calc(100% - 32px),
-      var(--container-xl)
-    );
+    width: min(calc(100% - 32px), var(--container-xl));
   }
 
   .section-premium {
@@ -1777,7 +1651,6 @@ textarea:disabled {
 }
 
 @media (max-width: 480px) {
-
   .container-premium,
   .container-wide {
     width: calc(100% - 24px);
@@ -1796,13 +1669,11 @@ textarea:disabled {
   }
 }
 
-
 /* ============================================================
    29. REDUCED MOTION
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
   html {
     scroll-behavior: auto;
   }
@@ -1817,29 +1688,16 @@ textarea:disabled {
   }
 }
 
-
 /* ============================================================
    30. UTILITY CLASSES
    ============================================================ */
 
 .bg-premium-dark {
-  background:
-    linear-gradient(
-      135deg,
-      #081008,
-      #101b10 50%,
-      #172617
-    );
+  background: linear-gradient(135deg, #081008, #101b10 50%, #172617);
 }
 
 .bg-premium-light {
-  background:
-    linear-gradient(
-      135deg,
-      #f7fbf6,
-      #eef7ee 50%,
-      #fffaf0
-    );
+  background: linear-gradient(135deg, #f7fbf6, #eef7ee 50%, #fffaf0);
 }
 
 .bg-agri {
@@ -1870,7 +1728,6 @@ textarea:disabled {
   border-radius: var(--radius-full);
 }
 
-
 /* ============================================================
    31. PAGE TRANSITIONS
    ============================================================ */
@@ -1879,13 +1736,11 @@ textarea:disabled {
   animation: fadeIn 0.45s var(--ease-standard) both;
 }
 
-
 /* ============================================================
    32. PRINT
    ============================================================ */
 
 @media print {
-
   body {
     background: #ffffff;
     color: #000000;
