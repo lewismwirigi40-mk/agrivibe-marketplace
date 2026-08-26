@@ -1,15 +1,15 @@
 // src/pages/admin/settings.tsx
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Settings, 
-  Globe, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  DollarSign, 
-  Truck, 
-  Lock, 
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Settings,
+  Globe,
+  Mail,
+  Phone,
+  MapPin,
+  DollarSign,
+  Truck,
+  Lock,
   Shield,
   Zap,
   Save,
@@ -35,84 +35,202 @@ import {
   Hash,
   Percent,
   Ruler,
-  Clock as ClockIcon,
   Fingerprint,
   Database,
   Cloud,
   RefreshCw,
   UserCheck,
   Key,
-  Server
-} from 'lucide-react';
-import AdminLayout from '../../components/AdminLayout';
+  Server,
+} from "lucide-react";
+import AdminLayout from "../../components/AdminLayout";
+import api from "../../services/api";
 
 export default function AdminSettings() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("general");
+
+  // REAL SETTINGS STATE - from backend
   const [settings, setSettings] = useState({
     // General Settings
-    siteName: 'AgriVibe',
-    siteDescription: 'Fresh Farm Produce, Delivered to Your Campus',
-    contactEmail: 'admin@agrivibe.com',
-    contactPhone: '+254700000000',
-    siteAddress: 'Nairobi, Kenya',
-    
+    siteName: "",
+    siteDescription: "",
+    contactEmail: "",
+    contactPhone: "",
+    siteAddress: "",
+
     // Commission Settings
-    vendorCommission: 10,
+    vendorCommission: 0,
     driverCommission: 0,
-    
+
     // Delivery Settings
-    defaultDeliveryFee: 150,
-    freeDeliveryThreshold: 1000,
-    maxDeliveryDistance: 15,
-    
+    defaultDeliveryFee: 0,
+    freeDeliveryThreshold: 0,
+    maxDeliveryDistance: 0,
+
     // Security Settings
     twoFactorAuth: false,
-    maxLoginAttempts: 5,
-    sessionTimeout: 120,
-    
+    maxLoginAttempts: 0,
+    sessionTimeout: 0,
+
     // Feature Flags
-    enableCampus: true,
-    enableEscrow: true,
-    enableWallet: true,
-    enableReviews: true,
+    enableCampus: false,
+    enableEscrow: false,
+    enableWallet: false,
+    enableReviews: false,
     enableAI: false,
 
     // Platform Payment Details
-    platformPaymentMethod: 'mpesa',
-    platformMpesaNumber: '254700000000',
-    platformBankName: 'Equity Bank',
-    platformBankAccount: '1234567890',
-    platformAccountHolder: 'AgriVibe KE Farm Solutions',
+    platformPaymentMethod: "mpesa",
+    platformMpesaNumber: "",
+    platformBankName: "",
+    platformBankAccount: "",
+    platformAccountHolder: "",
   });
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  // FETCH SETTINGS FROM BACKEND
+  useEffect(() => {
+    fetchSettings();
+  }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const value = e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value;
-    setSettings({ ...settings, [e.target.name]: value });
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const response = await api.get("/settings");
+      const data = response.data.settings || {};
+
+      // Map backend settings to state
+      setSettings({
+        siteName: data.site_name || "AgriVibe",
+        siteDescription:
+          data.site_description ||
+          "Fresh Farm Produce, Delivered to Your Campus",
+        contactEmail: data.contact_email || "",
+        contactPhone: data.contact_phone || "",
+        siteAddress: data.site_address || "",
+        vendorCommission: parseInt(data.vendor_commission) || 10,
+        driverCommission: parseInt(data.driver_commission) || 0,
+        defaultDeliveryFee: parseInt(data.default_delivery_fee) || 150,
+        freeDeliveryThreshold: parseInt(data.free_delivery_threshold) || 1000,
+        maxDeliveryDistance: parseInt(data.max_delivery_distance) || 15,
+        twoFactorAuth: data.two_factor_auth === "true" || false,
+        maxLoginAttempts: parseInt(data.max_login_attempts) || 5,
+        sessionTimeout: parseInt(data.session_timeout) || 120,
+        enableCampus: data.enable_campus === "true" || false,
+        enableEscrow: data.enable_escrow === "true" || false,
+        enableWallet: data.enable_wallet === "true" || false,
+        enableReviews: data.enable_reviews === "true" || false,
+        enableAI: data.enable_ai === "true" || false,
+        platformPaymentMethod: data.platform_payment_method || "mpesa",
+        platformMpesaNumber: data.platform_mpesa_number || "",
+        platformBankName: data.platform_bank_name || "",
+        platformBankAccount: data.platform_bank_account || "",
+        platformAccountHolder: data.platform_account_holder || "",
+      });
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+      setError("Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
+  ) => {
+    const value =
+      e.target.type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : e.target.value;
+    setSettings({ ...settings, [e.target.name]: value });
+    setError("");
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setIsEditing(false);
+    setSaving(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Not authenticated");
+        return;
+      }
+
+      // Prepare data for backend
+      const payload = {
+        site_name: settings.siteName,
+        site_description: settings.siteDescription,
+        contact_email: settings.contactEmail,
+        contact_phone: settings.contactPhone,
+        site_address: settings.siteAddress,
+        vendor_commission: settings.vendorCommission.toString(),
+        driver_commission: settings.driverCommission.toString(),
+        default_delivery_fee: settings.defaultDeliveryFee.toString(),
+        free_delivery_threshold: settings.freeDeliveryThreshold.toString(),
+        max_delivery_distance: settings.maxDeliveryDistance.toString(),
+        two_factor_auth: settings.twoFactorAuth.toString(),
+        max_login_attempts: settings.maxLoginAttempts.toString(),
+        session_timeout: settings.sessionTimeout.toString(),
+        enable_campus: settings.enableCampus.toString(),
+        enable_escrow: settings.enableEscrow.toString(),
+        enable_wallet: settings.enableWallet.toString(),
+        enable_reviews: settings.enableReviews.toString(),
+        enable_ai: settings.enableAI.toString(),
+        platform_payment_method: settings.platformPaymentMethod,
+        platform_mpesa_number: settings.platformMpesaNumber,
+        platform_bank_name: settings.platformBankName,
+        platform_bank_account: settings.platformBankAccount,
+        platform_account_holder: settings.platformAccountHolder,
+      };
+
+      await api.put("/settings", { settings: payload });
+
       setShowSuccess(true);
+      setIsEditing(false);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1500);
+    } catch (error: any) {
+      console.error("Failed to save settings:", error);
+      setError(error.response?.data?.error || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const tabs = [
-    { id: 'general', label: 'General', icon: Globe },
-    { id: 'commission', label: 'Commission', icon: DollarSign },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
-    { id: 'delivery', label: 'Delivery', icon: Truck },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'features', label: 'Features', icon: Zap },
+    { id: "general", label: "General", icon: Globe },
+    { id: "commission", label: "Commission", icon: DollarSign },
+    { id: "payment", label: "Payment", icon: CreditCard },
+    { id: "delivery", label: "Delivery", icon: Truck },
+    { id: "security", label: "Security", icon: Shield },
+    { id: "features", label: "Features", icon: Zap },
   ];
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-agrivibe-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500">Loading settings...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -121,28 +239,39 @@ export default function AdminSettings() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">⚙️ Settings</h1>
-            <p className="text-gray-500 mt-1">Manage platform settings and configurations</p>
+            <p className="text-gray-500 mt-1">
+              Manage platform settings and configurations
+            </p>
           </div>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-              isEditing 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-gradient-to-r from-agrivibe-green to-emerald-500 hover:shadow-xl hover:shadow-agrivibe-green/30 text-white'
-            }`}
-          >
-            {isEditing ? (
-              <>
-                <X className="w-5 h-5" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Edit className="w-5 h-5" />
-                Edit Settings
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-200">
+              <CheckCircle className="w-4 h-4" />
+              Settings loaded from database
+            </span>
+            <button
+              onClick={() => {
+                setIsEditing(!isEditing);
+                setError("");
+              }}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                isEditing
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-gradient-to-r from-agrivibe-green to-emerald-500 hover:shadow-xl hover:shadow-agrivibe-green/30 text-white"
+              }`}
+            >
+              {isEditing ? (
+                <>
+                  <X className="w-5 h-5" />
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <Edit className="w-5 h-5" />
+                  Edit Settings
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* ====== SUCCESS TOAST ====== */}
@@ -156,9 +285,28 @@ export default function AdminSettings() {
             >
               <CheckCircle className="w-5 h-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium text-green-700">Settings saved successfully!</p>
-                <p className="text-xs text-green-600">All configurations have been updated.</p>
+                <p className="text-sm font-medium text-green-700">
+                  Settings saved successfully!
+                </p>
+                <p className="text-xs text-green-600">
+                  All configurations have been updated.
+                </p>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ====== ERROR ====== */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{error}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -174,8 +322,8 @@ export default function AdminSettings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 whitespace-nowrap ${
                   isActive
-                    ? 'bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? "bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -185,9 +333,9 @@ export default function AdminSettings() {
           })}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSave} className="space-y-6">
           {/* ====== GENERAL SETTINGS ====== */}
-          {activeTab === 'general' && (
+          {activeTab === "general" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -198,8 +346,12 @@ export default function AdminSettings() {
                   <Globe className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">General Settings</h2>
-                  <p className="text-sm text-gray-500">Basic platform information</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    General Settings
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Basic platform information
+                  </p>
                 </div>
               </div>
 
@@ -216,9 +368,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -235,9 +387,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -255,9 +407,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -274,9 +426,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -293,9 +445,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -305,7 +457,7 @@ export default function AdminSettings() {
           )}
 
           {/* ====== COMMISSION SETTINGS ====== */}
-          {activeTab === 'commission' && (
+          {activeTab === "commission" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -316,8 +468,12 @@ export default function AdminSettings() {
                   <DollarSign className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Commission Settings</h2>
-                  <p className="text-sm text-gray-500">Platform revenue configuration</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Commission Settings
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Platform revenue configuration
+                  </p>
                 </div>
               </div>
 
@@ -335,13 +491,15 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Platform earns this percentage from each sale</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Platform earns this percentage from each sale
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -356,20 +514,22 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Platform earns this from delivery fees</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Platform earns this from delivery fees
+                  </p>
                 </div>
               </div>
             </motion.div>
           )}
 
           {/* ====== PAYMENT SETTINGS ====== */}
-          {activeTab === 'payment' && (
+          {activeTab === "payment" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -380,8 +540,12 @@ export default function AdminSettings() {
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Platform Payment Details</h2>
-                  <p className="text-sm text-gray-500">Your payment details for receiving platform commission (10%)</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Platform Payment Details
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Your payment details for receiving platform commission (10%)
+                  </p>
                 </div>
               </div>
 
@@ -397,9 +561,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full px-4 py-3.5 rounded-xl border-2 transition-all duration-300 appearance-none ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     >
                       <option value="mpesa">📱 M-Pesa</option>
@@ -409,7 +573,7 @@ export default function AdminSettings() {
                   </div>
                 </div>
 
-                {settings.platformPaymentMethod === 'mpesa' ? (
+                {settings.platformPaymentMethod === "mpesa" ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       M-Pesa Number
@@ -423,9 +587,9 @@ export default function AdminSettings() {
                         onChange={handleChange}
                         disabled={!isEditing}
                         className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                          isEditing 
-                            ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                            : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                          isEditing
+                            ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                            : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                         } outline-none`}
                       />
                     </div>
@@ -445,9 +609,9 @@ export default function AdminSettings() {
                           onChange={handleChange}
                           disabled={!isEditing}
                           className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                            isEditing 
-                              ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                              : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                            isEditing
+                              ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                              : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                           } outline-none`}
                         />
                       </div>
@@ -465,9 +629,9 @@ export default function AdminSettings() {
                           onChange={handleChange}
                           disabled={!isEditing}
                           className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                            isEditing 
-                              ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                              : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                            isEditing
+                              ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                              : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                           } outline-none`}
                         />
                       </div>
@@ -485,9 +649,9 @@ export default function AdminSettings() {
                           onChange={handleChange}
                           disabled={!isEditing}
                           className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                            isEditing 
-                              ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                              : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                            isEditing
+                              ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                              : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                           } outline-none`}
                         />
                       </div>
@@ -499,7 +663,7 @@ export default function AdminSettings() {
           )}
 
           {/* ====== DELIVERY SETTINGS ====== */}
-          {activeTab === 'delivery' && (
+          {activeTab === "delivery" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -510,8 +674,12 @@ export default function AdminSettings() {
                   <Truck className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Delivery Settings</h2>
-                  <p className="text-sm text-gray-500">Configure delivery options</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Delivery Settings
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Configure delivery options
+                  </p>
                 </div>
               </div>
 
@@ -529,9 +697,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -549,13 +717,15 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">Orders above this amount get free delivery</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Orders above this amount get free delivery
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -570,9 +740,9 @@ export default function AdminSettings() {
                       onChange={handleChange}
                       disabled={!isEditing}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
@@ -582,7 +752,7 @@ export default function AdminSettings() {
           )}
 
           {/* ====== SECURITY SETTINGS ====== */}
-          {activeTab === 'security' && (
+          {activeTab === "security" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -593,8 +763,12 @@ export default function AdminSettings() {
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Security Settings</h2>
-                  <p className="text-sm text-gray-500">Platform security configuration</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Security Settings
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Platform security configuration
+                  </p>
                 </div>
               </div>
 
@@ -603,21 +777,38 @@ export default function AdminSettings() {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="w-5 h-5 text-gray-500" />
                     <div>
-                      <p className="font-medium text-gray-900">Two-Factor Authentication</p>
-                      <p className="text-xs text-gray-500">Require 2FA for admin access</p>
+                      <p className="font-medium text-gray-900">
+                        Two-Factor Authentication
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Require 2FA for admin access
+                      </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => !isEditing ? null : setSettings({ ...settings, twoFactorAuth: !settings.twoFactorAuth })}
+                    onClick={() =>
+                      !isEditing
+                        ? null
+                        : setSettings({
+                            ...settings,
+                            twoFactorAuth: !settings.twoFactorAuth,
+                          })
+                    }
                     className={`w-12 h-7 rounded-full transition-all duration-300 ${
-                      settings.twoFactorAuth ? 'bg-agrivibe-green' : 'bg-gray-300'
-                    } ${!isEditing && 'opacity-50 cursor-not-allowed'}`}
+                      settings.twoFactorAuth
+                        ? "bg-agrivibe-green"
+                        : "bg-gray-300"
+                    } ${!isEditing && "opacity-50 cursor-not-allowed"}`}
                     disabled={!isEditing}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-md ${
-                      settings.twoFactorAuth ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full transition-all duration-300 shadow-md ${
+                        settings.twoFactorAuth
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
                   </button>
                 </div>
 
@@ -635,9 +826,9 @@ export default function AdminSettings() {
                         onChange={handleChange}
                         disabled={!isEditing}
                         className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                          isEditing 
-                            ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                            : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                          isEditing
+                            ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                            : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                         } outline-none`}
                       />
                     </div>
@@ -647,7 +838,7 @@ export default function AdminSettings() {
                       Session Timeout (minutes)
                     </label>
                     <div className="relative">
-                      <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         name="sessionTimeout"
                         type="number"
@@ -655,9 +846,9 @@ export default function AdminSettings() {
                         onChange={handleChange}
                         disabled={!isEditing}
                         className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                          isEditing 
-                            ? 'border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
-                            : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                          isEditing
+                            ? "border-gray-200 bg-white text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
+                            : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                         } outline-none`}
                       />
                     </div>
@@ -668,7 +859,7 @@ export default function AdminSettings() {
           )}
 
           {/* ====== FEATURE FLAGS ====== */}
-          {activeTab === 'features' && (
+          {activeTab === "features" && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -679,43 +870,65 @@ export default function AdminSettings() {
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Feature Flags</h2>
-                  <p className="text-sm text-gray-500">Enable or disable platform features</p>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Feature Flags
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Enable or disable platform features
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { key: 'enableCampus', label: 'Campus Mode', icon: Building },
-                  { key: 'enableEscrow', label: 'Escrow System', icon: Shield },
-                  { key: 'enableWallet', label: 'Wallet System', icon: Wallet },
-                  { key: 'enableReviews', label: 'Reviews & Ratings', icon: Star },
-                  { key: 'enableAI', label: 'AI Assistant', icon: Bot },
+                  { key: "enableCampus", label: "Campus Mode", icon: Building },
+                  { key: "enableEscrow", label: "Escrow System", icon: Shield },
+                  { key: "enableWallet", label: "Wallet System", icon: Wallet },
+                  {
+                    key: "enableReviews",
+                    label: "Reviews & Ratings",
+                    icon: Star,
+                  },
+                  { key: "enableAI", label: "AI Assistant", icon: Bot },
                 ].map((feature) => {
                   const Icon = feature.icon;
-                  const isEnabled = settings[feature.key as keyof typeof settings];
+                  const isEnabled =
+                    settings[feature.key as keyof typeof settings];
                   return (
-                    <div key={feature.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div
+                      key={feature.key}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                    >
                       <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${isEnabled ? 'text-agrivibe-green' : 'text-gray-400'}`} />
-                        <span className={`text-sm font-medium ${isEnabled ? 'text-gray-900' : 'text-gray-500'}`}>
+                        <Icon
+                          className={`w-4 h-4 ${isEnabled ? "text-agrivibe-green" : "text-gray-400"}`}
+                        />
+                        <span
+                          className={`text-sm font-medium ${isEnabled ? "text-gray-900" : "text-gray-500"}`}
+                        >
                           {feature.label}
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => !isEditing ? null : setSettings({ 
-                          ...settings, 
-                          [feature.key]: !isEnabled
-                        })}
+                        onClick={() =>
+                          !isEditing
+                            ? null
+                            : setSettings({
+                                ...settings,
+                                [feature.key]: !isEnabled,
+                              })
+                        }
                         className={`w-10 h-5 rounded-full transition-all duration-300 ${
-                          isEnabled ? 'bg-agrivibe-green' : 'bg-gray-300'
-                        } ${!isEditing && 'opacity-50 cursor-not-allowed'}`}
+                          isEnabled ? "bg-agrivibe-green" : "bg-gray-300"
+                        } ${!isEditing && "opacity-50 cursor-not-allowed"}`}
                         disabled={!isEditing}
                       >
-                        <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
-                          isEnabled ? 'translate-x-5' : 'translate-x-0.5'
-                        }`} />
+                        <div
+                          className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-md ${
+                            isEnabled ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
                       </button>
                     </div>
                   );
@@ -730,10 +943,10 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl hover:shadow-agrivibe-green/30 transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
+              {saving ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Saving...
@@ -747,10 +960,26 @@ export default function AdminSettings() {
             </motion.button>
           )}
         </form>
+
+        {/* ====== CONFIRMATION NOTE ====== */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-4">
+          <div className="flex items-start gap-3">
+            <Database className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-gray-700">
+                💡 All settings are saved to the database and will persist
+                across restarts.
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Changes take effect immediately after saving.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
 }
 
 // Add missing imports
-import { FileText, ChevronDown, User, Wallet, Star, Bot } from 'lucide-react';
+import { FileText, ChevronDown, User, Wallet, Star, Bot } from "lucide-react";
