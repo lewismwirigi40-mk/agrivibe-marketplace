@@ -104,6 +104,7 @@ const guideRoutes = require('./routes/guideRoutes.cjs');
 const uploadRoutes = require('./routes/uploadRoutes.cjs');
 const settingRoutes = require('./routes/settingRoutes.cjs');
 const auditRoutes = require('./routes/auditRoutes.cjs');
+const dashboardRoutes = require('./routes/dashboardRoutes.cjs');
 
 // ============================================
 // SERVICES
@@ -193,7 +194,8 @@ app.use('/api/webhooks', webhookRoutes);
 app.use('/api/guides', guideRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingRoutes);
-pp.use('/api/audit', auditRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ============================================
 // DIRECT SMS TEST ROUTE
