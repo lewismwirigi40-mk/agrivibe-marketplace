@@ -19,12 +19,12 @@ import {
   CartesianGrid,
   ComposedChart
 } from 'recharts';
-import { 
-  Users, 
-  Store, 
-  Truck, 
-  User, 
-  Package, 
+import {
+  Users,
+  Store,
+  Truck,
+  User,
+  Package,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -62,6 +62,7 @@ export default function AdminDashboard() {
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [userGrowthData, setUserGrowthData] = useState<any[]>([]);
   const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
 
   useEffect(() => {
@@ -76,72 +77,37 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Fetch dashboard stats
       const statsResponse = await api.get('/admin/dashboard');
-      setStats(statsResponse.data.stats);
+      const statsData = statsResponse.data.stats || {};
+      setStats(statsData);
 
+      // Fetch analytics data
       const analyticsResponse = await api.get('/admin/analytics');
-      const data = analyticsResponse.data;
+      const data = analyticsResponse.data || {};
 
-      // Set chart data with real or fallback
-      setRevenueData(data.revenue || [
-        { month: 'Jan', revenue: 0, orders: 0 },
-        { month: 'Feb', revenue: 0, orders: 0 },
-        { month: 'Mar', revenue: 0, orders: 0 },
-        { month: 'Apr', revenue: 0, orders: 0 },
-        { month: 'May', revenue: 0, orders: 0 },
-        { month: 'Jun', revenue: 0, orders: 0 },
-        { month: 'Jul', revenue: 0, orders: 0 },
-        { month: 'Aug', revenue: 0, orders: 0 },
-      ]);
+      // Set chart data with real or empty arrays
+      setRevenueData(data.revenue || []);
+      setUserGrowthData(data.userGrowth || []);
+      setOrderStatusData(data.orderStatus || []);
 
-      setUserGrowthData(data.userGrowth || [
-        { month: 'Jan', users: 0 },
-        { month: 'Feb', users: 0 },
-        { month: 'Mar', users: 0 },
-        { month: 'Apr', users: 0 },
-        { month: 'May', users: 0 },
-        { month: 'Jun', users: 0 },
-        { month: 'Jul', users: 0 },
-        { month: 'Aug', users: 0 },
-      ]);
-
-      setOrderStatusData(data.orderStatus || [
-        { name: 'Delivered', value: 0 },
-        { name: 'Processing', value: 0 },
-        { name: 'Pending', value: 0 },
-        { name: 'Cancelled', value: 0 },
-      ]);
+      // ✅ Fetch real recent activities from backend
+      try {
+        const activitiesResponse = await api.get('/admin/recent-activities');
+        setRecentActivities(activitiesResponse.data.activities || []);
+      } catch (err) {
+        console.error('Failed to fetch recent activities:', err);
+        setRecentActivities([]);
+      }
 
     } catch (error: any) {
       console.error('Failed to fetch dashboard data:', error);
       setError(error.response?.data?.error || 'Failed to load dashboard');
-      // Fallback data
-      setRevenueData([
-        { month: 'Jan', revenue: 0, orders: 0 },
-        { month: 'Feb', revenue: 0, orders: 0 },
-        { month: 'Mar', revenue: 0, orders: 0 },
-        { month: 'Apr', revenue: 0, orders: 0 },
-        { month: 'May', revenue: 0, orders: 0 },
-        { month: 'Jun', revenue: 0, orders: 0 },
-        { month: 'Jul', revenue: 0, orders: 0 },
-        { month: 'Aug', revenue: 0, orders: 0 },
-      ]);
-      setUserGrowthData([
-        { month: 'Jan', users: 0 },
-        { month: 'Feb', users: 0 },
-        { month: 'Mar', users: 0 },
-        { month: 'Apr', users: 0 },
-        { month: 'May', users: 0 },
-        { month: 'Jun', users: 0 },
-        { month: 'Jul', users: 0 },
-        { month: 'Aug', users: 0 },
-      ]);
-      setOrderStatusData([
-        { name: 'Delivered', value: 0 },
-        { name: 'Processing', value: 0 },
-        { name: 'Pending', value: 0 },
-        { name: 'Cancelled', value: 0 },
-      ]);
+      // Set empty data on error
+      setRevenueData([]);
+      setUserGrowthData([]);
+      setOrderStatusData([]);
+      setRecentActivities([]);
     } finally {
       setLoading(false);
     }
@@ -151,6 +117,44 @@ export default function AdminDashboard() {
 
   const formatCurrency = (amount: number) => {
     return `KES ${amount?.toLocaleString() || 0}`;
+  };
+
+  const getActivityIcon = (type: string) => {
+    const icons: Record<string, any> = {
+      'vendor_registered': Store,
+      'order_delivered': CheckCircle,
+      'customer_joined': User,
+      'product_approved': Package,
+      'order_placed': ShoppingBag,
+      'payment_received': CreditCard,
+      'vendor_approved': Award,
+    };
+    return icons[type] || Activity;
+  };
+
+  const getActivityColor = (type: string) => {
+    const colors: Record<string, string> = {
+      'vendor_registered': 'text-green-500 bg-green-50',
+      'order_delivered': 'text-blue-500 bg-blue-50',
+      'customer_joined': 'text-purple-500 bg-purple-50',
+      'product_approved': 'text-yellow-500 bg-yellow-50',
+      'order_placed': 'text-orange-500 bg-orange-50',
+      'payment_received': 'text-emerald-500 bg-emerald-50',
+      'vendor_approved': 'text-indigo-500 bg-indigo-50',
+    };
+    return colors[type] || 'text-gray-500 bg-gray-50';
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return 'Just now';
+    const now = new Date();
+    const past = new Date(dateString);
+    const diffMinutes = Math.floor((now.getTime() - past.getTime()) / 60000);
+
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hours ago`;
+    return `${Math.floor(diffMinutes / 1440)} days ago`;
   };
 
   if (loading) {
@@ -291,35 +295,41 @@ export default function AdminDashboard() {
               <Activity className="w-5 h-5 text-gray-400" />
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                    }}
-                    formatter={(value: any) => [`KES ${value?.toLocaleString() || 0}`, 'Revenue']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#22c55e" 
-                    fill="url(#revenueGrad)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {revenueData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="label" stroke="#9ca3af" fontSize={12} />
+                    <YAxis stroke="#9ca3af" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                      }}
+                      formatter={(value: any) => [`KES ${value?.toLocaleString() || 0}`, 'Revenue']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#22c55e"
+                      fill="url(#revenueGrad)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No revenue data available
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -338,23 +348,29 @@ export default function AdminDashboard() {
               <Users className="w-5 h-5 text-gray-400" />
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={userGrowthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
-                  <YAxis stroke="#9ca3af" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                    }}
-                    formatter={(value: any) => [value, 'New Users']}
-                  />
-                  <Bar dataKey="users" fill="#10b981" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {userGrowthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={userGrowthData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="label" stroke="#9ca3af" fontSize={12} />
+                    <YAxis stroke="#9ca3af" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                      }}
+                      formatter={(value: any) => [value, 'New Users']}
+                    />
+                    <Bar dataKey="users" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No user growth data available
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -376,39 +392,45 @@ export default function AdminDashboard() {
               <PieChartIcon className="w-5 h-5 text-gray-400" />
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={orderStatusData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {orderStatusData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                    }}
-                    formatter={(value: any) => [value, 'Orders']}
-                  />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {orderStatusData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={orderStatusData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {orderStatusData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                      }}
+                      formatter={(value: any) => [value, 'Orders']}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  No order status data available
+                </div>
+              )}
             </div>
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions - REAL DATA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -423,39 +445,44 @@ export default function AdminDashboard() {
             </div>
             <div className="space-y-3">
               {[
-                { 
-                  label: 'Review Pending Vendors', 
-                  icon: Store, 
+                {
+                  label: 'Review Pending Vendors',
+                  icon: Store,
                   count: stats.pendingVendors || 0,
                   color: 'text-yellow-500',
-                  bg: 'bg-yellow-50'
+                  bg: 'bg-yellow-50',
+                  href: '/admin/vendors?filter=pending'
                 },
-                { 
-                  label: 'Approve Pending Products', 
-                  icon: Package, 
+                {
+                  label: 'Approve Pending Products',
+                  icon: Package,
                   count: stats.pendingProducts || 0,
                   color: 'text-blue-500',
-                  bg: 'bg-blue-50'
+                  bg: 'bg-blue-50',
+                  href: '/admin/products?filter=pending'
                 },
-                { 
-                  label: 'View Platform Wallet', 
-                  icon: Wallet, 
+                {
+                  label: 'View Platform Wallet',
+                  icon: Wallet,
                   count: formatCurrency(stats.platformWallet || 0),
                   color: 'text-green-500',
-                  bg: 'bg-green-50'
+                  bg: 'bg-green-50',
+                  href: '/admin/payments'
                 },
-                { 
-                  label: 'Generate Full Report', 
-                  icon: FileText, 
+                {
+                  label: 'Generate Full Report',
+                  icon: FileText,
                   count: 'Export',
                   color: 'text-purple-500',
-                  bg: 'bg-purple-50'
+                  bg: 'bg-purple-50',
+                  href: '/admin/reports'
                 },
               ].map((action, index) => {
                 const Icon = action.icon;
                 return (
                   <button
                     key={index}
+                    onClick={() => router.push(action.href)}
                     className={`w-full ${action.bg} rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group`}
                   >
                     <div className="flex items-center gap-3">
@@ -475,7 +502,7 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* ====== RECENT ACTIVITY ====== */}
+        {/* ====== RECENT ACTIVITY - REAL DATA FROM BACKEND ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -489,30 +516,37 @@ export default function AdminDashboard() {
             </div>
             <Bell className="w-5 h-5 text-gray-400" />
           </div>
-          <div className="space-y-3">
-            {[
-              { action: 'New vendor registered', user: 'Fresh Farm Produce', time: '2 min ago', icon: Store },
-              { action: 'Order delivered', user: 'Order #ORD-004', time: '15 min ago', icon: CheckCircle },
-              { action: 'New customer joined', user: 'John Doe', time: '1 hour ago', icon: User },
-              { action: 'Product approved', user: 'Organic Avocados', time: '3 hours ago', icon: Package },
-            ].map((activity, index) => {
-              const Icon = activity.icon;
-              return (
-                <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                  <div className="w-10 h-10 bg-gradient-to-br from-agrivibe-green/20 to-emerald-500/20 rounded-xl flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-agrivibe-green" />
+          {recentActivities.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No recent activities</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentActivities.slice(0, 5).map((activity, index) => {
+                const Icon = getActivityIcon(activity.type);
+                const colorClass = getActivityColor(activity.type);
+                return (
+                  <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                    <div className={`w-10 h-10 ${colorClass} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                      <p className="text-xs text-gray-500">{activity.user}</p>
+                    </div>
+                    <span className="text-xs text-gray-400">{formatTimeAgo(activity.created_at)}</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.user}</p>
-                  </div>
-                  <span className="text-xs text-gray-400">{activity.time}</span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </motion.div>
       </div>
     </AdminLayout>
   );
 }
+
+// Add missing imports
+import { useRouter } from 'next/router';
+import { Package } from 'lucide-react';
