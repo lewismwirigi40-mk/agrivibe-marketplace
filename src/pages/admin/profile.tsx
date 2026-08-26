@@ -609,18 +609,18 @@ export default function AdminProfile() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             {
-              label: "Change Password",
-              icon: Key,
-              onClick: () => setShowPasswordModal(true),
-              color: "bg-yellow-50 text-yellow-600 hover:bg-yellow-100",
-              description: "Update your password",
-            },
-            {
               label: "Security Settings",
               icon: Shield,
               onClick: () => router.push("/admin/settings"),
               color: "bg-red-50 text-red-600 hover:bg-red-100",
               description: "Manage security",
+            },
+            {
+              label: "Audit Log",
+              icon: Clock,
+              onClick: () => router.push("/admin/audit"),
+              color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
+              description: "View activity log",
             },
             {
               label: "Audit Log",
