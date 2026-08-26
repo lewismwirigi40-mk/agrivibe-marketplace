@@ -28,21 +28,45 @@ exports.getUserNotifications = async (req, res) => {
 
         const notifications = await Notification.findAndCountAll({
             where: { user_id },
+            // 🟢 FIXED: Explicitly select existing columns, omitting the missing 'link' column
+            attributes: [
+                'id', 
+                'user_id', 
+                'type', 
+                'title', 
+                'message', 
+                'data', 
+                'channel', 
+                'is_read', 
+                'read_at', 
+                'sent_at', 
+                'created_at', 
+                'updated_at'
+            ],
             order: [['created_at', 'DESC']],
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
 
-        res.json({
+        // Calculate and append counter matrices safely
+        const unreadCount = await Notification.count({ 
+            where: { user_id, is_read: false } 
+        });
+
+        return res.json({
             success: true,
             total: notifications.count,
-            unread: await Notification.count({ where: { user_id, is_read: false } }),
+            unread: unreadCount,
             notifications: notifications.rows
         });
 
     } catch (error) {
-        console.error('Get notifications error:', error);
-        res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
+        console.error('❌ Get notifications error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            error: 'Failed to fetch notifications',
+            message: error.message 
+        });
     }
 };
 

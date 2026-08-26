@@ -102,6 +102,8 @@ const campusRoutes = require('./routes/campusRoutes.cjs');
 const escrowRoutes = require('./routes/escrowRoutes.cjs');
 const guideRoutes = require('./routes/guideRoutes.cjs');
 const uploadRoutes = require('./routes/uploadRoutes.cjs');
+const settingRoutes = require('./routes/settingRoutes.cjs');
+const auditRoutes = require('./routes/auditRoutes.cjs');
 
 // ============================================
 // SERVICES
@@ -190,6 +192,8 @@ console.log("✅ Payment routes registered");
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/guides', guideRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingRoutes);
+pp.use('/api/audit', auditRoutes);
 
 // ============================================
 // DIRECT SMS TEST ROUTE
