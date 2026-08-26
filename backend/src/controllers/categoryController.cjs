@@ -37,10 +37,14 @@ exports.getAllCategories = async (req, res) => {
             order: [['display_order', 'ASC']]
         });
 
-        res.json({ categories });
+        return res.json({ categories: categories || [] });
     } catch (error) {
         console.error('Get categories error:', error);
-        res.status(500).json({ error: 'Failed to fetch categories' });
+        // 🔴 THIS WILL CONFIRM THE DATABASE ERROR:
+        return res.status(500).json({ 
+            error: 'Failed to fetch categories',
+            message: error.message 
+        });
     }
 };
 

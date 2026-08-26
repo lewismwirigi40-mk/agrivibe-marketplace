@@ -62,6 +62,7 @@ exports.createProduct = async (req, res) => {
 };
 
 // Get All Products
+// Get All Products
 exports.getAllProducts = async (req, res) => {
     try {
         const products = await Product.findAll({
@@ -73,13 +74,16 @@ exports.getAllProducts = async (req, res) => {
                     attributes: ['id', 'store_name', 'latitude', 'longitude', 'address']
                 }
             ],
-            order: [['created_at', 'DESC']]
+            order: [['created_at', 'DESC']] // ⚠️ Double-check if your DB column is 'created_at' or 'createdAt'
         });
 
-        res.json({ products });
+        return res.json({ products: products || [] });
     } catch (error) {
-        console.error('Get products error:', error);
-        res.status(500).json({ error: 'Failed to fetch products' });
+        console.error('❌ Get products database error:', error);
+        return res.status(500).json({ 
+            error: 'Failed to fetch products', 
+            details: error.message // Exposes the column mismatch to Axios
+        });
     }
 };
 

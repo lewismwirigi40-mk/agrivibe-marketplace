@@ -1,3 +1,5 @@
+// Force console logs to show immediately
+console.log('🔥 AUTH CONTROLLER LOADED');
 const User = require('../models/User.cjs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -18,14 +20,22 @@ const generateToken = (user) => {
 
 // Register
 exports.register = async (req, res) => {
+    console.log('🔥 REGISTER FUNCTION CALLED'); // ✅ Force log
+    console.log('📝 Request body:', req.body); // ✅ Force log
+
     try {
         const { email, password, first_name, last_name, phone, role } = req.body;
+
+        console.log('🔍 Checking if user exists:', email); // ✅ Force log
 
         // Check if user exists
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
+            console.log('❌ User already exists:', email); // ✅ Force log
             return res.status(400).json({ error: 'Email already registered' });
         }
+
+        console.log('✅ User does not exist, creating...'); // ✅ Force log
 
         // Create user
         const user = await User.create({
@@ -37,24 +47,22 @@ exports.register = async (req, res) => {
             role: role || 'customer'
         });
 
-        // Generate token
-        const token = generateToken(user);
+        console.log('✅ User created successfully:', user.id); // ✅ Force log
 
         res.status(201).json({
             message: 'User registered successfully',
-            token,
             user: {
                 id: user.id,
                 email: user.email,
                 first_name: user.first_name,
                 last_name: user.last_name,
-                role: user.role,
-                is_verified: user.is_verified
+                role: user.role
             }
         });
 
     } catch (error) {
-        console.error('Register error:', error);
+        console.error('❌ REGISTRATION ERROR:', error.message); // ✅ Force log
+        console.error('❌ Full error:', error); // ✅ Force log
         res.status(500).json({ error: 'Registration failed' });
     }
 };
@@ -63,6 +71,10 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
 
         // Find user
         const user = await User.findOne({ where: { email } });
@@ -82,7 +94,7 @@ exports.login = async (req, res) => {
         // Generate token
         const token = generateToken(user);
 
-        res.json({
+        return res.json({
             message: 'Login successful',
             token,
             user: {
@@ -97,33 +109,36 @@ exports.login = async (req, res) => {
 
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed' });
+        return res.status(500).json({ 
+            error: 'Login failed',
+            message: error.message 
+        });
     }
 };
 
 // Logout
 exports.logout = async (req, res) => {
-    res.json({ message: 'Logged out successfully' });
+    return res.json({ message: 'Logged out successfully' });
 };
 
 // Verify OTP (placeholder)
 exports.verifyOTP = async (req, res) => {
-    res.json({ message: 'OTP verification endpoint' });
+    return res.json({ message: 'OTP verification endpoint' });
 };
 
 // Resend OTP (placeholder)
 exports.resendOTP = async (req, res) => {
-    res.json({ message: 'Resend OTP endpoint' });
+    return res.json({ message: 'Resend OTP endpoint' });
 };
 
 // Forgot Password (placeholder)
 exports.forgotPassword = async (req, res) => {
-    res.json({ message: 'Forgot password endpoint' });
+    return res.json({ message: 'Forgot password endpoint' });
 };
 
 // Reset Password (placeholder)
 exports.resetPassword = async (req, res) => {
-    res.json({ message: 'Reset password endpoint' });
+    return res.json({ message: 'Reset password endpoint' });
 };
 
 // Get Current User
@@ -143,11 +158,11 @@ exports.getCurrentUser = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json({ user });
+        return res.json({ user });
 
     } catch (error) {
         console.error('Get user error:', error);
-        res.status(401).json({ error: 'Invalid token' });
+        return res.status(401).json({ error: 'Invalid token' });
     }
 };
 
@@ -159,7 +174,12 @@ exports.getCurrentUser = async (req, res) => {
 exports.updateLocation = async (req, res) => {
     try {
         const { latitude, longitude, location_address } = req.body;
-        const userId = req.user.id;
+        // Assume req.user is populated by authentication middleware
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
 
         // Validate input
         if (latitude === undefined || longitude === undefined) {
@@ -190,7 +210,7 @@ exports.updateLocation = async (req, res) => {
             location_sharing_enabled: true
         });
 
-        res.json({
+        return res.json({
             message: 'Location updated successfully',
             user: {
                 id: user.id,
@@ -203,14 +223,17 @@ exports.updateLocation = async (req, res) => {
 
     } catch (error) {
         console.error('Update location error:', error);
-        res.status(500).json({ error: 'Failed to update location' });
+        return res.status(500).json({ error: 'Failed to update location' });
     }
 };
 
 // Get User Location
 exports.getLocation = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
 
         const user = await User.findByPk(userId, {
             attributes: ['id', 'latitude', 'longitude', 'location_address', 'location_updated_at', 'location_sharing_enabled']
@@ -220,11 +243,11 @@ exports.getLocation = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json({ location: user });
+        return res.json({ location: user });
 
     } catch (error) {
         console.error('Get location error:', error);
-        res.status(500).json({ error: 'Failed to get location' });
+        return res.status(500).json({ error: 'Failed to get location' });
     }
 };
 
@@ -232,7 +255,10 @@ exports.getLocation = async (req, res) => {
 exports.toggleLocationSharing = async (req, res) => {
     try {
         const { enabled } = req.body;
-        const userId = req.user.id;
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
 
         const user = await User.findByPk(userId);
         if (!user) {
@@ -243,13 +269,13 @@ exports.toggleLocationSharing = async (req, res) => {
             location_sharing_enabled: enabled !== undefined ? enabled : !user.location_sharing_enabled
         });
 
-        res.json({
+        return res.json({
             message: 'Location sharing preference updated',
             location_sharing_enabled: user.location_sharing_enabled
         });
 
     } catch (error) {
         console.error('Toggle location sharing error:', error);
-        res.status(500).json({ error: 'Failed to update preference' });
+        return res.status(500).json({ error: 'Failed to update preference' });
     }
 };

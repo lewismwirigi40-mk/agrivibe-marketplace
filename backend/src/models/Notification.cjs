@@ -1,3 +1,4 @@
+// backend/src/models/Notification.cjs
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.cjs');
 
@@ -12,7 +13,8 @@ const Notification = sequelize.define('Notification', {
         allowNull: false
     },
     type: {
-        type: DataTypes.ENUM('order', 'payment', 'delivery', 'system', 'promotion', 'message'),
+        type: DataTypes.ENUM('info', 'success', 'warning', 'error', 'order', 'payment', 'delivery', 'system', 'promotion', 'message'),
+        defaultValue: 'info',
         allowNull: false
     },
     title: {
@@ -41,6 +43,10 @@ const Notification = sequelize.define('Notification', {
     },
     sent_at: {
         type: DataTypes.DATE,
+        allowNull: true
+    },
+    link: {
+        type: DataTypes.STRING(255),
         allowNull: true
     }
 }, {

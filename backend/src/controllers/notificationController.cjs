@@ -1,5 +1,5 @@
+// backend/src/controllers/notificationController.cjs
 const Notification = require('../models/Notification.cjs');
-const { sendOrderConfirmation, sendDeliveryCodeEmail } = require('../services/emailService.cjs');
 
 // Create Notification (Internal use)
 exports.createNotification = async (user_id, type, title, message, data = {}, channel = 'in_app') => {
@@ -34,6 +34,7 @@ exports.getUserNotifications = async (req, res) => {
         });
 
         res.json({
+            success: true,
             total: notifications.count,
             unread: await Notification.count({ where: { user_id, is_read: false } }),
             notifications: notifications.rows
@@ -41,7 +42,7 @@ exports.getUserNotifications = async (req, res) => {
 
     } catch (error) {
         console.error('Get notifications error:', error);
-        res.status(500).json({ error: 'Failed to fetch notifications' });
+        res.status(500).json({ success: false, error: 'Failed to fetch notifications' });
     }
 };
 
@@ -56,7 +57,7 @@ exports.markAsRead = async (req, res) => {
         });
 
         if (!notification) {
-            return res.status(404).json({ error: 'Notification not found' });
+            return res.status(404).json({ success: false, error: 'Notification not found' });
         }
 
         await notification.update({
@@ -65,13 +66,14 @@ exports.markAsRead = async (req, res) => {
         });
 
         res.json({
+            success: true,
             message: 'Notification marked as read',
             notification
         });
 
     } catch (error) {
         console.error('Mark as read error:', error);
-        res.status(500).json({ error: 'Failed to mark notification as read' });
+        res.status(500).json({ success: false, error: 'Failed to mark notification as read' });
     }
 };
 
@@ -85,11 +87,11 @@ exports.markAllAsRead = async (req, res) => {
             { where: { user_id, is_read: false } }
         );
 
-        res.json({ message: 'All notifications marked as read' });
+        res.json({ success: true, message: 'All notifications marked as read' });
 
     } catch (error) {
         console.error('Mark all as read error:', error);
-        res.status(500).json({ error: 'Failed to mark all as read' });
+        res.status(500).json({ success: false, error: 'Failed to mark all as read' });
     }
 };
 
@@ -104,16 +106,16 @@ exports.deleteNotification = async (req, res) => {
         });
 
         if (!notification) {
-            return res.status(404).json({ error: 'Notification not found' });
+            return res.status(404).json({ success: false, error: 'Notification not found' });
         }
 
         await notification.destroy();
 
-        res.json({ message: 'Notification deleted successfully' });
+        res.json({ success: true, message: 'Notification deleted successfully' });
 
     } catch (error) {
         console.error('Delete notification error:', error);
-        res.status(500).json({ error: 'Failed to delete notification' });
+        res.status(500).json({ success: false, error: 'Failed to delete notification' });
     }
 };
 
@@ -126,10 +128,10 @@ exports.getUnreadCount = async (req, res) => {
             where: { user_id, is_read: false }
         });
 
-        res.json({ unread_count: count });
+        res.json({ success: true, unread_count: count });
 
     } catch (error) {
         console.error('Get unread count error:', error);
-        res.status(500).json({ error: 'Failed to get unread count' });
+        res.status(500).json({ success: false, error: 'Failed to get unread count' });
     }
 };

@@ -63,7 +63,19 @@ const Notification = require('./models/Notification.cjs');
 const Guide = require('./models/Guide.cjs');
 const GuidePurchase = require('./models/GuidePurchase.cjs');
 const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
+// ============================================
+// DEFINE MODEL ASSOCIATIONS
+// ============================================
+// 🟢 A product belongs to a store, and a store has many products
+Product.belongsTo(Store, { foreignKey: 'store_id', as: 'store' });
+Store.hasMany(Product, { foreignKey: 'store_id', as: 'products' });
+// 🟢 NEW: An Order belongs to a User (Customer), and a User can have many Orders
+Order.belongsTo(User, { foreignKey: 'customer_id', as: 'customer' });
+User.hasMany(Order, { foreignKey: 'customer_id', as: 'orders' });
 
+// 🟢 ADD THESE TWO LINES TO FIX THE NEW ERROR:
+Order.belongsTo(Store, { foreignKey: 'store_id', as: 'store' });
+Store.hasMany(Order, { foreignKey: 'store_id', as: 'orders' });
 // ============================================
 // ROUTES
 // ============================================
@@ -125,8 +137,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../storage/uploads')));
 // REQUEST LOGGING MIDDLEWARE - CRITICAL FOR DEBUGGING
 // ============================================
 app.use((req, res, next) => {
-    console.log(`📡 ${req.method} ${req.url}`);
-    console.log(`📝 Body:`, req.body);
+    process.stdout.write(`\n📡 ${req.method} ${req.url}\n`);
+    process.stdout.write(`📝 Body: ${JSON.stringify(req.body)}\n\n`);
     next();
 });
 

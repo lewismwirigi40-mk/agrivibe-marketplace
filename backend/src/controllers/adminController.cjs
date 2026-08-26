@@ -199,6 +199,7 @@ exports.getAllProducts = async (req, res) => {
             where,
             include: [{
                 model: Store,
+                as: 'store', 
                 attributes: ['store_name', 'id']
             }],
             limit: parseInt(limit),
@@ -260,7 +261,7 @@ exports.getAllOrders = async (req, res) => {
             where,
             include: [
                 { model: User, as: 'customer', attributes: ['id', 'email', 'first_name', 'last_name'] },
-                { model: Store, attributes: ['id', 'store_name'] }
+               { model: Store, as: 'store', attributes: ['id', 'store_name'] }
             ],
             limit: parseInt(limit),
             offset: parseInt(offset),
