@@ -1,19 +1,19 @@
 // src/components/DashboardLayout.tsx
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { ReactNode, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Heart, 
-  Wallet, 
-  MapPin, 
-  User, 
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { ReactNode, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Heart,
+  Wallet,
+  MapPin,
+  User,
   Settings,
   Menu,
   X,
-  Bell,
+  Crown,
   Search,
   LogOut,
   Shield,
@@ -22,20 +22,12 @@ import {
   ChevronDown,
   Sun,
   Moon,
-  CreditCard,
-  Truck,
-  MessageCircle,
-  Gift,
-  Star,
-  Clock,
-  Package,
-  TrendingUp,
-  Award,
-  Crown,
-  Users,
-  Store,
-  HelpCircle
-} from 'lucide-react';
+  Gem,
+  Zap,
+  BadgeCheck,
+} from "lucide-react";
+import Notifications from "./Notifications";
+import api from "../services/api";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -47,44 +39,183 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Your order #ORD-004 has been delivered', time: '15 min ago', read: false },
-    { id: 2, title: 'New product available in your area', time: '1 hour ago', read: false },
-    { id: 3, title: 'Wallet credited with KES 150', time: '3 hours ago', read: true },
-  ]);
+
+  // ✅ REAL DATA STATES
+  const [userData, setUserData] = useState({
+    firstName: "User",
+    lastName: "",
+    email: "",
+    role: "customer",
+  });
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    wishlistCount: 0,
+    walletBalance: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, badge: null },
-    { name: 'My Orders', href: '/dashboard/orders', icon: ShoppingBag, badge: '3' },
-    { name: 'Wishlist', href: '/dashboard/wishlist', icon: Heart, badge: '8' },
-    { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet, badge: null },
-    { name: 'Addresses', href: '/dashboard/addresses', icon: MapPin, badge: null },
-    { name: 'Profile', href: '/dashboard/profile', icon: User, badge: null },
-    { name: 'Settings', href: '/dashboard/settings', icon: Settings, badge: null },
+  // ✅ FETCH REAL DATA
+  useEffect(() => {
+    fetchUserData();
+    fetchStats();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await api.get("/auth/profile");
+      const user = response.data.user || response.data || {};
+      setUserData({
+        firstName: user.first_name || "User",
+        lastName: user.last_name || "",
+        email: user.email || "",
+        role: user.role || "customer",
+      });
+    } catch (error) {
+      console.error("Failed to fetch user data:", error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      // ✅ Fetch orders count
+      const ordersRes = await api.get("/orders/my-orders");
+      const orders = ordersRes.data.orders || [];
+      const totalOrders = orders.length;
+
+      // ✅ Fetch wishlist count
+      let wishlistCount = 0;
+      try {
+        const wishlistRes = await api.get("/wishlist");
+        wishlistCount = wishlistRes.data.items?.length || 0;
+      } catch (e) {
+        // Wishlist endpoint might not exist
+      }
+
+      // ✅ Fetch wallet balance
+      let walletBalance = 0;
+      try {
+        const walletRes = await api.get("/wallet/balance");
+        walletBalance = walletRes.data.balance || 0;
+      } catch (e) {
+        // Wallet endpoint might not exist
+      }
+
+      setStats({ totalOrders, wishlistCount, walletBalance });
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Get user initials for avatar
+  const getInitials = () => {
+    if (userData.firstName && userData.lastName) {
+      return `${userData.firstName.charAt(0)}${userData.lastName.charAt(0)}`.toUpperCase();
+    }
+    if (userData.firstName) return userData.firstName.charAt(0).toUpperCase();
+    if (userData.email) return userData.email.charAt(0).toUpperCase();
+    return "U";
+  };
+
+  // ✅ Get display name
+  const getDisplayName = () => {
+    if (userData.firstName && userData.lastName) {
+      return `${userData.firstName} ${userData.lastName}`;
+    }
+    if (userData.firstName) return userData.firstName;
+    return userData.email?.split("@")[0] || "User";
+  };
+
+  // ✅ Quick Stats with REAL data
+  const quickStats = [
+    {
+      label: "Total Orders",
+      value: stats.totalOrders,
+      icon: ShoppingBag,
+      color: "text-blue-500",
+    },
+    {
+      label: "Wishlist",
+      value: stats.wishlistCount,
+      icon: Heart,
+      color: "text-red-500",
+    },
+    {
+      label: "Wallet Balance",
+      value: `KES ${stats.walletBalance.toLocaleString()}`,
+      icon: Wallet,
+      color: "text-green-500",
+    },
   ];
 
-  const quickStats = [
-    { label: 'Total Orders', value: '12', icon: ShoppingBag, color: 'text-blue-500' },
-    { label: 'Wishlist', value: '8', icon: Heart, color: 'text-red-500' },
-    { label: 'Wallet Balance', value: 'KES 1,250', icon: Wallet, color: 'text-green-500' },
+  const navItems = [
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      badge: null,
+    },
+    {
+      name: "My Orders",
+      href: "/dashboard/orders",
+      icon: ShoppingBag,
+      badge: null,
+    },
+    { name: "Wishlist", href: "/dashboard/wishlist", icon: Heart, badge: null },
+    { name: "Wallet", href: "/dashboard/wallet", icon: Wallet, badge: null },
+    {
+      name: "Addresses",
+      href: "/dashboard/addresses",
+      icon: MapPin,
+      badge: null,
+    },
+    { name: "Profile", href: "/dashboard/profile", icon: User, badge: null },
+    {
+      name: "Settings",
+      href: "/dashboard/settings",
+      icon: Settings,
+      badge: null,
+    },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-agrivibe-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' : 'bg-gray-50'}`}>
+    <div
+      className={`min-h-screen ${isDarkMode ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" : "bg-gray-50"}`}
+    >
       {/* ====== TOP NAVBAR ====== */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl' 
-          : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md'
-      } border-b border-gray-200/20 dark:border-white/10`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          isScrolled
+            ? "bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl"
+            : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md"
+        } border-b border-gray-200/20 dark:border-white/10`}
+      >
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
@@ -110,12 +241,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-agrivibe-green to-emerald-500">
                     AgriVibe
                   </span>
-                  <span className="block text-[10px] text-gray-400 font-medium tracking-widest uppercase">Dashboard</span>
+                  <span className="block text-[10px] text-gray-400 font-medium tracking-widest uppercase">
+                    Dashboard
+                  </span>
                 </div>
               </Link>
             </div>
 
-            {/* Center - Search */}
+            {/* Search */}
             <div className="hidden lg:flex items-center flex-1 max-w-md mx-8">
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -127,94 +260,103 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            {/* Right - Actions */}
+            {/* Right Actions */}
             <div className="flex items-center gap-2">
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  onClick={() => setActiveDropdown(activeDropdown === 'notifications' ? null : 'notifications')}
-                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors relative"
-                >
-                  <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                  {notifications.filter(n => !n.read).length > 0 && (
-                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                  )}
-                </button>
-                <AnimatePresence>
-                  {activeDropdown === 'notifications' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden"
-                    >
-                      <div className="p-4 border-b border-gray-100 dark:border-white/10">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-gray-900 dark:text-white">Notifications</h3>
-                          <button className="text-xs text-agrivibe-green hover:underline">Mark all read</button>
-                        </div>
-                      </div>
-                      <div className="max-h-80 overflow-y-auto">
-                        {notifications.map((n) => (
-                          <div key={n.id} className={`p-4 border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${!n.read ? 'bg-agrivibe-green/5' : ''}`}>
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</p>
-                            <p className="text-xs text-gray-400 mt-1">{n.time}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="p-3 border-t border-gray-100 dark:border-white/10 text-center">
-                        <button className="text-sm text-agrivibe-green hover:underline">View all</button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              <Notifications />
+
+              {/* Premium Badge */}
+              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 border border-yellow-400/30 rounded-full">
+                <Gem className="w-3.5 h-3.5 text-yellow-500" />
+                <span className="text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                  Premium
+                </span>
               </div>
 
-              {/* Theme Toggle */}
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
               >
-                {isDarkMode ? <Sun className="w-5 h-5 text-gray-300" /> : <Moon className="w-5 h-5 text-gray-700" />}
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5 text-gray-300" />
+                ) : (
+                  <Moon className="w-5 h-5 text-gray-700" />
+                )}
               </button>
 
-              {/* Profile */}
+              {/* Profile Dropdown - REAL DATA */}
               <button
-                onClick={() => setActiveDropdown(activeDropdown === 'profile' ? null : 'profile')}
-                className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                onClick={() =>
+                  setActiveDropdown(
+                    activeDropdown === "profile" ? null : "profile",
+                  )
+                }
+                className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
               >
-                <div className="w-8 h-8 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                  U
+                <div className="w-8 h-8 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-agrivibe-green/30">
+                  {getInitials()}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">User</p>
-                  <p className="text-xs text-gray-400">Customer</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {getDisplayName()}
+                  </p>
+                  <p className="text-xs text-gray-400 capitalize">
+                    {userData.role}
+                  </p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block" />
+                <ChevronDown className="w-4 h-4 text-gray-400 hidden sm:block group-hover:text-agrivibe-green transition-colors" />
               </button>
 
               <AnimatePresence>
-                {activeDropdown === 'profile' && (
+                {activeDropdown === "profile" && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-4 top-16 mt-2 w-56 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden"
+                    className="absolute right-4 top-16 mt-2 w-64 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden"
                   >
-                    <div className="p-4 border-b border-gray-100 dark:border-white/10">
-                      <p className="font-bold text-gray-900 dark:text-white">John Doe</p>
-                      <p className="text-xs text-gray-400">john@example.com</p>
+                    <div className="p-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-agrivibe-green/5 to-emerald-500/5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg shadow-agrivibe-green/30">
+                          {getInitials()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white">
+                            {getDisplayName()}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {userData.email}
+                          </p>
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-agrivibe-green/10 text-agrivibe-green text-xs rounded-full">
+                            <BadgeCheck className="w-3 h-3" />
+                            {userData.role}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="p-2">
-                      <Link href="/dashboard/profile" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-300">
+                      <Link
+                        href="/dashboard/profile"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-300"
+                      >
                         <User className="w-4 h-4" />
                         <span>Profile</span>
                       </Link>
-                      <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-300">
+                      <Link
+                        href="/dashboard/settings"
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-gray-700 dark:text-gray-300"
+                      >
                         <Settings className="w-4 h-4" />
                         <span>Settings</span>
                       </Link>
-                      <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-red-500">
+                      <div className="border-t border-gray-100 dark:border-white/10 my-1" />
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem("token");
+                          localStorage.removeItem("user");
+                          router.push("/login");
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-red-500"
+                      >
                         <LogOut className="w-4 h-4" />
                         <span>Logout</span>
                       </button>
@@ -228,22 +370,31 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </header>
 
       {/* ====== SIDEBAR ====== */}
-      <aside className={`fixed left-0 top-16 lg:top-20 h-full w-64 lg:w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200/20 dark:border-white/10 transform transition-all duration-500 z-40 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-64 lg:translate-x-0'
-      }`}>
+      <aside
+        className={`fixed left-0 top-16 lg:top-20 h-full w-64 lg:w-72 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200/20 dark:border-white/10 transform transition-all duration-500 z-40 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-64 lg:translate-x-0"
+        }`}
+      >
         <div className="h-full flex flex-col overflow-y-auto">
-          {/* Quick Stats */}
+          {/* Quick Stats - REAL DATA */}
           <div className="p-4 border-b border-gray-100 dark:border-white/10">
             <div className="space-y-2">
               {quickStats.map((stat, i) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={i} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 bg-gray-50 dark:bg-white/5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                  >
                     <div className="flex items-center gap-2">
                       <Icon className={`w-4 h-4 ${stat.color}`} />
-                      <span className="text-xs text-gray-600 dark:text-gray-400">{stat.label}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        {stat.label}
+                      </span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{stat.value}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {stat.value}
+                    </span>
                   </div>
                 );
               })}
@@ -254,7 +405,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = router.pathname === item.href || router.pathname.startsWith(item.href + '/');
+              const isActive =
+                router.pathname === item.href ||
+                router.pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.name}
@@ -262,18 +415,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={() => setIsSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative ${
                     isActive
-                      ? 'bg-gradient-to-r from-agrivibe-green/20 to-emerald-500/20 text-agrivibe-green border border-agrivibe-green/20 shadow-lg shadow-agrivibe-green/5'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'
+                      ? "bg-gradient-to-r from-agrivibe-green/20 to-emerald-500/20 text-agrivibe-green border border-agrivibe-green/20 shadow-lg shadow-agrivibe-green/5"
+                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-agrivibe-green' : 'group-hover:text-gray-900 dark:group-hover:text-white'}`} />
-                  <span className="flex-1 text-sm font-medium">{item.name}</span>
+                  <Icon
+                    className={`w-5 h-5 ${isActive ? "text-agrivibe-green" : "group-hover:text-gray-900 dark:group-hover:text-white"}`}
+                  />
+                  <span className="flex-1 text-sm font-medium">
+                    {item.name}
+                  </span>
                   {item.badge && (
-                    <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
-                      isActive 
-                        ? 'bg-agrivibe-green text-white' 
-                        : 'bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                        isActive
+                          ? "bg-agrivibe-green text-white"
+                          : "bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-400"
+                      }`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -288,17 +447,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             })}
           </nav>
 
-          {/* Member Card */}
+          {/* Premium Upgrade Card */}
           <div className="p-4 border-t border-gray-100 dark:border-white/10">
-            <div className="bg-gradient-to-br from-agrivibe-green/10 to-emerald-500/10 rounded-2xl p-4 border border-agrivibe-green/20">
-              <div className="flex items-center gap-3 mb-2">
-                <Crown className="w-5 h-5 text-yellow-400" />
-                <span className="text-sm font-bold text-gray-900 dark:text-white">Member Since 2024</span>
+            <div className="relative overflow-hidden bg-gradient-to-br from-agrivibe-green/10 to-emerald-500/10 rounded-2xl p-4 border border-agrivibe-green/20">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-agrivibe-green/10 rounded-full blur-2xl" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl" />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    Premium Member
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  {stats.totalOrders} orders • {stats.wishlistCount} wishlist
+                  items
+                </p>
+                <button className="w-full px-4 py-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all hover:scale-[1.02] active:scale-95">
+                  <Zap className="w-4 h-4 inline mr-1" />
+                  Upgrade Now
+                </button>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Earn points with every purchase</p>
-              <button className="w-full px-4 py-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all">
-                View Rewards
-              </button>
             </div>
           </div>
         </div>
@@ -318,7 +487,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </AnimatePresence>
 
       {/* ====== MAIN CONTENT ====== */}
-      <main className={`pt-16 lg:top-20 transition-all duration-300 ${isSidebarOpen ? 'lg:ml-72' : 'lg:ml-72'}`}>
+      <main
+        className={`pt-16 lg:top-20 transition-all duration-300 ${isSidebarOpen ? "lg:ml-72" : "lg:ml-72"}`}
+      >
         <div className="min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8">
           {children}
         </div>
@@ -332,9 +503,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-              <Link href="/dashboard" className="hover:text-agrivibe-green transition-colors">Dashboard</Link>
-              <Link href="/marketplace" className="hover:text-agrivibe-green transition-colors">Marketplace</Link>
-              <Link href="/dashboard/settings" className="hover:text-agrivibe-green transition-colors">Settings</Link>
+              <Link
+                href="/dashboard"
+                className="hover:text-agrivibe-green transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/marketplace"
+                className="hover:text-agrivibe-green transition-colors"
+              >
+                Marketplace
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="hover:text-agrivibe-green transition-colors"
+              >
+                Settings
+              </Link>
               <span className="text-xs text-gray-400">v2.0.0</span>
             </div>
           </div>
@@ -343,7 +529,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* ====== FLOATING ACTION BUTTON ====== */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="fixed bottom-6 right-6 z-50 p-3 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-full shadow-2xl shadow-agrivibe-green/30 hover:scale-110 transition-all duration-300 lg:hidden"
       >
         <ChevronRight className="w-5 h-5 -rotate-90" />

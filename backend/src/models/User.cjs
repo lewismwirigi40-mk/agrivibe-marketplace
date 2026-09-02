@@ -49,9 +49,6 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
-    // ============================================
-    // LOCATION FIELDS (Google Maps Integration)
-    // ============================================
     latitude: {
         type: DataTypes.DECIMAL(10, 8),
         allowNull: true,
@@ -79,22 +76,11 @@ const User = sequelize.define('User', {
     }
 }, {
     tableName: 'users',
-    timestamps: true,
-    hooks: {
-        beforeCreate: async (user) => {
-            if (user.password_hash) {
-                user.password_hash = await bcrypt.hash(user.password_hash, 10);
-            }
-        },
-        beforeUpdate: async (user) => {
-            if (user.changed('password_hash')) {
-                user.password_hash = await bcrypt.hash(user.password_hash, 10);
-            }
-        }
-    }
+    timestamps: true
+    // ✅ REMOVED: hooks block - Controller handles hashing
 });
 
-// Instance method to check password
+// ✅ Instance method to check password (KEEP THIS!)
 User.prototype.comparePassword = async function(password) {
     return await bcrypt.compare(password, this.password_hash);
 };

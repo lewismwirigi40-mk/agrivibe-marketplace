@@ -1,14 +1,13 @@
 // src/pages/dashboard/profile.tsx
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Camera, 
-  Save, 
-  Edit, 
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User,
+  Mail,
+  Phone,
+  Camera,
+  Save,
+  Edit,
   X,
   CheckCircle,
   AlertCircle,
@@ -16,32 +15,26 @@ import {
   Shield,
   Award,
   Calendar,
-  TrendingUp,
   Star,
-  Users,
-  ArrowRight,
   Settings,
-  Bell,
-  CreditCard,
   Wallet,
-  Smartphone,
-  School,
-  Building,
-  LogOut,
   ShoppingBag,
-  Heart
-} from 'lucide-react';
-import DashboardLayout from '../../components/DashboardLayout';
-import api from '../../services/api';
+  Heart,
+  School,
+} from "lucide-react";
+import DashboardLayout from "../../components/DashboardLayout";
+import api from "../../services/api";
 
 export default function Profile() {
   const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    campus: '',
-    profileImage: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    campus: "",
+    profileImage: "",
+    createdAt: "",
+    role: "",
   });
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -49,42 +42,186 @@ export default function Profile() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    wishlistCount: 0,
+    reviewCount: 0,
+    memberSince: "New Member",
+  });
+
   useEffect(() => {
     fetchProfile();
+    fetchStats();
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem('token');
+      setLoading(true);
+      const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
         return;
       }
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      const response = await api.get("/auth/profile");
+      const user = response.data.user || response.data || {};
+
       setProfile({
-        firstName: user.first_name || '',
-        lastName: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        campus: user.campus || '',
-        profileImage: user.profile_image || '',
+        firstName: user.first_name || "",
+        lastName: user.last_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        campus: user.campus || user.location_address || "",
+        profileImage: user.profile_image || "",
+        createdAt: user.created_at || "",
+        role: user.role || "customer",
       });
-      setImagePreview(user.profile_image || null);
+
+      if (user.profile_image) {
+        setImagePreview(user.profile_image);
+      }
     } catch (error) {
-      console.error('Failed to fetch profile:', error);
-      setError('Failed to load profile data');
+      console.error("Failed to fetch profile:", error);
+      setError("Failed to load profile data");
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        setProfile({
+          firstName: user.first_name || "",
+          lastName: user.last_name || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          campus: user.campus || "",
+          profileImage: user.profile_image || "",
+          createdAt: user.created_at || "",
+          role: user.role || "customer",
+        });
+      } catch (e) {
+        // Ignore
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      let totalOrders = 0;
+      try {
+        const ordersRes = await api.get("/orders/my-orders");
+        const orders = ordersRes.data.orders || [];
+        totalOrders = orders.length;
+      } catch (e) {
+        console.warn("Orders endpoint error:", e);
+        totalOrders = 0;
+      }
+
+      let wishlistCount = 0;
+      try {
+        const wishlistRes = await api.get("/wishlist");
+        wishlistCount = wishlistRes.data.items?.length || 0;
+      } catch (e) {
+        console.warn("Wishlist endpoint not available yet");
+        wishlistCount = 0;
+      }
+
+      let reviewCount = 0;
+      try {
+        const reviewsRes = await api.get("/reviews/my-reviews");
+        reviewCount = reviewsRes.data.reviews?.length || 0;
+      } catch (e) {
+        console.warn("Reviews endpoint not available yet");
+        reviewCount = 0;
+      }
+
+      // ✅ Get member since from actual user creation date
+      let memberSince = "New Member";
+      if (profile.createdAt) {
+        try {
+          const date = new Date(profile.createdAt);
+          memberSince = date.toLocaleDateString("en-KE", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        } catch (e) {
+          memberSince = "New Member";
+        }
+      }
+
+      setStats({
+        totalOrders,
+        wishlistCount,
+        reviewCount,
+        memberSince,
+      });
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!profile.firstName.trim()) {
+      setError("First name is required");
+      return;
+    }
+    if (!profile.lastName.trim()) {
+      setError("Last name is required");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Please login again");
+        return;
+      }
+
+      await api.put("/auth/profile", {
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        phone: profile.phone,
+        campus: profile.campus,
+      });
+
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const updatedUser = {
+        ...user,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        phone: profile.phone,
+        campus: profile.campus,
+      };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      setShowSuccess(true);
+      setIsEditing(false);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error: any) {
+      console.error("Failed to update profile:", error);
+      setError(
+        error.response?.data?.error ||
+          "Failed to update profile. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
-    setError('');
+    setError("");
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,48 +241,54 @@ export default function Profile() {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    setProfile({ ...profile, profileImage: '' });
+    setProfile({ ...profile, profileImage: "" });
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!profile.firstName.trim()) {
-      setError('First name is required');
-      return;
+  const getDisplayName = () => {
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName} ${profile.lastName}`;
     }
-    if (!profile.lastName.trim()) {
-      setError('Last name is required');
-      return;
-    }
-    if (!profile.phone.trim()) {
-      setError('Phone number is required');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-    
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setShowSuccess(true);
-      setIsEditing(false);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      setError('Failed to update profile. Please try again.');
-    } finally {
-      setSaving(false);
-    }
+    if (profile.firstName) return profile.firstName;
+    if (profile.email) return profile.email.split("@")[0];
+    return "User";
   };
 
-  const stats = [
-    { label: 'Total Orders', value: '12', icon: ShoppingBag, color: 'from-blue-500 to-blue-600' },
-    { label: 'Wishlist', value: '8', icon: Heart, color: 'from-red-500 to-red-600' },
-    { label: 'Reviews', value: '5', icon: Star, color: 'from-yellow-500 to-orange-500' },
-    { label: 'Member Since', value: '2024', icon: Calendar, color: 'from-purple-500 to-purple-600' },
+  const getInitials = () => {
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
+    }
+    if (profile.firstName) return profile.firstName.charAt(0).toUpperCase();
+    if (profile.email) return profile.email.charAt(0).toUpperCase();
+    return "U";
+  };
+
+  // ✅ Stat cards - "Member Since" removed to avoid dummy data
+  const statCards = [
+    {
+      label: "Total Orders",
+      value: stats.totalOrders,
+      icon: ShoppingBag,
+      color: "from-blue-500 to-blue-600",
+      href: "/dashboard/orders",
+    },
+    {
+      label: "Wishlist",
+      value: stats.wishlistCount,
+      icon: Heart,
+      color: "from-red-500 to-red-600",
+      href: "/dashboard/wishlist",
+    },
+    {
+      label: "Reviews",
+      value: stats.reviewCount,
+      icon: Star,
+      color: "from-yellow-500 to-orange-500",
+      href: "/dashboard/reviews",
+    },
+    // ✅ "Member Since" REMOVED - No more dummy "2024"!
   ];
 
   if (loading) {
@@ -168,17 +311,19 @@ export default function Profile() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-            <p className="text-gray-500 mt-1">Manage your personal information</p>
+            <p className="text-gray-500 mt-1">
+              Manage your personal information
+            </p>
           </div>
           <button
             onClick={() => {
               setIsEditing(!isEditing);
-              setError('');
+              setError("");
             }}
             className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-              isEditing 
-                ? 'bg-red-500 hover:bg-red-600 text-white' 
-                : 'bg-gradient-to-r from-agrivibe-green to-emerald-500 hover:shadow-xl hover:shadow-agrivibe-green/30 text-white'
+              isEditing
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : "bg-gradient-to-r from-agrivibe-green to-emerald-500 hover:shadow-xl hover:shadow-agrivibe-green/30 text-white"
             }`}
           >
             {isEditing ? (
@@ -206,8 +351,12 @@ export default function Profile() {
             >
               <CheckCircle className="w-5 h-5 text-green-500" />
               <div>
-                <p className="text-sm font-medium text-green-700">Profile updated successfully!</p>
-                <p className="text-xs text-green-600">Your changes have been saved.</p>
+                <p className="text-sm font-medium text-green-700">
+                  Profile updated successfully!
+                </p>
+                <p className="text-xs text-green-600">
+                  Your changes have been saved.
+                </p>
               </div>
             </motion.div>
           )}
@@ -229,27 +378,33 @@ export default function Profile() {
         </AnimatePresence>
 
         {/* ====== STATS CARDS ====== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat, index) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <motion.div
+              <motion.a
                 key={index}
+                href={stat.href}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl shadow-md border border-gray-100 p-4"
+                whileHover={{ scale: 1.02, y: -2 }}
+                className="bg-white rounded-2xl shadow-md border border-gray-100 p-4 cursor-pointer hover:shadow-lg transition-all duration-300 block"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}
+                  >
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                 </div>
-              </motion.div>
+              </motion.a>
             );
           })}
         </div>
@@ -262,10 +417,14 @@ export default function Profile() {
               <div className="relative group">
                 <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-agrivibe-green/20 to-emerald-500/20 border-4 border-agrivibe-green/30 shadow-xl">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+                    <img
+                      src={imagePreview}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl bg-gray-100">
-                      {profile.firstName?.charAt(0)?.toUpperCase() || '👤'}
+                    <div className="w-full h-full flex items-center justify-center text-5xl bg-gray-100 font-bold text-agrivibe-green">
+                      {getInitials()}
                     </div>
                   )}
                 </div>
@@ -295,15 +454,22 @@ export default function Profile() {
                   className="hidden"
                 />
               </div>
+              <h2 className="text-xl font-bold text-gray-900 mt-3">
+                {getDisplayName()}
+              </h2>
+              <p className="text-sm text-gray-500 capitalize">
+                {profile.role || "Customer"}
+              </p>
               {isEditing && (
-                <p className="text-gray-400 text-xs mt-2">Click the camera to change profile photo</p>
+                <p className="text-gray-400 text-xs mt-2">
+                  Click the camera to change profile photo
+                </p>
               )}
             </div>
 
             {/* ====== FORM FIELDS ====== */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* First Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     First Name
@@ -315,20 +481,15 @@ export default function Profile() {
                       value={profile.firstName}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      onFocus={() => setFocusedField('firstName')}
-                      onBlur={() => setFocusedField(null)}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? focusedField === 'firstName'
-                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10 text-gray-900 bg-white'
-                            : 'border-gray-200 text-gray-900 bg-gray-50 hover:border-gray-300'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 text-gray-900 bg-white focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
                 </div>
 
-                {/* Last Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Last Name
@@ -340,21 +501,16 @@ export default function Profile() {
                       value={profile.lastName}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      onFocus={() => setFocusedField('lastName')}
-                      onBlur={() => setFocusedField(null)}
                       className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                        isEditing 
-                          ? focusedField === 'lastName'
-                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10 text-gray-900 bg-white'
-                            : 'border-gray-200 text-gray-900 bg-gray-50 hover:border-gray-300'
-                          : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                        isEditing
+                          ? "border-gray-200 text-gray-900 bg-white focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10"
+                          : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                       } outline-none`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Email Address
@@ -362,25 +518,17 @@ export default function Profile() {
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    name="email"
                     type="email"
                     value={profile.email}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                      isEditing 
-                        ? focusedField === 'email'
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10 text-gray-900 bg-white'
-                          : 'border-gray-200 text-gray-900 bg-gray-50 hover:border-gray-300'
-                        : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
-                    } outline-none`}
+                    disabled={true}
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed outline-none"
                   />
                 </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Email cannot be changed
+                </p>
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Phone Number
@@ -392,23 +540,18 @@ export default function Profile() {
                     value={profile.phone}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    onFocus={() => setFocusedField('phone')}
-                    onBlur={() => setFocusedField(null)}
                     className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                      isEditing 
-                        ? focusedField === 'phone'
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10 text-gray-900 bg-white'
-                          : 'border-gray-200 text-gray-900 bg-gray-50 hover:border-gray-300'
-                        : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                      isEditing
+                        ? "border-gray-200 text-gray-900 bg-white focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10"
+                        : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                     } outline-none`}
                   />
                 </div>
               </div>
 
-              {/* Campus */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Campus
+                  Campus / Location
                 </label>
                 <div className="relative">
                   <School className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -417,20 +560,16 @@ export default function Profile() {
                     value={profile.campus}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    onFocus={() => setFocusedField('campus')}
-                    onBlur={() => setFocusedField(null)}
                     className={`w-full pl-11 pr-4 py-3.5 rounded-xl border-2 transition-all duration-300 ${
-                      isEditing 
-                        ? focusedField === 'campus'
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10 text-gray-900 bg-white'
-                          : 'border-gray-200 text-gray-900 bg-gray-50 hover:border-gray-300'
-                        : 'border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed'
+                      isEditing
+                        ? "border-gray-200 text-gray-900 bg-white focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10"
+                        : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"
                     } outline-none`}
+                    placeholder="e.g., DeKUT, Nyeri"
                   />
                 </div>
               </div>
 
-              {/* Save Button */}
               {isEditing && (
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
@@ -461,7 +600,8 @@ export default function Profile() {
                   <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-700">
-                      Your information is securely stored and only visible to authorized personnel.
+                      Your information is securely stored and only visible to
+                      authorized personnel.
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       Click "Edit Profile" to update your details.
@@ -476,51 +616,50 @@ export default function Profile() {
         {/* ====== QUICK ACTIONS ====== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'My Orders', icon: ShoppingBag, color: 'bg-blue-50 text-blue-600' },
-            { label: 'Wishlist', icon: Heart, color: 'bg-red-50 text-red-600' },
-            { label: 'Wallet', icon: Wallet, color: 'bg-green-50 text-green-600' },
-            { label: 'Settings', icon: Settings, color: 'bg-purple-50 text-purple-600' },
+            {
+              label: "My Orders",
+              icon: ShoppingBag,
+              color: "bg-blue-50 text-blue-600",
+              href: "/dashboard/orders",
+            },
+            {
+              label: "Wishlist",
+              icon: Heart,
+              color: "bg-red-50 text-red-600",
+              href: "/dashboard/wishlist",
+            },
+            {
+              label: "Wallet",
+              icon: Wallet,
+              color: "bg-green-50 text-green-600",
+              href: "/dashboard/wallet",
+            },
+            {
+              label: "Settings",
+              icon: Settings,
+              color: "bg-purple-50 text-purple-600",
+              href: "/dashboard/settings",
+            },
           ].map((action, index) => {
             const Icon = action.icon;
             return (
-              <motion.button
+              <motion.a
                 key={index}
+                href={action.href}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.05 }}
                 whileHover={{ scale: 1.05, y: -2 }}
-                className={`${action.color} rounded-2xl p-4 text-center transition-all duration-300 shadow-sm hover:shadow-md`}
+                className={`${action.color} rounded-2xl p-4 text-center transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer block`}
               >
                 <Icon className="w-6 h-6 mx-auto mb-1" />
                 <span className="text-xs font-medium">{action.label}</span>
-              </motion.button>
+              </motion.a>
             );
           })}
         </div>
 
-        {/* ====== MEMBERSHIP CARD ====== */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-gradient-to-r from-agrivibe-green to-emerald-600 rounded-2xl p-6 text-white"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                <span className="text-sm font-medium">Member since 2024</span>
-              </div>
-              <h3 className="text-2xl font-bold mt-1">
-                {profile.firstName} {profile.lastName}
-              </h3>
-              <p className="text-white/80 text-sm">{profile.email}</p>
-            </div>
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-              <Sparkles className="w-8 h-8" />
-            </div>
-          </div>
-        </motion.div>
+        {/* ✅ "Member Since" CARD REMOVED - No more dummy "2024" watermark */}
       </div>
     </DashboardLayout>
   );

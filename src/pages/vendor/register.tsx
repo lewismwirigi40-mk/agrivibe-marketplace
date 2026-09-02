@@ -1,16 +1,16 @@
 // src/pages/vendor/register.tsx
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Store, 
-  MapPin, 
-  CreditCard, 
-  Smartphone, 
+import { useState, useRef } from "react";
+import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  User,
+  Mail,
+  Phone,
+  Lock,
+  Store,
+  MapPin,
+  CreditCard,
+  Smartphone,
   Building,
   Camera,
   ArrowRight,
@@ -26,10 +26,10 @@ import {
   ChevronRight,
   Image,
   X,
-  Globe
-} from 'lucide-react';
-import Navbar from '../../components/Navbar';
-
+  Globe,
+} from "lucide-react";
+import Navbar from "../../components/Navbar";
+import api from "../../services/api";
 export default function VendorRegister() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -38,37 +38,41 @@ export default function VendorRegister() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     // Personal Info
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
     // Store Info
-    storeName: '',
-    storeDescription: '',
-    category: '',
+    storeName: "",
+    storeDescription: "",
+    category: "",
     // Addresses
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    county: '',
-    storeAddress: '', // ✅ NEW: Full store address for geocoding
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    county: "",
+    storeAddress: "", // ✅ NEW: Full store address for geocoding
     // Payment Details
-    paymentMethod: 'mpesa',
-    mpesaNumber: '',
-    bankName: '',
-    bankAccount: '',
+    paymentMethod: "mpesa",
+    mpesaNumber: "",
+    bankName: "",
+    bankAccount: "",
     // Profile Image
     profileImage: null as File | null,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: '' });
+      setErrors({ ...errors, [e.target.name]: "" });
     }
   };
 
@@ -86,39 +90,49 @@ export default function VendorRegister() {
 
   const validateStep = (stepNumber: number) => {
     const newErrors: Record<string, string> = {};
-    
+
     if (stepNumber === 1) {
-      if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-      if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-      if (!formData.email.trim()) newErrors.email = 'Email is required';
-      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Please enter a valid email';
-      if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-      if (!formData.password.trim()) newErrors.password = 'Password is required';
-      else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      if (!formData.firstName.trim())
+        newErrors.firstName = "First name is required";
+      if (!formData.lastName.trim())
+        newErrors.lastName = "Last name is required";
+      if (!formData.email.trim()) newErrors.email = "Email is required";
+      else if (!/\S+@\S+\.\S+/.test(formData.email))
+        newErrors.email = "Please enter a valid email";
+      if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+      if (!formData.password.trim())
+        newErrors.password = "Password is required";
+      else if (formData.password.length < 6)
+        newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     if (stepNumber === 2) {
-      if (!formData.storeName.trim()) newErrors.storeName = 'Store name is required';
-      if (!formData.storeDescription.trim()) newErrors.storeDescription = 'Store description is required';
-      if (!formData.category) newErrors.category = 'Please select a category';
+      if (!formData.storeName.trim())
+        newErrors.storeName = "Store name is required";
+      if (!formData.storeDescription.trim())
+        newErrors.storeDescription = "Store description is required";
+      if (!formData.category) newErrors.category = "Please select a category";
     }
-    
+
     if (stepNumber === 3) {
-      if (!formData.storeAddress.trim()) newErrors.storeAddress = 'Store address is required';
-      if (!formData.city.trim()) newErrors.city = 'City is required';
-      if (!formData.county.trim()) newErrors.county = 'County is required';
+      if (!formData.storeAddress.trim())
+        newErrors.storeAddress = "Store address is required";
+      if (!formData.city.trim()) newErrors.city = "City is required";
+      if (!formData.county.trim()) newErrors.county = "County is required";
     }
-    
+
     if (stepNumber === 4) {
-      if (formData.paymentMethod === 'mpesa' && !formData.mpesaNumber.trim()) {
-        newErrors.mpesaNumber = 'M-Pesa number is required';
+      if (formData.paymentMethod === "mpesa" && !formData.mpesaNumber.trim()) {
+        newErrors.mpesaNumber = "M-Pesa number is required";
       }
-      if (formData.paymentMethod === 'bank') {
-        if (!formData.bankName.trim()) newErrors.bankName = 'Bank name is required';
-        if (!formData.bankAccount.trim()) newErrors.bankAccount = 'Bank account number is required';
+      if (formData.paymentMethod === "bank") {
+        if (!formData.bankName.trim())
+          newErrors.bankName = "Bank name is required";
+        if (!formData.bankAccount.trim())
+          newErrors.bankAccount = "Bank account number is required";
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,37 +140,78 @@ export default function VendorRegister() {
   const nextStep = () => {
     if (validateStep(step)) {
       setStep(step + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
   const prevStep = () => {
     setStep(step - 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(4)) return;
-    
-    setLoading(true);
-    // Will connect to backend later
-    setTimeout(() => {
-      setLoading(false);
-      setShowSuccess(true);
-      setTimeout(() => {
-        router.push('/vendor/dashboard');
-      }, 2000);
-    }, 1500);
-  };
 
+    setLoading(true);
+    setErrors({});
+
+    try {
+      // ✅ Prepare data for backend
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        role: "vendor",
+        address:
+          formData.storeAddress ||
+          `${formData.addressLine1}, ${formData.city}, ${formData.county}`,
+        store_name: formData.storeName,
+        store_description: formData.storeDescription,
+        category: formData.category,
+        payment_method: formData.paymentMethod,
+        mpesa_number: formData.mpesaNumber,
+        bank_name: formData.bankName,
+        bank_account: formData.bankAccount,
+      };
+
+      // ✅ Send request to backend
+      const response = await api.post("/auth/register", payload);
+
+      console.log("✅ Registration response:", response.data);
+
+      if (response.data.success) {
+        setShowSuccess(true);
+        setTimeout(() => {
+          router.push("/vendor/pending-approval");
+        }, 2000);
+      } else {
+        setErrors({ form: response.data.error || "Registration failed" });
+      }
+    } catch (error: any) {
+      console.error("❌ Registration error:", error);
+
+      // ✅ Show the actual error from backend
+      if (error.response?.data?.error) {
+        setErrors({ form: error.response.data.error });
+      } else if (error.response?.data?.message) {
+        setErrors({ form: error.response.data.message });
+      } else {
+        setErrors({ form: "Registration failed. Please try again." });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   return (
     <div className="min-h-screen bg-premium-light overflow-x-hidden">
       <Navbar />
-      
+
       <div className="container-premium pt-28 pb-16">
         <div className="max-w-3xl mx-auto">
           {/* ====== HEADER ====== */}
@@ -172,7 +227,9 @@ export default function VendorRegister() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-3">
               Become a <span className="text-gradient-green">Vendor</span>
             </h1>
-            <p className="text-gray-500 mt-2">Complete all steps to start selling on AgriVibe</p>
+            <p className="text-gray-500 mt-2">
+              Complete all steps to start selling on AgriVibe
+            </p>
           </motion.div>
 
           {/* ====== PROGRESS BAR ====== */}
@@ -196,22 +253,28 @@ export default function VendorRegister() {
             <div className="flex justify-between mt-3">
               {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                    s === step 
-                      ? 'bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30 scale-110' 
-                      : s < step 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-gray-200 text-gray-400'
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                      s === step
+                        ? "bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30 scale-110"
+                        : s < step
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200 text-gray-400"
+                    }`}
+                  >
                     {s < step ? <CheckCircle className="w-4 h-4" /> : s}
                   </div>
-                  <span className={`text-xs hidden sm:inline ${
-                    s === step ? 'text-agrivibe-green font-semibold' : 'text-gray-400'
-                  }`}>
-                    {s === 1 && 'Personal'}
-                    {s === 2 && 'Store'}
-                    {s === 3 && 'Address'}
-                    {s === 4 && 'Payment'}
+                  <span
+                    className={`text-xs hidden sm:inline ${
+                      s === step
+                        ? "text-agrivibe-green font-semibold"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {s === 1 && "Personal"}
+                    {s === 2 && "Store"}
+                    {s === 3 && "Address"}
+                    {s === 4 && "Payment"}
                   </span>
                 </div>
               ))}
@@ -237,8 +300,12 @@ export default function VendorRegister() {
                         <User className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
-                        <p className="text-sm text-gray-500">Tell us about yourself</p>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Personal Information
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Tell us about yourself
+                        </p>
                       </div>
                     </div>
 
@@ -255,7 +322,9 @@ export default function VendorRegister() {
                             value={formData.firstName}
                             onChange={handleChange}
                             className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                              errors.firstName ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                              errors.firstName
+                                ? "border-red-500"
+                                : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                             }`}
                             required
                           />
@@ -279,7 +348,9 @@ export default function VendorRegister() {
                             value={formData.lastName}
                             onChange={handleChange}
                             className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                              errors.lastName ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                              errors.lastName
+                                ? "border-red-500"
+                                : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                             }`}
                             required
                           />
@@ -306,7 +377,9 @@ export default function VendorRegister() {
                           value={formData.email}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.email ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.email
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -331,7 +404,9 @@ export default function VendorRegister() {
                           value={formData.phone}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.phone ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.phone
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -357,7 +432,9 @@ export default function VendorRegister() {
                           value={formData.password}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.password ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.password
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -378,7 +455,11 @@ export default function VendorRegister() {
                         <div className="relative">
                           <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
                             {imagePreview ? (
-                              <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
+                              <img
+                                src={imagePreview}
+                                alt="Profile"
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-3xl text-gray-400">
                                 <User className="w-8 h-8" />
@@ -433,8 +514,12 @@ export default function VendorRegister() {
                         <Store className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">Store Information</h2>
-                        <p className="text-sm text-gray-500">Tell us about your store</p>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Store Information
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Tell us about your store
+                        </p>
                       </div>
                     </div>
 
@@ -450,7 +535,9 @@ export default function VendorRegister() {
                           value={formData.storeName}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.storeName ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.storeName
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -474,7 +561,9 @@ export default function VendorRegister() {
                         value={formData.storeDescription}
                         onChange={handleChange}
                         className={`w-full px-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 resize-none ${
-                          errors.storeDescription ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                          errors.storeDescription
+                            ? "border-red-500"
+                            : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                         }`}
                         required
                       />
@@ -496,7 +585,9 @@ export default function VendorRegister() {
                           value={formData.category}
                           onChange={handleChange}
                           className={`w-full px-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all duration-300 appearance-none ${
-                            errors.category ? 'border-red-500' : 'border-gray-200'
+                            errors.category
+                              ? "border-red-500"
+                              : "border-gray-200"
                           }`}
                           required
                         >
@@ -557,8 +648,12 @@ export default function VendorRegister() {
                         <MapPin className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">Store Address</h2>
-                        <p className="text-sm text-gray-500">Where is your store located?</p>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Store Address
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Where is your store located?
+                        </p>
                       </div>
                     </div>
 
@@ -575,7 +670,9 @@ export default function VendorRegister() {
                           value={formData.storeAddress}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.storeAddress ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.storeAddress
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -587,7 +684,8 @@ export default function VendorRegister() {
                         </p>
                       )}
                       <p className="text-xs text-gray-400 mt-1">
-                        📍 This address will be used to show your products to nearby customers
+                        📍 This address will be used to show your products to
+                        nearby customers
                       </p>
                     </div>
 
@@ -603,7 +701,9 @@ export default function VendorRegister() {
                           value={formData.addressLine1}
                           onChange={handleChange}
                           className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                            errors.addressLine1 ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                            errors.addressLine1
+                              ? "border-red-500"
+                              : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                           }`}
                           required
                         />
@@ -642,7 +742,9 @@ export default function VendorRegister() {
                             value={formData.city}
                             onChange={handleChange}
                             className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                              errors.city ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                              errors.city
+                                ? "border-red-500"
+                                : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                             }`}
                             required
                           />
@@ -666,7 +768,9 @@ export default function VendorRegister() {
                             value={formData.county}
                             onChange={handleChange}
                             className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                              errors.county ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                              errors.county
+                                ? "border-red-500"
+                                : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                             }`}
                             required
                           />
@@ -716,8 +820,12 @@ export default function VendorRegister() {
                         <CreditCard className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-gray-900">Payment Details</h2>
-                        <p className="text-sm text-gray-500">Where your earnings will be sent (90% of sales)</p>
+                        <h2 className="text-xl font-bold text-gray-900">
+                          Payment Details
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          Where your earnings will be sent (90% of sales)
+                        </p>
                       </div>
                     </div>
 
@@ -739,7 +847,7 @@ export default function VendorRegister() {
                       </div>
                     </div>
 
-                    {formData.paymentMethod === 'mpesa' ? (
+                    {formData.paymentMethod === "mpesa" ? (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
                           M-Pesa Number *
@@ -752,7 +860,9 @@ export default function VendorRegister() {
                             value={formData.mpesaNumber}
                             onChange={handleChange}
                             className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                              errors.mpesaNumber ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                              errors.mpesaNumber
+                                ? "border-red-500"
+                                : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                             }`}
                             required
                           />
@@ -778,7 +888,9 @@ export default function VendorRegister() {
                               value={formData.bankName}
                               onChange={handleChange}
                               className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                                errors.bankName ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                                errors.bankName
+                                  ? "border-red-500"
+                                  : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                               }`}
                               required
                             />
@@ -802,7 +914,9 @@ export default function VendorRegister() {
                               value={formData.bankAccount}
                               onChange={handleChange}
                               className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                                errors.bankAccount ? 'border-red-500' : 'border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10'
+                                errors.bankAccount
+                                  ? "border-red-500"
+                                  : "border-gray-200 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10"
                               }`}
                               required
                             />
@@ -821,12 +935,19 @@ export default function VendorRegister() {
                       <div className="flex items-start gap-3">
                         <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                         <p className="text-sm text-gray-700">
-                          💡 Your payment details are securely stored. You'll receive 90% of each sale
-                          after successful delivery confirmation.
+                          💡 Your payment details are securely stored. You'll
+                          receive 90% of each sale after successful delivery
+                          confirmation.
                         </p>
                       </div>
                     </div>
-
+                    {/* ✅ FIXED: Form errors go here - OUTSIDE the button */}
+                    {errors.form && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-red-700">{errors.form}</p>
+                      </div>
+                    )}
                     <div className="flex gap-3">
                       <button
                         type="button"
@@ -887,8 +1008,11 @@ export default function VendorRegister() {
 
           {/* ====== ALREADY HAVE AN ACCOUNT ====== */}
           <div className="text-center mt-6 text-sm text-gray-500">
-            Already have an account?{' '}
-            <a href="/login" className="text-agrivibe-green font-semibold hover:underline">
+            Already have an account?{" "}
+            <a
+              href="/login"
+              className="text-agrivibe-green font-semibold hover:underline"
+            >
               Login here
             </a>
           </div>

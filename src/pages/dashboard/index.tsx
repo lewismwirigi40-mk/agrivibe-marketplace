@@ -1,12 +1,12 @@
 // src/pages/dashboard/index.tsx
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShoppingBag, 
-  Package, 
-  Clock, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ShoppingBag,
+  Package,
+  Clock,
+  CheckCircle,
   Heart,
   Wallet,
   TrendingUp,
@@ -26,10 +26,10 @@ import {
   Zap,
   Eye,
   MessageCircle,
-  Users
-} from 'lucide-react';
-import DashboardLayout from '../../components/DashboardLayout';
-import api from '../../services/api';
+  Users,
+} from "lucide-react";
+import DashboardLayout from "../../components/DashboardLayout";
+import api from "../../services/api";
 
 export default function CustomerDashboard() {
   const [stats, setStats] = useState({
@@ -38,10 +38,11 @@ export default function CustomerDashboard() {
     walletBalance: 0,
     wishlistCount: 0,
   });
+  const [userData, setUserData] = useState<any>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [greeting, setGreeting] = useState('');
+  const [error, setError] = useState("");
+  const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     fetchDashboardData();
@@ -50,44 +51,70 @@ export default function CustomerDashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
   };
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('token');
+      setLoading(true);
+      const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
         return;
       }
-      
-      // Fetch orders
-      const ordersRes = await api.get('/orders/my-orders');
+
+      // ✅ Fetch user profile for member since
+      const userRes = await api.get("/auth/profile");
+      const user = userRes.data.user || userRes.data || {};
+      setUserData(user);
+
+      // ✅ Fetch orders
+      const ordersRes = await api.get("/orders/my-orders");
       const orders = ordersRes.data.orders || [];
-      
-      // Fetch wallet
-      const walletRes = await api.get('/wallet/balance');
+
+      // ✅ Fetch wallet balance
+      const walletRes = await api.get("/wallet/balance");
       const walletData = walletRes.data || {};
-      
-      // Fetch wishlist
-      const wishlistRes = await api.get('/wishlist');
+
+      // ✅ Fetch wishlist
+      const wishlistRes = await api.get("/wishlist");
       const wishlist = wishlistRes.data.items || [];
-      
+
+      // ✅ Fetch user reviews/ratings
+      let reviewCount = 0;
+      let avgRating = 0;
+      try {
+        const reviewsRes = await api.get("/reviews/my-reviews");
+        const reviews = reviewsRes.data.reviews || [];
+        reviewCount = reviews.length;
+        if (reviewCount > 0) {
+          const total = reviews.reduce(
+            (sum: number, r: any) => sum + (r.rating || 0),
+            0,
+          );
+          avgRating = parseFloat((total / reviewCount).toFixed(1));
+        }
+      } catch (e) {
+        // Reviews endpoint might not exist yet
+        console.log("Reviews not available yet");
+      }
+
       setStats({
         totalOrders: orders.length,
-        pendingOrders: orders.filter((o: any) => o.status === 'pending' || o.status === 'processing').length,
+        pendingOrders: orders.filter(
+          (o: any) => o.status === "pending" || o.status === "processing",
+        ).length,
         walletBalance: walletData.balance || 0,
         wishlistCount: wishlist.length,
       });
-      
+
       // Recent orders (last 5)
       setRecentOrders(orders.slice(0, 5));
-      
     } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      setError('Failed to load dashboard');
+      console.error("Failed to fetch dashboard data:", error);
+      setError("Failed to load dashboard");
     } finally {
       setLoading(false);
     }
@@ -99,13 +126,31 @@ export default function CustomerDashboard() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'delivered': 'bg-green-100 text-green-700 border-green-200',
-      'pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      'processing': 'bg-blue-100 text-blue-700 border-blue-200',
-      'shipped': 'bg-purple-100 text-purple-700 border-purple-200',
-      'cancelled': 'bg-red-100 text-red-700 border-red-200',
+      delivered: "bg-green-100 text-green-700 border-green-200",
+      pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      processing: "bg-blue-100 text-blue-700 border-blue-200",
+      shipped: "bg-purple-100 text-purple-700 border-purple-200",
+      cancelled: "bg-red-100 text-red-700 border-red-200",
     };
-    return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    return (
+      colors[status?.toLowerCase()] ||
+      "bg-gray-100 text-gray-700 border-gray-200"
+    );
+  };
+
+  // ✅ Get member since from user data
+  const getMemberSince = () => {
+    if (userData?.created_at) {
+      return new Date(userData.created_at).getFullYear().toString();
+    }
+    return "2024";
+  };
+
+  // ✅ Get review stats from real data
+  const getReviewStats = () => {
+    // You can fetch this from a reviews endpoint
+    // For now, return placeholder until reviews are implemented
+    return { count: 0, rating: 0 };
   };
 
   if (loading) {
@@ -121,6 +166,8 @@ export default function CustomerDashboard() {
     );
   }
 
+  const reviewStats = getReviewStats();
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -133,15 +180,17 @@ export default function CustomerDashboard() {
           <div className="absolute inset-0 bg-white/10" />
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-          
+
           <div className="relative">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">👋</span>
-              <span className="text-white/80 text-sm font-medium">{greeting}</span>
+              <span className="text-white/80 text-sm font-medium">
+                {greeting}
+              </span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold">Welcome back!</h1>
             <p className="text-white/80 mt-1">Here's your AgriVibe overview</p>
-            
+
             <div className="flex flex-wrap gap-4 mt-4">
               <Link
                 href="/marketplace"
@@ -165,10 +214,34 @@ export default function CustomerDashboard() {
         {/* ====== STATS CARDS ====== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50' },
-            { label: 'Pending Orders', value: stats.pendingOrders, icon: Clock, color: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50' },
-            { label: 'Wallet Balance', value: formatCurrency(stats.walletBalance), icon: Wallet, color: 'from-green-500 to-emerald-500', bg: 'bg-green-50' },
-            { label: 'Wishlist', value: stats.wishlistCount, icon: Heart, color: 'from-red-500 to-red-600', bg: 'bg-red-50' },
+            {
+              label: "Total Orders",
+              value: stats.totalOrders,
+              icon: ShoppingBag,
+              color: "from-blue-500 to-blue-600",
+              bg: "bg-blue-50",
+            },
+            {
+              label: "Pending Orders",
+              value: stats.pendingOrders,
+              icon: Clock,
+              color: "from-yellow-500 to-orange-500",
+              bg: "bg-yellow-50",
+            },
+            {
+              label: "Wallet Balance",
+              value: formatCurrency(stats.walletBalance),
+              icon: Wallet,
+              color: "from-green-500 to-emerald-500",
+              bg: "bg-green-50",
+            },
+            {
+              label: "Wishlist",
+              value: stats.wishlistCount,
+              icon: Heart,
+              color: "from-red-500 to-red-600",
+              bg: "bg-red-50",
+            },
           ].map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -181,10 +254,16 @@ export default function CustomerDashboard() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                    <p className="text-sm font-medium text-gray-500">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                  <div
+                    className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                 </div>
@@ -196,10 +275,30 @@ export default function CustomerDashboard() {
         {/* ====== QUICK ACTIONS ====== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'My Orders', icon: Package, href: '/dashboard/orders', color: 'bg-blue-50 text-blue-600' },
-            { label: 'Wishlist', icon: Heart, href: '/dashboard/wishlist', color: 'bg-red-50 text-red-600' },
-            { label: 'Wallet', icon: Wallet, href: '/dashboard/wallet', color: 'bg-green-50 text-green-600' },
-            { label: 'Profile', icon: User, href: '/dashboard/profile', color: 'bg-purple-50 text-purple-600' },
+            {
+              label: "My Orders",
+              icon: Package,
+              href: "/dashboard/orders",
+              color: "bg-blue-50 text-blue-600",
+            },
+            {
+              label: "Wishlist",
+              icon: Heart,
+              href: "/dashboard/wishlist",
+              color: "bg-red-50 text-red-600",
+            },
+            {
+              label: "Wallet",
+              icon: Wallet,
+              href: "/dashboard/wallet",
+              color: "bg-green-50 text-green-600",
+            },
+            {
+              label: "Profile",
+              icon: User,
+              href: "/dashboard/profile",
+              color: "bg-purple-50 text-purple-600",
+            },
           ].map((action, index) => {
             const Icon = action.icon;
             return (
@@ -236,8 +335,8 @@ export default function CustomerDashboard() {
               </div>
               <h2 className="text-lg font-bold text-gray-900">Recent Orders</h2>
             </div>
-            <Link 
-              href="/dashboard/orders" 
+            <Link
+              href="/dashboard/orders"
               className="text-sm text-agrivibe-green hover:text-emerald-600 font-medium transition-colors flex items-center gap-1"
             >
               View All
@@ -249,7 +348,9 @@ export default function CustomerDashboard() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📦</div>
               <p className="text-gray-500 font-medium">No orders yet</p>
-              <p className="text-sm text-gray-400 mt-1">Start shopping to see your orders</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Start shopping to see your orders
+              </p>
               <Link
                 href="/marketplace"
                 className="inline-block mt-4 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all"
@@ -285,7 +386,9 @@ export default function CustomerDashboard() {
                       <span className="font-bold text-agrivibe-green">
                         {formatCurrency(order.total)}
                       </span>
-                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}
+                      >
                         {order.status}
                       </span>
                       <Link
@@ -302,13 +405,36 @@ export default function CustomerDashboard() {
           )}
         </motion.div>
 
-        {/* ====== QUICK STATS ====== */}
+        {/* ====== QUICK STATS - REAL DATA ====== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Member Since', value: '2024', icon: Calendar, change: 'Active' },
-            { label: 'Reviews', value: '12', icon: Star, change: '4.8 ⭐' },
-            { label: 'Items Saved', value: stats.wishlistCount, icon: Heart, change: 'Wishlist' },
-            { label: 'Support', value: '24/7', icon: MessageCircle, change: 'Available' },
+            {
+              label: "Member Since",
+              value: getMemberSince(),
+              icon: Calendar,
+              change: "Active",
+            },
+            {
+              label: "Reviews",
+              value: reviewStats.count || 0,
+              icon: Star,
+              change:
+                reviewStats.rating > 0
+                  ? `${reviewStats.rating} ⭐`
+                  : "No reviews",
+            },
+            {
+              label: "Items Saved",
+              value: stats.wishlistCount,
+              icon: Heart,
+              change: "Wishlist",
+            },
+            {
+              label: "Support",
+              value: "24/7",
+              icon: MessageCircle,
+              change: "Available",
+            },
           ].map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -326,8 +452,12 @@ export default function CustomerDashboard() {
                   <div>
                     <p className="text-sm text-gray-500">{stat.label}</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                      <span className="text-xs text-green-500">{stat.change}</span>
+                      <p className="text-xl font-bold text-gray-900">
+                        {stat.value}
+                      </p>
+                      <span className="text-xs text-green-500">
+                        {stat.change}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -346,8 +476,12 @@ export default function CustomerDashboard() {
           <div className="flex items-center gap-3">
             <Shield className="w-6 h-6 text-blue-500" />
             <div>
-              <p className="text-sm font-medium text-gray-700">Your account is secure</p>
-              <p className="text-xs text-gray-500">2-Factor Authentication available</p>
+              <p className="text-sm font-medium text-gray-700">
+                Your account is secure
+              </p>
+              <p className="text-xs text-gray-500">
+                2-Factor Authentication available
+              </p>
             </div>
             <Link
               href="/dashboard/settings"

@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.cjs');
-
+const OrderItem = require('./OrderItem.cjs');
 const Product = sequelize.define('Product', {
     id: {
         type: DataTypes.UUID,
@@ -87,7 +87,7 @@ const Product = sequelize.define('Product', {
     rating: {
         type: DataTypes.DECIMAL(3, 2),
         defaultValue: 0.00
-    }
+    },
 }, {
     tableName: 'products',
     timestamps: true,

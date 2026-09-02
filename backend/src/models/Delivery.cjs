@@ -10,11 +10,19 @@ const Delivery = sequelize.define('Delivery', {
     order_id: {
         type: DataTypes.UUID,
         allowNull: false,
-        unique: true
+        unique: true,
+        references: {
+            model: 'orders',
+            key: 'id'
+        }
     },
     driver_id: {
         type: DataTypes.UUID,
-        allowNull: true
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
     },
     pickup_address: {
         type: DataTypes.TEXT,
@@ -62,6 +70,36 @@ const Delivery = sequelize.define('Delivery', {
         allowNull: true,
         comment: 'Actual time in minutes'
     },
+    delivery_code: {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+        comment: '6-digit code given to customer'
+    },
+    code_verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'When the delivery code was verified'
+    },
+    code_attempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        comment: 'Number of failed code attempts'
+    },
+    escrow_amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Total amount held in escrow'
+    },
+    escrow_released: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        comment: 'Whether escrow has been released'
+    },
+    escrow_released_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: 'When escrow was released'
+    },
     pickup_time: {
         type: DataTypes.DATE,
         allowNull: true
@@ -90,6 +128,7 @@ const Delivery = sequelize.define('Delivery', {
         type: DataTypes.TEXT,
         allowNull: true
     }
+    // ✅ vendor_id and vendor_approved REMOVED
 }, {
     tableName: 'deliveries',
     timestamps: true,

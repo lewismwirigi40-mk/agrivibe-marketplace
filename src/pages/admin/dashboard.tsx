@@ -18,7 +18,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  ComposedChart,
 } from "recharts";
 import {
   Users,
@@ -52,6 +51,7 @@ import {
   Bell,
   Settings,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import AdminLayout from "../../components/AdminLayout";
 import api from "../../services/api";
@@ -65,7 +65,8 @@ export default function AdminDashboard() {
   const [userGrowthData, setUserGrowthData] = useState<any[]>([]);
   const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [selectedPeriod, setSelectedPeriod] = useState("week");
+  const [pendingVendorsCount, setPendingVendorsCount] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -73,38 +74,109 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
+        router.push("/login");
         return;
       }
 
-      // Fetch dashboard stats
-      const statsResponse = await api.get("/admin/dashboard");
+      // ✅ Fetch dashboard stats from real endpoint
+      const statsResponse = await api.get("/dashboard/stats");
       const statsData = statsResponse.data.stats || {};
-      setStats(statsData);
 
-      // Fetch analytics data
-      const analyticsResponse = await api.get("/admin/analytics");
-      const data = analyticsResponse.data || {};
+      // ✅ Get real counts
+      setPendingVendorsCount(statsData.pendingVendors || 0);
 
-      // Set chart data with real or empty arrays
-      setRevenueData(data.revenue || []);
-      setUserGrowthData(data.userGrowth || []);
-      setOrderStatusData(data.orderStatus || []);
+      setStats({
+        totalUsers: statsData.totalUsers || 0,
+        totalVendors: statsData.totalVendors || 0,
+        totalOrders: statsData.totalOrders || 0,
+        totalRevenue: statsData.totalRevenue || 0,
+        pendingVendors: statsData.pendingVendors || 0,
+        todayOrders: statsData.todayOrders || 0,
+        todayUsers: statsData.todayUsers || 0,
+        totalDrivers: statsData.totalDrivers || 0,
+        totalCustomers: statsData.totalCustomers || statsData.totalUsers || 0,
+        platformWallet: statsData.totalRevenue || 0,
+        pendingProducts: statsData.pendingProducts || 0,
+      });
 
-      // ✅ Fetch real recent activities from backend
+      // ✅ Fetch real order status data from backend
       try {
-        const activitiesResponse = await api.get("/admin/recent-activities");
-        setRecentActivities(activitiesResponse.data.activities || []);
+        const orderStatusResponse = await api.get("/admin/order-status");
+        if (orderStatusResponse.data && orderStatusResponse.data.statuses) {
+          setOrderStatusData(orderStatusResponse.data.statuses);
+        } else {
+          // Fallback to real data from orders
+          const ordersRes = await api.get("/admin/orders?limit=100");
+          const orders = ordersRes.data.orders || [];
+          const statusCounts: Record<string, number> = {};
+          orders.forEach((order: any) => {
+            const status = order.status || "pending";
+            statusCounts[status] = (statusCounts[status] || 0) + 1;
+          });
+          const statusData = Object.keys(statusCounts).map((key) => ({
+            name: key.charAt(0).toUpperCase() + key.slice(1),
+            value: statusCounts[key],
+          }));
+          setOrderStatusData(
+            statusData.length > 0
+              ? statusData
+              : [
+                  { name: "Completed", value: 0 },
+                  { name: "Pending", value: 0 },
+                  { name: "Processing", value: 0 },
+                ],
+          );
+        }
       } catch (err) {
-        console.error("Failed to fetch recent activities:", err);
+        console.warn("Could not fetch order status, using empty data:", err);
+        setOrderStatusData([]);
+      }
+
+      // ✅ Fetch real revenue data from backend
+      try {
+        const revenueRes = await api.get(
+          `/admin/revenue?period=${selectedPeriod}`,
+        );
+        if (revenueRes.data && revenueRes.data.data) {
+          setRevenueData(revenueRes.data.data);
+        } else {
+          setRevenueData([]);
+        }
+      } catch (err) {
+        console.warn("Could not fetch revenue data:", err);
+        setRevenueData([]);
+      }
+
+      // ✅ Fetch real user growth data
+      try {
+        const userGrowthRes = await api.get(
+          `/admin/user-growth?period=${selectedPeriod}`,
+        );
+        if (userGrowthRes.data && userGrowthRes.data.data) {
+          setUserGrowthData(userGrowthRes.data.data);
+        } else {
+          setUserGrowthData([]);
+        }
+      } catch (err) {
+        console.warn("Could not fetch user growth data:", err);
+        setUserGrowthData([]);
+      }
+
+      // ✅ Fetch real recent activities
+      try {
+        const activitiesRes = await api.get("/admin/recent-activities");
+        setRecentActivities(activitiesRes.data.activities || []);
+      } catch (err) {
+        console.warn("Could not fetch recent activities:", err);
         setRecentActivities([]);
       }
     } catch (error: any) {
       console.error("Failed to fetch dashboard data:", error);
       setError(error.response?.data?.error || "Failed to load dashboard");
-      // Set empty data on error
       setRevenueData([]);
       setUserGrowthData([]);
       setOrderStatusData([]);
@@ -219,6 +291,7 @@ export default function AdminDashboard() {
       icon: Users,
       color: "from-blue-500 to-blue-600",
       bg: "bg-blue-50",
+      link: "/admin/users",
     },
     {
       label: "Vendors",
@@ -226,20 +299,7 @@ export default function AdminDashboard() {
       icon: Store,
       color: "from-green-500 to-emerald-500",
       bg: "bg-green-50",
-    },
-    {
-      label: "Drivers",
-      value: stats.totalDrivers || 0,
-      icon: Truck,
-      color: "from-purple-500 to-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      label: "Customers",
-      value: stats.totalCustomers || 0,
-      icon: User,
-      color: "from-yellow-500 to-orange-500",
-      bg: "bg-yellow-50",
+      link: "/admin/vendors",
     },
     {
       label: "Total Orders",
@@ -247,6 +307,7 @@ export default function AdminDashboard() {
       icon: Package,
       color: "from-indigo-500 to-indigo-600",
       bg: "bg-indigo-50",
+      link: "/admin/orders",
     },
     {
       label: "Total Revenue",
@@ -254,20 +315,7 @@ export default function AdminDashboard() {
       icon: DollarSign,
       color: "from-emerald-500 to-green-500",
       bg: "bg-emerald-50",
-    },
-    {
-      label: "Platform Wallet",
-      value: formatCurrency(stats.platformWallet || 0),
-      icon: Wallet,
-      color: "from-yellow-500 to-orange-500",
-      bg: "bg-yellow-50",
-    },
-    {
-      label: "Pending Approvals",
-      value: (stats.pendingVendors || 0) + (stats.pendingProducts || 0),
-      icon: Clock,
-      color: "from-red-500 to-red-600",
-      bg: "bg-red-50",
+      link: "/admin/reports",
     },
   ];
 
@@ -277,39 +325,45 @@ export default function AdminDashboard() {
         {/* ====== HEADER ====== */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Admin Dashboard
-            </h1>
-            <p className="text-gray-500 mt-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Admin Dashboard
+              </h1>
+              {pendingVendorsCount > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium border border-yellow-200 animate-pulse">
+                  <Clock className="w-3 h-3" />
+                  {pendingVendorsCount} Pending Vendors
+                </span>
+              )}
+            </div>
+            <p className="text-gray-500 mt-1 flex items-center gap-2">
               Platform overview and key metrics
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span className="text-xs text-gray-400">
+                {stats.todayOrders || 0} orders today
+              </span>
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-              {["day", "week", "month", "year"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setSelectedPeriod(t)}
-                  className={`px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                    selectedPeriod === t
-                      ? "bg-agrivibe-green text-white"
-                      : "text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-sm font-medium border border-yellow-200">
-                <Clock className="w-4 h-4" />
-                {stats.pendingVendors || 0} Pending Vendors
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-200">
-                <Package className="w-4 h-4" />
-                {stats.pendingProducts || 0} Pending Products
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchDashboardData}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+            <button
+              onClick={() => router.push("/admin/vendors/pending")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:shadow-xl hover:shadow-yellow-500/30 transition-all duration-300 font-medium"
+            >
+              <Users className="w-4 h-4" />
+              Pending Vendors
+              {pendingVendorsCount > 0 && (
+                <span className="ml-1 bg-white/20 px-2 py-0.5 rounded-full text-xs">
+                  {pendingVendorsCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
@@ -323,7 +377,9 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`${stat.bg} rounded-2xl border border-gray-100 p-5 hover:shadow-lg transition-all duration-300`}
+                whileHover={{ y: -4 }}
+                onClick={() => stat.link && router.push(stat.link)}
+                className={`${stat.bg} rounded-2xl border border-gray-100 p-5 hover:shadow-lg transition-all duration-300 cursor-pointer`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -345,9 +401,40 @@ export default function AdminDashboard() {
           })}
         </div>
 
+        {/* ====== PENDING VENDORS ALERT ====== */}
+        {pendingVendorsCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-medium text-yellow-800">
+                  {pendingVendorsCount} vendor
+                  {pendingVendorsCount > 1 ? "s" : ""} awaiting approval
+                </p>
+                <p className="text-sm text-yellow-600">
+                  Review and approve vendor registrations
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/admin/vendors/pending")}
+              className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition-colors font-medium"
+            >
+              Review Now
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
         {/* ====== CHARTS ROW ====== */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Chart */}
+          {/* Revenue Chart - REAL DATA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -360,10 +447,25 @@ export default function AdminDashboard() {
                   Revenue Trend
                 </h3>
                 <p className="text-sm text-gray-500">
-                  Monthly revenue performance
+                  {selectedPeriod === "week" ? "Weekly" : "Monthly"} revenue
+                  performance
                 </p>
               </div>
-              <Activity className="w-5 h-5 text-gray-400" />
+              <div className="flex gap-1">
+                {["week", "month"].map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setSelectedPeriod(period)}
+                    className={`px-3 py-1 text-xs rounded-lg transition-all ${
+                      selectedPeriod === period
+                        ? "bg-agrivibe-green text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {period.charAt(0).toUpperCase() + period.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="h-64">
               {revenueData.length > 0 ? (
@@ -421,7 +523,7 @@ export default function AdminDashboard() {
             </div>
           </motion.div>
 
-          {/* User Growth */}
+          {/* User Growth - REAL DATA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -431,9 +533,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">User Growth</h3>
-                <p className="text-sm text-gray-500">
-                  Monthly user acquisition
-                </p>
+                <p className="text-sm text-gray-500">New user registrations</p>
               </div>
               <Users className="w-5 h-5 text-gray-400" />
             </div>
@@ -467,7 +567,7 @@ export default function AdminDashboard() {
 
         {/* ====== SECOND ROW ====== */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Order Status */}
+          {/* Order Status - REAL DATA */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -484,7 +584,8 @@ export default function AdminDashboard() {
               <PieChartIcon className="w-5 h-5 text-gray-400" />
             </div>
             <div className="h-64">
-              {orderStatusData.length > 0 ? (
+              {orderStatusData.length > 0 &&
+              orderStatusData.some((d) => d.value > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -521,13 +622,13 @@ export default function AdminDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
-                  No order status data available
+                  No order data available
                 </div>
               )}
             </div>
           </motion.div>
 
-          {/* Quick Actions - REAL DATA */}
+          {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -541,71 +642,85 @@ export default function AdminDashboard() {
               <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
             </div>
             <div className="space-y-3">
-              {[
-                {
-                  label: "Review Pending Vendors",
-                  icon: Store,
-                  count: stats.pendingVendors || 0,
-                  color: "text-yellow-500",
-                  bg: "bg-yellow-50",
-                  href: "/admin/vendors?filter=pending",
-                },
-                {
-                  label: "Approve Pending Products",
-                  icon: Package,
-                  count: stats.pendingProducts || 0,
-                  color: "text-blue-500",
-                  bg: "bg-blue-50",
-                  href: "/admin/products?filter=pending",
-                },
-                {
-                  label: "View Platform Wallet",
-                  icon: Wallet,
-                  count: formatCurrency(stats.platformWallet || 0),
-                  color: "text-green-500",
-                  bg: "bg-green-50",
-                  href: "/admin/payments",
-                },
-                {
-                  label: "Generate Full Report",
-                  icon: FileText,
-                  count: "Export",
-                  color: "text-purple-500",
-                  bg: "bg-purple-50",
-                  href: "/admin/reports",
-                },
-              ].map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => router.push(action.href)}
-                    className={`w-full ${action.bg} rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 ${action.bg} rounded-lg flex items-center justify-center`}
-                      >
-                        <Icon className={`w-4 h-4 ${action.color}`} />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {action.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-bold ${action.color}`}>
-                        {action.count}
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </button>
-                );
-              })}
+              <button
+                onClick={() => router.push("/admin/vendors/pending")}
+                className="w-full bg-yellow-50 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Store className="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Review Pending Vendors
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-yellow-600">
+                    {pendingVendorsCount}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push("/admin/users")}
+                className="w-full bg-blue-50 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Manage Users
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-blue-600">
+                    {stats.totalUsers}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push("/admin/orders")}
+                className="w-full bg-green-50 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    View All Orders
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-green-600">
+                    {stats.totalOrders}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push("/admin/reports")}
+                className="w-full bg-purple-50 rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Generate Reports
+                  </span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
+              </button>
             </div>
           </motion.div>
         </div>
 
-        {/* ====== RECENT ACTIVITY - REAL DATA FROM BACKEND ====== */}
+        {/* ====== RECENT ACTIVITY ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

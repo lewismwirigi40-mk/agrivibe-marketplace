@@ -1,12 +1,12 @@
 // src/pages/dashboard/orders.tsx
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShoppingBag, 
-  Package, 
-  Clock, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ShoppingBag,
+  Package,
+  Clock,
+  CheckCircle,
   XCircle,
   AlertCircle,
   Search,
@@ -25,10 +25,10 @@ import {
   Star,
   Truck,
   MapPin,
-  ArrowRight
-} from 'lucide-react';
-import DashboardLayout from '../../components/DashboardLayout';
-import api from '../../services/api';
+  ArrowRight,
+} from "lucide-react";
+import DashboardLayout from "../../components/DashboardLayout";
+import api from "../../services/api";
 
 // ... rest of your code
 
@@ -36,10 +36,10 @@ export default function MyOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
 
@@ -49,18 +49,18 @@ export default function MyOrders() {
 
   const fetchOrders = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
         return;
       }
-      const response = await api.get('/orders/my-orders');
+      const response = await api.get("/orders/my-orders");
       const ordersData = response.data.orders || [];
       setOrders(ordersData);
       setFilteredOrders(ordersData);
     } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      setError('Failed to load orders');
+      console.error("Failed to fetch orders:", error);
+      setError("Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -72,31 +72,42 @@ export default function MyOrders() {
 
     // Search filter
     if (searchTerm.trim()) {
-      result = result.filter(order =>
-        order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id?.toLowerCase().includes(searchTerm.toLowerCase())
+      result = result.filter(
+        (order) =>
+          order.order_number
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          order.id?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Status filter
-    if (statusFilter !== 'all') {
-      result = result.filter(order => order.status === statusFilter);
+    if (statusFilter !== "all") {
+      result = result.filter((order) => order.status === statusFilter);
     }
 
     // Sorting
     switch (sortBy) {
-      case 'oldest':
-        result.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      case "oldest":
+        result.sort(
+          (a, b) =>
+            new Date(a.created_at || 0).getTime() -
+            new Date(b.created_at || 0).getTime(),
+        );
         break;
-      case 'amount-high':
+      case "amount-high":
         result.sort((a, b) => (b.total || 0) - (a.total || 0));
         break;
-      case 'amount-low':
+      case "amount-low":
         result.sort((a, b) => (a.total || 0) - (b.total || 0));
         break;
-      case 'newest':
+      case "newest":
       default:
-        result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+        result.sort(
+          (a, b) =>
+            new Date(b.created_at || 0).getTime() -
+            new Date(a.created_at || 0).getTime(),
+        );
         break;
     }
 
@@ -105,34 +116,40 @@ export default function MyOrders() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'delivered': 'bg-green-100 text-green-700 border-green-200',
-      'pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      'processing': 'bg-blue-100 text-blue-700 border-blue-200',
-      'shipped': 'bg-purple-100 text-purple-700 border-purple-200',
-      'cancelled': 'bg-red-100 text-red-700 border-red-200',
+      delivered: "bg-green-100 text-green-700 border-green-200",
+      pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      processing: "bg-blue-100 text-blue-700 border-blue-200",
+      shipped: "bg-purple-100 text-purple-700 border-purple-200",
+      cancelled: "bg-red-100 text-red-700 border-red-200",
     };
-    return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    return (
+      colors[status?.toLowerCase()] ||
+      "bg-gray-100 text-gray-700 border-gray-200"
+    );
   };
 
   const getStatusIcon = (status: string) => {
     const icons: Record<string, any> = {
-      'delivered': CheckCircle,
-      'pending': Clock,
-      'processing': Package,
-      'shipped': Truck,
-      'cancelled': XCircle,
+      delivered: CheckCircle,
+      pending: Clock,
+      processing: Package,
+      shipped: Truck,
+      cancelled: XCircle,
     };
     return icons[status?.toLowerCase()] || Clock;
   };
 
   const getPaymentStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'paid': 'bg-green-100 text-green-700 border-green-200',
-      'pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      'failed': 'bg-red-100 text-red-700 border-red-200',
-      'refunded': 'bg-blue-100 text-blue-700 border-blue-200',
+      paid: "bg-green-100 text-green-700 border-green-200",
+      pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      failed: "bg-red-100 text-red-700 border-red-200",
+      refunded: "bg-blue-100 text-blue-700 border-blue-200",
     };
-    return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    return (
+      colors[status?.toLowerCase()] ||
+      "bg-gray-100 text-gray-700 border-gray-200"
+    );
   };
 
   const formatCurrency = (amount: number) => {
@@ -140,10 +157,30 @@ export default function MyOrders() {
   };
 
   const stats = [
-    { label: 'Total Orders', value: orders.length, icon: ShoppingBag, color: 'from-blue-500 to-blue-600' },
-    { label: 'Pending', value: orders.filter(o => o.status === 'pending').length, icon: Clock, color: 'from-yellow-500 to-orange-500' },
-    { label: 'Processing', value: orders.filter(o => o.status === 'processing').length, icon: Package, color: 'from-purple-500 to-purple-600' },
-    { label: 'Delivered', value: orders.filter(o => o.status === 'delivered').length, icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
+    {
+      label: "Total Orders",
+      value: orders.length,
+      icon: ShoppingBag,
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      label: "Pending",
+      value: orders.filter((o) => o.status === "pending").length,
+      icon: Clock,
+      color: "from-yellow-500 to-orange-500",
+    },
+    {
+      label: "Processing",
+      value: orders.filter((o) => o.status === "processing").length,
+      icon: Package,
+      color: "from-purple-500 to-purple-600",
+    },
+    {
+      label: "Delivered",
+      value: orders.filter((o) => o.status === "delivered").length,
+      icon: CheckCircle,
+      color: "from-green-500 to-emerald-500",
+    },
   ];
 
   if (loading) {
@@ -166,7 +203,9 @@ export default function MyOrders() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-            <p className="text-gray-500 mt-1">View all your orders and track status</p>
+            <p className="text-gray-500 mt-1">
+              View all your orders and track status
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-agrivibe-green/10 text-agrivibe-green rounded-full text-sm font-medium">
@@ -191,9 +230,13 @@ export default function MyOrders() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}
+                  >
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                 </div>
@@ -259,13 +302,20 @@ export default function MyOrders() {
             className="text-center py-20 bg-white rounded-2xl shadow-md border border-gray-100"
           >
             <div className="text-8xl mb-6">📦</div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">No Orders Found</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              No Orders Found
+            </h3>
             <p className="text-gray-500 text-lg mb-8">
-              {searchTerm || statusFilter !== 'all' ? 'Try adjusting your filters' : 'Start shopping to see your orders here'}
+              {searchTerm || statusFilter !== "all"
+                ? "Try adjusting your filters"
+                : "Start shopping to see your orders here"}
             </p>
-            {(searchTerm || statusFilter !== 'all') ? (
+            {searchTerm || statusFilter !== "all" ? (
               <button
-                onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                }}
                 className="text-agrivibe-green font-medium hover:underline"
               >
                 Clear Filters
@@ -287,12 +337,24 @@ export default function MyOrders() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">Order ID</th>
-                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">Date</th>
-                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">Total</th>
-                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">Status</th>
-                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">Payment</th>
-                    <th className="text-right text-sm font-semibold text-gray-600 px-6 py-4">Action</th>
+                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">
+                      Order ID
+                    </th>
+                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">
+                      Date
+                    </th>
+                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">
+                      Total
+                    </th>
+                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">
+                      Status
+                    </th>
+                    <th className="text-left text-sm font-semibold text-gray-600 px-6 py-4">
+                      Payment
+                    </th>
+                    <th className="text-right text-sm font-semibold text-gray-600 px-6 py-4">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -300,8 +362,10 @@ export default function MyOrders() {
                     {filteredOrders.map((order, index) => {
                       const StatusIcon = getStatusIcon(order.status);
                       const statusColor = getStatusColor(order.status);
-                      const paymentColor = getPaymentStatusColor(order.payment_status);
-                      
+                      const paymentColor = getPaymentStatusColor(
+                        order.payment_status,
+                      );
+
                       return (
                         <motion.tr
                           key={order.id}
@@ -321,10 +385,14 @@ export default function MyOrders() {
                           <td className="px-6 py-4">
                             <div>
                               <p className="text-sm text-gray-900">
-                                {new Date(order.created_at).toLocaleDateString()}
+                                {new Date(
+                                  order.created_at,
+                                ).toLocaleDateString()}
                               </p>
                               <p className="text-xs text-gray-400">
-                                {new Date(order.created_at).toLocaleTimeString()}
+                                {new Date(
+                                  order.created_at,
+                                ).toLocaleTimeString()}
                               </p>
                             </div>
                           </td>
@@ -334,14 +402,18 @@ export default function MyOrders() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${statusColor}`}>
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${statusColor}`}
+                            >
                               <StatusIcon className="w-3.5 h-3.5" />
                               {order.status}
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${paymentColor}`}>
-                              {order.payment_status === 'paid' ? '✅' : '⏳'}
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border ${paymentColor}`}
+                            >
+                              {order.payment_status === "paid" ? "✅" : "⏳"}
                               {order.payment_status}
                             </span>
                           </td>
@@ -395,10 +467,13 @@ export default function MyOrders() {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      Order #{selectedOrder.order_number || selectedOrder.id.slice(0, 8)}
+                      Order #
+                      {selectedOrder.order_number ||
+                        selectedOrder.id.slice(0, 8)}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      Placed on {new Date(selectedOrder.created_at).toLocaleString()}
+                      Placed on{" "}
+                      {new Date(selectedOrder.created_at).toLocaleString()}
                     </p>
                   </div>
                   <button
@@ -416,16 +491,24 @@ export default function MyOrders() {
                       <User className="w-4 h-4" />
                       Customer Information
                     </h4>
-                    <p className="text-sm text-gray-900">{selectedOrder.customer?.name || 'Customer'}</p>
-                    <p className="text-sm text-gray-500">{selectedOrder.customer?.email || ''}</p>
-                    <p className="text-sm text-gray-500">{selectedOrder.customer?.phone || ''}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedOrder.customer?.name || "Customer"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedOrder.customer?.email || ""}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedOrder.customer?.phone || ""}
+                    </p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       Delivery Address
                     </h4>
-                    <p className="text-sm text-gray-900">{selectedOrder.delivery_address || 'No address provided'}</p>
+                    <p className="text-sm text-gray-900">
+                      {selectedOrder.delivery_address || "No address provided"}
+                    </p>
                   </div>
                 </div>
 
@@ -439,19 +522,38 @@ export default function MyOrders() {
                     <table className="w-full">
                       <thead className="bg-gray-100">
                         <tr>
-                          <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">Product</th>
-                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">Qty</th>
-                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">Price</th>
-                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">Total</th>
+                          <th className="text-left text-xs font-medium text-gray-500 px-4 py-2">
+                            Product
+                          </th>
+                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">
+                            Qty
+                          </th>
+                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">
+                            Price
+                          </th>
+                          <th className="text-right text-xs font-medium text-gray-500 px-4 py-2">
+                            Total
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedOrder.items?.map((item: any, i: number) => (
-                          <tr key={i} className="border-b border-gray-200 last:border-0">
-                            <td className="px-4 py-2 text-sm text-gray-900">{item.product?.name || 'Product'}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 text-right">{item.quantity}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 text-right">{formatCurrency(item.price)}</td>
-                            <td className="px-4 py-2 text-sm font-medium text-gray-900 text-right">{formatCurrency(item.price * item.quantity)}</td>
+                          <tr
+                            key={i}
+                            className="border-b border-gray-200 last:border-0"
+                          >
+                            <td className="px-4 py-2 text-sm text-gray-900">
+                              {item.product?.name || "Product"}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-700 text-right">
+                              {item.quantity}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-gray-700 text-right">
+                              {formatCurrency(item.price)}
+                            </td>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900 text-right">
+                              {formatCurrency(item.price * item.quantity)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -463,13 +565,17 @@ export default function MyOrders() {
                 <div className="flex justify-between items-center border-t border-gray-200 pt-4">
                   <div>
                     <p className="text-sm text-gray-500">Order Status</p>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedOrder.status)}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedOrder.status)}`}
+                    >
                       {selectedOrder.status}
                     </span>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-gray-500">Payment Status</p>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(selectedOrder.payment_status)}`}>
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(selectedOrder.payment_status)}`}
+                    >
                       {selectedOrder.payment_status}
                     </span>
                   </div>

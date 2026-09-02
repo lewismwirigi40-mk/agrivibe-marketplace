@@ -4,7 +4,25 @@ const Product = require('../models/Product.cjs');
 const Store = require('../models/Store.cjs');
 const User = require('../models/User.cjs');
 const Wallet = require('../models/Wallet.cjs');
+const OrderItem = require('../models/OrderItem.cjs');
 const { Op } = require('sequelize');
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Calculate distance (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
 
 // Generate Order Number
 function generateOrderNumber() {
@@ -21,10 +39,84 @@ function generateDeliveryCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Create Order (Checkout)
+// ============================================
+// SEND DELIVERY CODE TO CUSTOMER
+// ============================================
+async function sendDeliveryCodeToCustomer(customerId, orderNumber, code) {
+    try {
+        const customer = await User.findByPk(customerId);
+        if (!customer) return;
+
+        const message = `🔑 Your AgriVibe delivery code for order #${orderNumber} is: ${code}
+
+Please keep this code safe. Give it to your driver only when you receive your items.
+
+Thank you for choosing AgriVibe! 🌾`;
+
+        if (customer.phone) {
+            console.log(`📱 SMS sent to ${customer.phone}: ${message}`);
+        }
+
+        if (customer.email) {
+            console.log(`📧 Email sent to ${customer.email}: ${message}`);
+        }
+
+        console.log(`🔑 Delivery code for order #${orderNumber}: ${code}`);
+
+    } catch (error) {
+        console.error('Send delivery code error:', error);
+    }
+}
+
+// ============================================
+// NOTIFY VENDOR FOR LONG DISTANCE
+// ============================================
+async function notifyVendorForLongDistance(orderId, storeId, customerId) {
+    try {
+        const store = await Store.findByPk(storeId, {
+            include: [{ model: User, as: 'vendorUser' }]
+        });
+        const customer = await User.findByPk(customerId);
+        const order = await Order.findByPk(orderId);
+
+        if (!store || !customer || !order) return;
+
+        const message = `📦 Long Distance Order Alert!
+
+Order #${order.order_number}
+Customer: ${customer.first_name} ${customer.last_name}
+Phone: ${customer.phone || 'N/A'}
+Email: ${customer.email}
+Delivery: ${order.delivery_address}
+
+⚠️ This order is ${order.delivery_distance || 'far'} from your store.
+Please contact the customer to arrange delivery.
+
+Contact customer: ${customer.phone || 'N/A'}`;
+
+        console.log(`📧 Vendor notification for order #${order.order_number}:`);
+        console.log(message);
+
+    } catch (error) {
+        console.error('Vendor notification error:', error);
+    }
+}
+
+// ============================================
+// CREATE ORDER (CHECKOUT)
+// ============================================
 exports.createOrder = async (req, res) => {
     try {
-        const { delivery_address, delivery_notes, payment_method } = req.body;
+        const { 
+            delivery_address, 
+            county,
+            town,
+            local_area,
+            delivery_notes, 
+            payment_method,
+            phone
+        } = req.body;
+        
         const customer_id = req.user.id;
 
         // Get cart items
@@ -64,25 +156,58 @@ exports.createOrder = async (req, res) => {
             });
         }
 
-        // Calculate totals
-        const delivery_fee = 0;
+        // ============================================
+        // CALCULATE DISTANCE & DELIVERY FEE
+        // ============================================
+        let deliveryFee = 0;
+        let distanceKm = 0;
+        let isLocalDelivery = true;
+
+        const store = await Store.findByPk(store_id);
+        const customer = await User.findByPk(customer_id);
+
+        const fullDeliveryAddress = [
+            delivery_address,
+            local_area,
+            town,
+            county
+        ].filter(Boolean).join(', ');
+
+        if (store && store.latitude && store.longitude && 
+            customer && customer.latitude && customer.longitude) {
+            
+            distanceKm = calculateDistance(
+                store.latitude, store.longitude,
+                customer.latitude, customer.longitude
+            );
+            
+            console.log(`📍 Distance: ${distanceKm.toFixed(2)} km`);
+            
+            if (distanceKm <= 15) {
+                isLocalDelivery = true;
+                if (subtotal >= 1000) {
+                    deliveryFee = 0;
+                } else {
+                    deliveryFee = 150;
+                }
+            } else {
+                isLocalDelivery = false;
+                deliveryFee = 0;
+                console.log(`📦 Long distance order (${distanceKm.toFixed(2)} km). Vendor will contact buyer.`);
+            }
+        } else {
+            deliveryFee = subtotal >= 1000 ? 0 : 150;
+        }
+
         const tax = 0;
         const discount = 0;
-        const total = subtotal + delivery_fee + tax - discount;
+        const total = subtotal + deliveryFee + tax - discount;
 
-        // Generate order number
         const order_number = generateOrderNumber();
-
-        // Generate delivery code
         const deliveryCode = generateDeliveryCode();
-
-        // Set code expiry (24 hours from now)
         const codeExpiry = new Date();
         codeExpiry.setHours(codeExpiry.getHours() + 24);
 
-        // ============================================
-        // ESCROW - Hold payment amount
-        // ============================================
         const escrow_amount = total;
         const escrow_status = 'held';
 
@@ -95,22 +220,37 @@ exports.createOrder = async (req, res) => {
             payment_status: 'unpaid',
             delivery_status: 'pending',
             subtotal,
-            delivery_fee,
+            delivery_fee: deliveryFee,
             tax,
             discount,
             total,
-            delivery_address,
-            delivery_notes,
-            payment_method,
-            // Delivery code fields
+            delivery_address: fullDeliveryAddress,
+            delivery_notes: delivery_notes || '',
+            payment_method: payment_method || 'mpesa',
             delivery_code: deliveryCode,
             delivery_code_expires: codeExpiry,
             delivery_code_attempts: 0,
             is_delivery_code_verified: false,
-            // Escrow fields
             escrow_amount: total,
-            escrow_status: 'held'
+            escrow_status: 'held',
+            delivery_county: county || '',
+            delivery_town: town || '',
+            delivery_local_area: local_area || '',
+            customer_phone: phone || customer.phone || ''
         });
+
+        // Create OrderItems
+        for (const item of orderItems) {
+            await OrderItem.create({
+                order_id: order.id,
+                product_id: item.product_id,
+                vendor_id: store_id,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.total,
+                status: 'pending'
+            });
+        }
 
         // Update product stock
         for (const item of cartItems) {
@@ -123,14 +263,28 @@ exports.createOrder = async (req, res) => {
         // Clear cart
         await Cart.destroy({ where: { user_id: customer_id } });
 
-        // Send delivery code to customer ONLY
+        // Send delivery code to customer
         await sendDeliveryCodeToCustomer(customer_id, order_number, deliveryCode);
 
+        // If long distance, notify vendor
+        if (!isLocalDelivery) {
+            await notifyVendorForLongDistance(order.id, store_id, customer_id);
+        }
+
         res.status(201).json({
+            success: true,
             message: 'Order created successfully',
-            order,
+            order: {
+                id: order.id,
+                order_number: order.order_number,
+                total: order.total,
+                status: order.status,
+                delivery_code: deliveryCode,
+                is_local_delivery: isLocalDelivery,
+                distance_km: Math.round(distanceKm * 10) / 10
+            },
             items: orderItems,
-            delivery_code: deliveryCode,
+            delivery_fee: deliveryFee,
             escrow: {
                 amount: total,
                 status: 'held'
@@ -138,100 +292,217 @@ exports.createOrder = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Create order error:', error);
-        res.status(500).json({ error: 'Failed to create order' });
+        console.error('❌ Create order error:', error);
+        res.status(500).json({ 
+            error: 'Failed to create order',
+            details: error.message 
+        });
     }
 };
 
-// Send delivery code to customer only
-async function sendDeliveryCodeToCustomer(customerId, orderNumber, code) {
-    try {
-        const customer = await User.findByPk(customerId);
-        if (!customer) return;
+// ============================================
+// GET ALL ORDERS (Customer) - ✅ FIXED
+// ============================================
+// backend/src/controllers/orderController.cjs
 
-        const message = `🔑 Your AgriVibe delivery code for order #${orderNumber} is: ${code}
-
-Please keep this code safe. Give it to your driver only when you receive your items.
-
-Thank you for choosing AgriVibe! 🌾`;
-
-        if (customer.phone) {
-            console.log(`📱 SMS sent to ${customer.phone}: ${message}`);
-        }
-
-        if (customer.email) {
-            console.log(`📧 Email sent to ${customer.email}: ${message}`);
-        }
-
-        console.log(`🔑 Delivery code for order #${orderNumber}: ${code}`);
-
-    } catch (error) {
-        console.error('Send delivery code error:', error);
-    }
-}
-
-// Get All Orders (Customer)
 exports.getMyOrders = async (req, res) => {
     try {
         const customer_id = req.user.id;
 
         const orders = await Order.findAll({
             where: { customer_id },
+            include: [
+                {
+                    model: User,
+                    as: 'customer',
+                    attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
+                },
+                {
+                    model: OrderItem,
+                    as: 'items',  // ✅ FIXED: Changed from 'items' to 'orderItems'
+                    include: [
+                        {
+                            model: Product,
+                            as: 'product',
+                            attributes: ['id', 'name', 'images']
+                        }
+                    ]
+                },
+                {
+                    model: Store,
+                    as: 'orderstore',
+                    attributes: ['id', 'store_name']
+                }
+            ],
             order: [['created_at', 'DESC']]
         });
 
-        res.json({ orders });
+        res.json({
+            success: true,
+            orders
+        });
     } catch (error) {
         console.error('Get orders error:', error);
         res.status(500).json({ error: 'Failed to fetch orders' });
     }
 };
 
-// Get Order by ID
+// ============================================
+// GET ORDER BY ID - ✅ FIXED
+// ============================================
 exports.getOrderById = async (req, res) => {
     try {
         const { id } = req.params;
         const customer_id = req.user.id;
 
         const order = await Order.findOne({
-            where: { id, customer_id }
+            where: { id, customer_id },
+            include: [
+                {
+                    model: User,
+                    as: 'customer',
+                    attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
+                },
+                {
+                    model: OrderItem,
+                    as: 'items',
+                    include: [
+                        {
+                            model: Product,
+                            as: 'product',
+                            attributes: ['id', 'name', 'images']
+                        }
+                    ]
+                },
+                {
+                    model: Store,
+                    as: 'orderstore',
+                    attributes: ['id', 'store_name']
+                }
+            ]
         });
 
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        res.json({ order });
+        res.json({ 
+            success: true,
+            order 
+        });
     } catch (error) {
         console.error('Get order error:', error);
         res.status(500).json({ error: 'Failed to fetch order' });
     }
 };
 
-// Get Vendor Orders (Vendor)
+// ============================================
+// GET VENDOR ORDERS - ✅ FIXED
+// ============================================
 exports.getVendorOrders = async (req, res) => {
     try {
+        const userId = req.user.id;
+        
         const store = await Store.findOne({
-            where: { vendor_id: req.user.id }
+            where: { vendor_id: userId }
         });
 
         if (!store) {
-            return res.status(404).json({ error: 'Store not found' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Store not found. Please complete your store setup.' 
+            });
         }
 
         const orders = await Order.findAll({
             where: { store_id: store.id },
+            include: [
+                {
+                    model: User,
+                    as: 'customer',
+                    attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
+                },
+                {
+                    model: OrderItem,
+                    as: 'items',
+                    include: [
+                        {
+                            model: Product,
+                            as: 'product',
+                            attributes: ['id', 'name', 'images', 'price']
+                        }
+                    ]
+                },
+                {
+                    model: Store,
+                    as: 'orderstore',
+                    attributes: ['id', 'store_name']
+                }
+            ],
             order: [['created_at', 'DESC']]
         });
 
-        res.json({ orders });
+        const formattedOrders = orders.map(order => {
+            const totalItems = order.items ? order.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+            
+            return {
+                id: order.id,
+                order_number: order.order_number,
+                customer: order.customer ? {
+                    name: `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() || 'Customer',
+                    email: order.customer.email || 'N/A',
+                    phone: order.customer.phone || 'N/A'
+                } : { 
+                    name: 'Unknown Customer', 
+                    email: 'N/A', 
+                    phone: 'N/A' 
+                },
+                items: order.items || [],
+                total_items: totalItems,
+                subtotal: order.subtotal,
+                delivery_fee: order.delivery_fee,
+                total: order.total,
+                status: order.status,
+                payment_status: order.payment_status,
+                delivery_status: order.delivery_status,
+                delivery_address: order.delivery_address,
+                delivery_notes: order.delivery_notes,
+                delivery_code: order.delivery_code,
+                created_at: order.created_at,
+                delivered_at: order.delivered_at,
+                customer_phone: order.customer?.phone || order.customer_phone || 'N/A'
+            };
+        });
+
+        const totalOrders = formattedOrders.length;
+        const pendingOrders = formattedOrders.filter(o => o.status === 'pending').length;
+        const completedOrders = formattedOrders.filter(o => o.status === 'delivered' || o.status === 'completed').length;
+        const totalRevenue = formattedOrders.reduce((sum, o) => sum + parseFloat(o.total || 0), 0);
+
+        res.json({
+            success: true,
+            orders: formattedOrders,
+            stats: {
+                total: totalOrders,
+                pending: pendingOrders,
+                completed: completedOrders,
+                revenue: totalRevenue
+            }
+        });
+
     } catch (error) {
-        console.error('Get vendor orders error:', error);
-        res.status(500).json({ error: 'Failed to fetch orders' });
+        console.error('❌ Get vendor orders error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch orders',
+            details: error.message 
+        });
     }
 };
 
-// Update Order Status (Vendor/Admin)
+// ============================================
+// UPDATE ORDER STATUS (Vendor/Admin)
+// ============================================
 exports.updateOrderStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -246,6 +517,7 @@ exports.updateOrderStatus = async (req, res) => {
         await order.update({ status });
 
         res.json({
+            success: true,
             message: 'Order status updated',
             order
         });
@@ -256,7 +528,9 @@ exports.updateOrderStatus = async (req, res) => {
     }
 };
 
-// Cancel Order (Customer) - WITH ESCROW REFUND
+// ============================================
+// CANCEL ORDER (Customer) - WITH ESCROW REFUND
+// ============================================
 exports.cancelOrder = async (req, res) => {
     try {
         const { id } = req.params;
@@ -274,15 +548,12 @@ exports.cancelOrder = async (req, res) => {
             return res.status(400).json({ error: 'Order cannot be cancelled' });
         }
 
-        // ============================================
-        // ESCROW REFUND - Return money to customer
-        // ============================================
+        // ESCROW REFUND
         if (order.escrow_status === 'held') {
             order.escrow_status = 'refunded';
             order.escrow_refunded_at = new Date();
             await order.save();
 
-            // Refund to customer wallet
             const wallet = await Wallet.findOne({ where: { user_id: customer_id } });
             if (wallet) {
                 wallet.balance = parseFloat(wallet.balance) + parseFloat(order.escrow_amount);
@@ -298,6 +569,7 @@ exports.cancelOrder = async (req, res) => {
         });
 
         res.json({
+            success: true,
             message: 'Order cancelled successfully. Refund processed.',
             order
         });
@@ -324,7 +596,6 @@ exports.releaseEscrow = async (req, res) => {
             return res.status(400).json({ error: 'Escrow not in held status' });
         }
 
-        // Release escrow to vendor
         const store = await Store.findByPk(order.store_id);
         if (store) {
             const wallet = await Wallet.findOne({ where: { user_id: store.vendor_id } });
@@ -341,6 +612,7 @@ exports.releaseEscrow = async (req, res) => {
         await order.save();
 
         res.json({
+            success: true,
             message: 'Escrow released successfully',
             order
         });
@@ -368,7 +640,10 @@ exports.getEscrowStatus = async (req, res) => {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        res.json({ escrow: order });
+        res.json({ 
+            success: true,
+            escrow: order 
+        });
     } catch (error) {
         console.error('Get escrow status error:', error);
         res.status(500).json({ error: 'Failed to fetch escrow status' });

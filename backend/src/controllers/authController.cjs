@@ -1,9 +1,11 @@
 // Force console logs to show immediately
 console.log('🔥 AUTH CONTROLLER LOADED');
+
 const User = require('../models/User.cjs');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
+const { Op } = require('sequelize');
 
 // Generate JWT Token
 const generateToken = (user) => {
@@ -18,38 +20,118 @@ const generateToken = (user) => {
     );
 };
 
-// Register
+// ============================================
+// REGISTER - FIXED with email + phone check
+// ============================================
 exports.register = async (req, res) => {
-    console.log('🔥 REGISTER FUNCTION CALLED'); // ✅ Force log
-    console.log('📝 Request body:', req.body); // ✅ Force log
-
     try {
-        const { email, password, first_name, last_name, phone, role } = req.body;
+        console.log('📝 Registration data:', req.body);
+        const { email, password, first_name, last_name, phone, role, address } = req.body;
 
-        console.log('🔍 Checking if user exists:', email); // ✅ Force log
-
-        // Check if user exists
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            console.log('❌ User already exists:', email); // ✅ Force log
-            return res.status(400).json({ error: 'Email already registered' });
+        // Basic validation
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and password are required' 
+            });
         }
 
-        console.log('✅ User does not exist, creating...'); // ✅ Force log
+        // ✅ Check if user exists by email OR phone
+        const existingUser = await User.findOne({
+            where: {
+                [Op.or]: [
+                    { email: email },
+                    { phone: phone }
+                ]
+            }
+        });
 
-        // Create user
+        if (existingUser) {
+            // ✅ Check which field caused the conflict
+            let errorMessage = 'Registration failed. ';
+            
+            if (existingUser.email === email) {
+                errorMessage = 'This email is already registered. Please login or use a different email.';
+            } else if (existingUser.phone === phone) {
+                errorMessage = 'This phone number is already registered. Please use a different number.';
+            } else {
+                errorMessage = 'Email or phone number already registered.';
+            }
+            
+            return res.status(400).json({ 
+                success: false,
+                error: errorMessage
+            });
+        }
+
+        // ✅ Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // ============================================================
+        // ✅ STEP 1: Create the User
+        // ============================================================
         const user = await User.create({
             email,
-            password_hash: password,
+            password_hash: hashedPassword,
             first_name,
             last_name,
             phone,
             role: role || 'customer'
         });
 
-        console.log('✅ User created successfully:', user.id); // ✅ Force log
+        console.log('✅ User created successfully ID:', user.id);
 
-        res.status(201).json({
+        // ============================================================
+        // ✅ STEP 2: If role is vendor, create the Store record
+        // ============================================================
+        let storeData = null;
+
+        if (user.role === 'vendor') {
+            try {
+                const Store = require('../models/Store.cjs');
+                
+                console.log(`🌱 Creating vendor store for ${email}...`);
+
+                const timestamp = Date.now().toString(36);
+                const shortId = user.id.substring(0, 8);
+                const slug = `shop-${shortId}-${timestamp}`;
+
+                const store = await Store.create({
+                    vendor_id: user.id,
+                    store_name: `${first_name || 'Vendor'}'s Store`,
+                    store_slug: slug,
+                    description: 'Agricultural marketplace vendor store. Pending approval.',
+                    contact_email: email,
+                    contact_phone: phone || '',
+                    address: address || '',
+                    latitude: 0,
+                    longitude: 0,
+                    is_approved: false,
+                    is_active: false,
+                    rating: 5.0,
+                    total_orders: 0
+                });
+
+                storeData = {
+                    id: store.id,
+                    store_name: store.store_name,
+                    status: 'pending',
+                    is_approved: false
+                };
+
+                console.log(`🎯 SUCCESS: Store created for vendor ${email}`);
+                console.log(`📊 Store ID: ${store.id}, is_approved: ${store.is_approved}`);
+
+            } catch (storeError) {
+                console.error('❌ DATABASE WRITE FAILURE:', storeError.message);
+                console.error('❌ Full error details:', storeError);
+                console.warn('⚠️ User created but store creation failed. Please check Store model.');
+            }
+        }
+
+        return res.status(201).json({
+            success: true,
             message: 'User registered successfully',
             user: {
                 id: user.id,
@@ -57,46 +139,126 @@ exports.register = async (req, res) => {
                 first_name: user.first_name,
                 last_name: user.last_name,
                 role: user.role
-            }
+            },
+            store: storeData
         });
 
     } catch (error) {
-        console.error('❌ REGISTRATION ERROR:', error.message); // ✅ Force log
-        console.error('❌ Full error:', error); // ✅ Force log
-        res.status(500).json({ error: 'Registration failed' });
+        console.error('❌ Critical Registration error:', error);
+        
+        // ✅ Better error handling for database constraints
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            if (error.fields?.email) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'This email is already registered. Please login or use a different email.'
+                });
+            }
+            if (error.fields?.phone) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'This phone number is already registered. Please use a different number.'
+                });
+            }
+        }
+        
+        return res.status(500).json({ 
+            success: false,
+            error: 'Registration failed', 
+            message: error.message
+        });
     }
 };
 
-// Login
+// ============================================
+// LOGIN - FIXED
+// ============================================
 exports.login = async (req, res) => {
+    console.log('🔥 LOGIN CALLED');
+    console.log('📝 Email:', req.body.email);
+
     try {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and password are required' 
+            });
         }
 
-        // Find user
         const user = await User.findOne({ where: { email } });
         if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
         }
 
-        // Check password
+        // ✅ Check password using comparePassword
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
         }
 
-        // Update last login
         await user.update({ last_login: new Date() });
 
-        // Generate token
         const token = generateToken(user);
 
+        // ====== ROLE-BASED REDIRECT ======
+        let redirectTo = '/';
+        let vendorData = null;
+
+        if (user.role === 'admin') {
+            redirectTo = '/admin/dashboard';
+            console.log('👑 Admin login - redirecting to /admin/dashboard');
+        } else if (user.role === 'vendor') {
+            console.log('🏪 Vendor login - checking store status...');
+            try {
+                const Store = require('../models/Store.cjs');
+                const store = await Store.findOne({ 
+                    where: { vendor_id: user.id }
+                });
+                
+                if (store) {
+                    vendorData = {
+                        id: store.id,
+                        store_name: store.store_name,
+                        is_approved: store.is_approved,
+                        status: store.is_approved ? 'approved' : 'pending'
+                    };
+                    console.log('📦 Store found:', store.store_name);
+                    console.log('📊 Status:', store.is_approved ? 'approved' : 'pending');
+
+                    if (store.is_approved) {
+                        redirectTo = '/vendor/dashboard';
+                        vendorData.status = 'approved';
+                        console.log('✅ Approved vendor - redirecting to /vendor/dashboard');
+                    } else {
+                        redirectTo = '/vendor/pending-approval';
+                        console.log('⏳ Pending vendor - redirecting to /vendor/pending-approval');
+                    }
+                } else {
+                    console.log('⚠️ User has vendor role but no store record');
+                    redirectTo = '/vendor/register';
+                }
+            } catch (err) {
+                console.error('❌ Store check error:', err.message);
+                redirectTo = '/';
+            }
+        } else {
+            redirectTo = '/';
+            console.log('👤 Customer login - redirecting to /');
+        }
+
         return res.json({
+            success: true,
             message: 'Login successful',
             token,
+            redirectTo,
             user: {
                 id: user.id,
                 email: user.email,
@@ -104,44 +266,41 @@ exports.login = async (req, res) => {
                 last_name: user.last_name,
                 role: user.role,
                 is_verified: user.is_verified
-            }
+            },
+            vendor: vendorData
         });
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ Login error:', error);
         return res.status(500).json({ 
+            success: false,
             error: 'Login failed',
             message: error.message 
         });
     }
 };
 
-// Logout
+// ============================================
+// LOGOUT
+// ============================================
 exports.logout = async (req, res) => {
     return res.json({ message: 'Logged out successfully' });
 };
 
-// Verify OTP (placeholder)
+// ============================================
+// OTP FUNCTIONS (Placeholders)
+// ============================================
 exports.verifyOTP = async (req, res) => {
     return res.json({ message: 'OTP verification endpoint' });
 };
 
-// Resend OTP (placeholder)
 exports.resendOTP = async (req, res) => {
     return res.json({ message: 'Resend OTP endpoint' });
 };
 
-// Forgot Password (placeholder)
-exports.forgotPassword = async (req, res) => {
-    return res.json({ message: 'Forgot password endpoint' });
-};
-
-// Reset Password (placeholder)
-exports.resetPassword = async (req, res) => {
-    return res.json({ message: 'Reset password endpoint' });
-};
-
-// Get Current User
+// ============================================
+// GET CURRENT USER
+// ============================================
 exports.getCurrentUser = async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -167,28 +326,23 @@ exports.getCurrentUser = async (req, res) => {
 };
 
 // ============================================
-// USER LOCATION FUNCTIONS (GOOGLE MAPS INTEGRATION)
+// USER LOCATION FUNCTIONS
 // ============================================
-
-// Update User Location
 exports.updateLocation = async (req, res) => {
     try {
         const { latitude, longitude, location_address } = req.body;
-        // Assume req.user is populated by authentication middleware
         const userId = req.user?.id;
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        // Validate input
         if (latitude === undefined || longitude === undefined) {
             return res.status(400).json({ 
                 error: 'Latitude and longitude are required' 
             });
         }
 
-        // Validate range
         if (latitude < -90 || latitude > 90) {
             return res.status(400).json({ error: 'Invalid latitude' });
         }
@@ -196,7 +350,6 @@ exports.updateLocation = async (req, res) => {
             return res.status(400).json({ error: 'Invalid longitude' });
         }
 
-        // Update user location
         const user = await User.findByPk(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -227,7 +380,6 @@ exports.updateLocation = async (req, res) => {
     }
 };
 
-// Get User Location
 exports.getLocation = async (req, res) => {
     try {
         const userId = req.user?.id;
@@ -251,7 +403,6 @@ exports.getLocation = async (req, res) => {
     }
 };
 
-// Toggle Location Sharing
 exports.toggleLocationSharing = async (req, res) => {
     try {
         const { enabled } = req.body;
@@ -279,13 +430,12 @@ exports.toggleLocationSharing = async (req, res) => {
         return res.status(500).json({ error: 'Failed to update preference' });
     }
 };
-// ============================================
-// PROFILE FUNCTIONS - ADD THESE METHODS
-// ============================================
 
-// Get user profile
+// ============================================
+// PROFILE FUNCTIONS
+// ============================================
 exports.getProfile = async (req, res) => {
-    console.log('🔥 GET PROFILE CALLED'); // Force log
+    console.log('🔥 GET PROFILE CALLED');
     try {
         const userId = req.user?.id;
         if (!userId) {
@@ -308,9 +458,8 @@ exports.getProfile = async (req, res) => {
     }
 };
 
-// Update user profile
 exports.updateProfile = async (req, res) => {
-    console.log('🔥 UPDATE PROFILE CALLED'); // Force log
+    console.log('🔥 UPDATE PROFILE CALLED');
     console.log('📝 Request body:', req.body);
     
     try {
@@ -326,7 +475,6 @@ exports.updateProfile = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        // Update only provided fields
         const updates = {};
         if (first_name !== undefined) updates.first_name = first_name;
         if (last_name !== undefined) updates.last_name = last_name;
@@ -354,9 +502,11 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// Change password
+// ============================================
+// CHANGE PASSWORD - FIXED
+// ============================================
 exports.changePassword = async (req, res) => {
-    console.log('🔥 CHANGE PASSWORD CALLED'); // Force log
+    console.log('🔥 CHANGE PASSWORD CALLED');
     
     try {
         const { current_password, new_password } = req.body;
@@ -379,14 +529,17 @@ exports.changePassword = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        // Verify current password
+        // ✅ Verify current password
         const isValid = await user.comparePassword(current_password);
         if (!isValid) {
             return res.status(401).json({ error: 'Current password is incorrect' });
         }
         
-        // Update password
-        user.password_hash = new_password;
+        // ✅ Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(new_password, salt);
+        
+        user.password_hash = hashedPassword;
         await user.save();
         
         console.log('✅ Password changed for user:', user.id);
@@ -399,4 +552,112 @@ exports.changePassword = async (req, res) => {
         console.error('❌ Change password error:', error);
         res.status(500).json({ error: 'Failed to change password' });
     }
-}; 
+};
+
+// ============================================
+// FORGOT PASSWORD - SEND RESET LINK
+// ============================================
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const user = await User.findOne({ where: { email } });
+        
+        if (!user) {
+            return res.status(404).json({ error: 'Email not found' });
+        }
+
+        // ✅ Generate reset token
+        const resetToken = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET || 'dev-secret',
+            { expiresIn: '1h' }
+        );
+
+        // ✅ Send email with reset link
+        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+        
+        console.log(`🔑 Reset link for ${email}: ${resetLink}`);
+
+        return res.json({
+            success: true,
+            message: 'Reset link sent to your email',
+            resetLink: resetLink // Only for development
+        });
+
+    } catch (error) {
+        console.error('❌ Forgot password error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to send reset link' 
+        });
+    }
+};
+
+// ============================================
+// RESET PASSWORD
+// ============================================
+exports.resetPassword = async (req, res) => {
+    try {
+        const { token, new_password } = req.body;
+
+        if (!token || !new_password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Token and new password are required' 
+            });
+        }
+
+        if (new_password.length < 6) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Password must be at least 6 characters' 
+            });
+        }
+
+        // ✅ Verify token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+        } catch (err) {
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid or expired token' 
+            });
+        }
+
+        const user = await User.findByPk(decoded.id);
+
+        if (!user) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'User not found' 
+            });
+        }
+
+        // ✅ Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(new_password, salt);
+        
+        user.password_hash = hashedPassword;
+        await user.save();
+
+        console.log('✅ Password reset successfully for user:', user.id);
+
+        return res.json({
+            success: true,
+            message: 'Password reset successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Reset password error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to reset password' 
+        });
+    }
+};

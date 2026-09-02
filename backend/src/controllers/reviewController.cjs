@@ -196,3 +196,36 @@ exports.markHelpful = async (req, res) => {
         res.status(500).json({ error: 'Failed to mark review as helpful' });
     }
 };
+// ============================================
+// GET MY REVIEWS (Customer)
+// ============================================
+exports.getMyReviews = async (req, res) => {
+    try {
+        const user_id = req.user.id;
+
+        const reviews = await Review.findAll({
+            where: { user_id },
+            include: [
+                {
+                    model: Product,
+                    as: 'product',
+                    attributes: ['id', 'name', 'images']
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        res.json({
+            success: true,
+            reviews: reviews || [],
+            count: reviews.length
+        });
+    } catch (error) {
+        console.error('Get my reviews error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to fetch reviews',
+            details: error.message 
+        });
+    }
+};

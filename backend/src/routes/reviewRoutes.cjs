@@ -5,6 +5,7 @@ const { authMiddleware, authorize } = require('../middleware/auth.cjs');
 
 // Public routes
 router.get('/product/:product_id', reviewController.getProductReviews);
+router.get('/my-reviews', reviewController.getMyReviews);  
 router.get('/:id', reviewController.getReviewById);
 
 // Protected routes (Customer)

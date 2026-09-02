@@ -1,11 +1,11 @@
 // src/pages/driver/dashboard.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Truck, 
-  Package, 
-  CheckCircle, 
-  Clock, 
+import {
+  Truck,
+  Package,
+  CheckCircle,
+  Clock,
   DollarSign,
   TrendingUp,
   Calendar,
@@ -59,23 +59,23 @@ export default function DriverDashboard() {
       // Fetch driver's deliveries
       const deliveriesRes = await api.get('/deliveries/my-deliveries');
       const deliveries = deliveriesRes.data.deliveries || [];
-      
+
       // Calculate stats
       const today = new Date().toISOString().split('T')[0];
-      const todayDel = deliveries.filter((d: any) => 
+      const todayDel = deliveries.filter((d: any) =>
         d.created_at?.startsWith(today)
       );
-      
+
       setTodayDeliveries(todayDel);
       const completed = deliveries.filter((d: any) => d.status === 'delivered').length;
       setCompletedToday(completed);
-      
+
       // Calculate earnings (delivery fees)
       const earnings = deliveries
         .filter((d: any) => d.status === 'delivered')
         .reduce((sum: number, d: any) => sum + parseFloat(d.delivery_fee || 0), 0);
       setTotalEarnings(earnings);
-      
+
       // Set stats
       setStats({
         total: deliveries.length,
@@ -83,7 +83,7 @@ export default function DriverDashboard() {
         completed: completed,
         rating: 4.8,
       });
-      
+
     } catch (error: any) {
       console.error('Failed to fetch driver data:', error);
       setError(error.response?.data?.error || 'Failed to load data');
@@ -237,8 +237,8 @@ export default function DriverDashboard() {
               </div>
               <h2 className="text-lg font-bold text-gray-900">Today's Deliveries</h2>
             </div>
-            <Link 
-              href="/driver/deliveries" 
+            <Link
+              href="/driver/deliveries"
               className="text-sm text-agrivibe-green hover:text-emerald-600 font-medium transition-colors flex items-center gap-1"
             >
               View All

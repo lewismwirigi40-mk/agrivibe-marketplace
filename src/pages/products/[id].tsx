@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import Navbar from '../../components/Navbar';
-import PremiumButton from '../../components/PremiumButton';
-import api from '../../services/api';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import Navbar from "../../components/Navbar";
+import PremiumButton from "../../components/PremiumButton";
+import api from "../../services/api";
 
 export default function ProductDetail() {
   const router = useRouter();
@@ -24,28 +24,35 @@ export default function ProductDetail() {
       const response = await api.get(`/products/${id}`);
       setProduct(response.data.product);
     } catch (error) {
-      console.error('Failed to fetch product:', error);
+      console.error("Failed to fetch product:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddToCart = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
 
     setAdding(true);
     try {
-      await api.post('/cart/add', {
+      await api.post("/cart/add", {
         product_id: id,
-        quantity: quantity
+        quantity: quantity,
       });
-      alert('✅ Added to cart!');
+
+      // ✅ Update stock locally
+      setProduct((prev) => ({
+        ...prev,
+        stock_quantity: Math.max(0, prev.stock_quantity - quantity),
+      }));
+
+      alert("✅ Added to cart!");
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to add to cart');
+      alert(error.response?.data?.error || "Failed to add to cart");
     } finally {
       setAdding(false);
     }
@@ -66,7 +73,10 @@ export default function ProductDetail() {
         <Navbar />
         <div className="pt-24 px-4 text-center">
           <h1 className="text-3xl font-bold text-white">Product not found</h1>
-          <Link href="/marketplace" className="text-yellow-400 hover:text-yellow-300 transition">
+          <Link
+            href="/marketplace"
+            className="text-yellow-400 hover:text-yellow-300 transition"
+          >
             ← Back to Marketplace
           </Link>
         </div>
@@ -78,7 +88,10 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <Navbar />
       <div className="pt-24 px-4 max-w-6xl mx-auto pb-16">
-        <Link href="/marketplace" className="text-yellow-400 hover:text-yellow-300 transition">
+        <Link
+          href="/marketplace"
+          className="text-yellow-400 hover:text-yellow-300 transition"
+        >
           ← Back to Marketplace
         </Link>
 
@@ -86,7 +99,11 @@ export default function ProductDetail() {
           {/* Product Image */}
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex items-center justify-center">
             {product.images && product.images.length > 0 ? (
-              <img src={product.images[0]} alt={product.name} className="w-full h-96 object-cover rounded-xl" />
+              <img
+                src={product.images[0]}
+                alt={product.name}
+                className="w-full h-96 object-cover rounded-xl"
+              />
             ) : (
               <div className="w-full h-96 bg-gradient-to-br from-yellow-500/20 to-green-500/20 rounded-xl flex items-center justify-center text-8xl">
                 📦
@@ -97,19 +114,27 @@ export default function ProductDetail() {
           {/* Product Info */}
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6">
             <h1 className="text-3xl font-bold text-white">{product.name}</h1>
-            <p className="text-gray-400 text-sm mt-1">By: {product.store?.store_name || 'Vendor'}</p>
-            
+            <p className="text-gray-400 text-sm mt-1">
+              By: {product.store?.store_name || "Vendor"}
+            </p>
+
             <div className="flex items-center gap-4 mt-4">
-              <span className="text-3xl font-bold text-yellow-400">KES {product.price}</span>
+              <span className="text-3xl font-bold text-yellow-400">
+                KES {product.price}
+              </span>
               <span className="text-gray-400">⭐ {product.rating || 0}</span>
             </div>
 
-            <p className="text-gray-300 mt-4">{product.description || 'No description available.'}</p>
+            <p className="text-gray-300 mt-4">
+              {product.description || "No description available."}
+            </p>
 
             <div className="mt-4 flex items-center gap-4">
               <span className="text-gray-400">Stock:</span>
               {product.stock_quantity > 0 ? (
-                <span className="text-green-400 font-semibold">{product.stock_quantity} available</span>
+                <span className="text-green-400 font-semibold">
+                  {product.stock_quantity} available
+                </span>
               ) : (
                 <span className="text-red-400 font-semibold">Out of Stock</span>
               )}
@@ -144,7 +169,11 @@ export default function ProductDetail() {
                 className="w-full"
                 disabled={adding || product.stock_quantity <= 0}
               >
-                {adding ? 'Adding...' : product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+                {adding
+                  ? "Adding..."
+                  : product.stock_quantity > 0
+                    ? "Add to Cart"
+                    : "Out of Stock"}
               </PremiumButton>
             </div>
           </div>

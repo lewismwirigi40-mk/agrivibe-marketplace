@@ -1,8 +1,8 @@
 // src/pages/driver/deliveries/[id].tsx
-import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import { useRouter } from "next/router";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
   ArrowLeft,
   Package,
   MapPin,
@@ -24,21 +24,21 @@ import {
   Award,
   Send,
   MessageCircle,
-  Mail
-} from 'lucide-react';
-import DriverLayout from '../../../components/DriverLayout';
-import api from '../../../services/api';
+  Mail,
+  AlertCircle,
+} from "lucide-react";
+import DriverLayout from "../../../components/DriverLayout";
+import api from "../../../services/api";
 
 export default function DeliveryDetails() {
   const router = useRouter();
   const { id } = router.query;
-  const [code, setCode] = useState('');
-  const [status, setStatus] = useState('Assigned');
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [delivery, setDelivery] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -47,61 +47,125 @@ export default function DeliveryDetails() {
     }
   }, [id]);
 
+  // ============================================
+  // ✅ FETCH DELIVERY DETAILS - REAL API
+  // ============================================
   const fetchDeliveryDetails = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
+      setError("");
+      const token = localStorage.getItem("token");
       if (!token) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
-      // For now, use sample data. Will connect to backend later.
-      const sampleDelivery = {
-        id: id || 'DEL-001',
-        orderId: 'ORD-1234',
-        customer: 'Jane Mwangi',
-        phone: '254700000001',
-        address: 'DeKUT, Nyeri',
-        items: ['Fresh Tomatoes x 2', 'Organic Kale x 1', 'Sweet Avocado x 3'],
-        fee: 150,
-        status: 'assigned',
-        createdAt: new Date().toISOString(),
-        deliveryCode: '482931',
-        notes: 'Call customer upon arrival. Gate code: 1234',
-        vendor: 'Green Farm Produce',
-        estimatedTime: '30-45 min',
-      };
-      setDelivery(sampleDelivery);
-      setStatus(sampleDelivery.status);
-    } catch (error) {
-      console.error('Failed to fetch delivery:', error);
+
+      const response = await api.get(`/deliveries/${id}`);
+      const data = response.data.delivery || response.data;
+
+      // ✅ Format delivery data
+      setDelivery({
+        id: data.id,
+        orderId:
+          data.order?.order_number || data.order_id?.slice(0, 8) || "N/A",
+        customer: data.customer?.name || data.customer_name || "Customer",
+        phone: data.customer?.phone || data.phone || "N/A",
+        address: data.delivery_address || "Address not set",
+        items: data.order?.items?.map(
+          (item: any) =>
+            `${item.product?.name || "Product"} x ${item.quantity}`,
+        ) || ["No items"],
+        fee: data.delivery_fee || 0,
+        status: data.status || "assigned",
+        createdAt: data.created_at || new Date().toISOString(),
+        deliveryCode: data.delivery_code || "Not set",
+        notes: data.driver_notes || data.customer_notes || "",
+        vendor: data.vendor?.store_name || "Vendor",
+        estimatedTime: data.estimated_time
+          ? `${data.estimated_time} min`
+          : "N/A",
+        pickupTime: data.pickup_time,
+        deliveryTime: data.delivery_time,
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch delivery:", error);
+      setError(
+        error.response?.data?.error || "Failed to load delivery details",
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStatusUpdate = (newStatus: string) => {
-    setStatus(newStatus);
-    setMessage(`✅ Status updated to: ${newStatus}`);
-    setTimeout(() => setMessage(''), 3000);
+  // ============================================
+  // ✅ UPDATE STATUS - REAL API
+  // ============================================
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      await api.put(`/deliveries/${id}/status`, { status: newStatus });
+
+      // ✅ Update local state
+      setDelivery((prev: any) => ({ ...prev, status: newStatus }));
+      setMessage(`✅ Status updated to: ${newStatus}`);
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error: any) {
+      console.error("Failed to update status:", error);
+      setMessage(
+        `❌ ${error.response?.data?.error || "Failed to update status"}`,
+      );
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyCode = () => {
+  // ============================================
+  // ✅ VERIFY DELIVERY CODE - REAL API
+  // ============================================
+  const handleVerifyCode = async () => {
     if (!code || code.length !== 6) {
-      setMessage('⚠️ Please enter a valid 6-digit code');
+      setMessage("⚠️ Please enter a valid 6-digit code");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const response = await api.post("/deliveries/verify-code", {
+        order_id: delivery.orderId,
+        code: code,
+      });
+
+      if (response.data.message) {
+        setMessage("✅ Delivery confirmed! Code verified successfully.");
+        setDelivery((prev: any) => ({ ...prev, status: "delivered" }));
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (error: any) {
+      console.error("Failed to verify code:", error);
+      setMessage(
+        `❌ ${error.response?.data?.error || "Invalid code. Please try again."}`,
+      );
+      setTimeout(() => setMessage(""), 3000);
+    } finally {
       setLoading(false);
-      setMessage('✅ Delivery confirmed! Code verified successfully.');
-      setStatus('delivered');
-      setTimeout(() => setMessage(''), 3000);
-    }, 1500);
+    }
   };
 
   const handleCopyCode = () => {
-    if (delivery?.deliveryCode) {
+    if (delivery?.deliveryCode && delivery.deliveryCode !== "Not set") {
       navigator.clipboard.writeText(delivery.deliveryCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -110,33 +174,39 @@ export default function DeliveryDetails() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      'assigned': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      'picked_up': 'bg-blue-100 text-blue-700 border-blue-200',
-      'in_transit': 'bg-purple-100 text-purple-700 border-purple-200',
-      'delivered': 'bg-green-100 text-green-700 border-green-200',
-      'failed': 'bg-red-100 text-red-700 border-red-200',
+      assigned: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      picked_up: "bg-blue-100 text-blue-700 border-blue-200",
+      in_transit: "bg-purple-100 text-purple-700 border-purple-200",
+      delivered: "bg-green-100 text-green-700 border-green-200",
+      failed: "bg-red-100 text-red-700 border-red-200",
+      cancelled: "bg-gray-100 text-gray-700 border-gray-200",
     };
-    return colors[status?.toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200';
+    return (
+      colors[status?.toLowerCase()] ||
+      "bg-gray-100 text-gray-700 border-gray-200"
+    );
   };
 
   const getStatusIcon = (status: string) => {
     const icons: Record<string, any> = {
-      'assigned': Clock,
-      'picked_up': Package,
-      'in_transit': Navigation,
-      'delivered': CheckCircle,
-      'failed': XCircle,
+      assigned: Clock,
+      picked_up: Package,
+      in_transit: Navigation,
+      delivered: CheckCircle,
+      failed: XCircle,
+      cancelled: XCircle,
     };
     return icons[status?.toLowerCase()] || Clock;
   };
 
   const getStatusProgress = (status: string) => {
     const progress: Record<string, number> = {
-      'assigned': 25,
-      'picked_up': 50,
-      'in_transit': 75,
-      'delivered': 100,
-      'failed': 0,
+      assigned: 25,
+      picked_up: 50,
+      in_transit: 75,
+      delivered: 100,
+      failed: 0,
+      cancelled: 0,
     };
     return progress[status?.toLowerCase()] || 0;
   };
@@ -154,12 +224,15 @@ export default function DeliveryDetails() {
     );
   }
 
-  if (!delivery) {
+  if (error) {
     return (
       <DriverLayout>
         <div className="text-center py-20">
-          <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-xl font-semibold text-gray-800">Delivery not found</h3>
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-800">
+            Error loading delivery
+          </h3>
+          <p className="text-gray-500 mt-2">{error}</p>
           <button
             onClick={() => router.back()}
             className="mt-4 text-agrivibe-green font-medium hover:underline"
@@ -171,10 +244,30 @@ export default function DeliveryDetails() {
     );
   }
 
-  const StatusIcon = getStatusIcon(status);
-  const progress = getStatusProgress(status);
-  const isDelivered = status === 'delivered';
-  const isFailed = status === 'failed';
+  if (!delivery) {
+    return (
+      <DriverLayout>
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4">📭</div>
+          <h3 className="text-xl font-semibold text-gray-800">
+            Delivery not found
+          </h3>
+          <button
+            onClick={() => router.back()}
+            className="mt-4 text-agrivibe-green font-medium hover:underline"
+          >
+            Go Back
+          </button>
+        </div>
+      </DriverLayout>
+    );
+  }
+
+  const StatusIcon = getStatusIcon(delivery.status);
+  const progress = getStatusProgress(delivery.status);
+  const isDelivered = delivery.status === "delivered";
+  const isFailed =
+    delivery.status === "failed" || delivery.status === "cancelled";
 
   return (
     <DriverLayout>
@@ -189,13 +282,18 @@ export default function DeliveryDetails() {
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               Back to Deliveries
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">Delivery Details</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Delivery Details
+            </h1>
             <p className="text-gray-500 mt-1">Order #{delivery.orderId}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(status)}`}>
+            <span
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border ${getStatusColor(delivery.status)}`}
+            >
               <StatusIcon className="w-4 h-4" />
-              {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+              {delivery.status.charAt(0).toUpperCase() +
+                delivery.status.slice(1).replace("_", " ")}
             </span>
           </div>
         </div>
@@ -209,11 +307,11 @@ export default function DeliveryDetails() {
             <span>Delivered</span>
           </div>
           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.8 }}
-              className={`h-full rounded-full ${isDelivered ? 'bg-green-500' : isFailed ? 'bg-red-500' : 'bg-agrivibe-green'}`}
+              className={`h-full rounded-full ${isDelivered ? "bg-green-500" : isFailed ? "bg-red-500" : "bg-agrivibe-green"}`}
             />
           </div>
           <div className="text-right text-sm text-gray-500 mt-1">
@@ -229,11 +327,11 @@ export default function DeliveryDetails() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className={`p-4 rounded-2xl flex items-start gap-3 ${
-                message.includes('✅') 
-                  ? 'bg-green-50 border border-green-200 text-green-700'
-                  : message.includes('⚠️')
-                  ? 'bg-yellow-50 border border-yellow-200 text-yellow-700'
-                  : 'bg-blue-50 border border-blue-200 text-blue-700'
+                message.includes("✅")
+                  ? "bg-green-50 border border-green-200 text-green-700"
+                  : message.includes("⚠️")
+                    ? "bg-yellow-50 border border-yellow-200 text-yellow-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
               }`}
             >
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -259,15 +357,21 @@ export default function DeliveryDetails() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-500 text-sm">Delivery ID</span>
-                  <span className="text-gray-900 font-medium">{delivery.id}</span>
+                  <span className="text-gray-900 font-medium">
+                    {delivery.id?.slice(0, 8) || "N/A"}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-500 text-sm">Order ID</span>
-                  <span className="text-gray-900 font-medium">{delivery.orderId}</span>
+                  <span className="text-gray-900 font-medium">
+                    {delivery.orderId}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-500 text-sm">Vendor</span>
-                  <span className="text-gray-900 font-medium">{delivery.vendor}</span>
+                  <span className="text-gray-900 font-medium">
+                    {delivery.vendor}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-500 text-sm">Date</span>
@@ -277,8 +381,26 @@ export default function DeliveryDetails() {
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-500 text-sm">Estimated Time</span>
-                  <span className="text-gray-900 font-medium">{delivery.estimatedTime}</span>
+                  <span className="text-gray-900 font-medium">
+                    {delivery.estimatedTime}
+                  </span>
                 </div>
+                {delivery.pickupTime && (
+                  <div className="flex justify-between items-center py-2 border-t border-gray-50">
+                    <span className="text-gray-500 text-sm">Picked Up</span>
+                    <span className="text-gray-900 font-medium">
+                      {new Date(delivery.pickupTime).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {delivery.deliveryTime && (
+                  <div className="flex justify-between items-center py-2 border-t border-gray-50">
+                    <span className="text-gray-500 text-sm">Delivered</span>
+                    <span className="text-gray-900 font-medium">
+                      {new Date(delivery.deliveryTime).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -299,7 +421,9 @@ export default function DeliveryDetails() {
                     <User className="w-5 h-5 text-agrivibe-green" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{delivery.customer}</p>
+                    <p className="font-medium text-gray-900">
+                      {delivery.customer}
+                    </p>
                     <p className="text-sm text-gray-500 flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5" />
                       {delivery.phone}
@@ -310,7 +434,9 @@ export default function DeliveryDetails() {
                   <MapPin className="w-5 h-5 text-agrivibe-green flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-gray-500">Delivery Address</p>
-                    <p className="text-gray-900 font-medium">{delivery.address}</p>
+                    <p className="text-gray-900 font-medium">
+                      {delivery.address}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
@@ -338,8 +464,12 @@ export default function DeliveryDetails() {
                 <div className="flex items-start gap-3">
                   <MessageCircle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-yellow-700">Delivery Notes</p>
-                    <p className="text-sm text-yellow-600 mt-1">{delivery.notes}</p>
+                    <p className="text-sm font-medium text-yellow-700">
+                      Delivery Notes
+                    </p>
+                    <p className="text-sm text-yellow-600 mt-1">
+                      {delivery.notes}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -357,47 +487,81 @@ export default function DeliveryDetails() {
             >
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-5 h-5 text-agrivibe-green" />
-                <h3 className="text-lg font-bold text-gray-900">Delivery Code</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Delivery Code
+                </h3>
               </div>
-              <p className="text-sm text-gray-500 mb-3">Ask the customer for the 6-digit code</p>
-              
+              <p className="text-sm text-gray-500 mb-3">
+                Ask the customer for the 6-digit code
+              </p>
+
               {isDelivered ? (
                 <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-center">
                   <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-green-700">Delivery Confirmed</p>
-                  <p className="text-xs text-green-600">Code verified successfully</p>
+                  <p className="text-sm font-medium text-green-700">
+                    Delivery Confirmed
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Code verified successfully
+                  </p>
+                </div>
+              ) : isFailed ? (
+                <div className="p-4 bg-red-50 rounded-xl border border-red-200 text-center">
+                  <XCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-red-700">
+                    Delivery Failed
+                  </p>
+                  <p className="text-xs text-red-600">
+                    This delivery cannot be completed
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {delivery.deliveryCode &&
+                    delivery.deliveryCode !== "Not set" && (
+                      <div className="p-3 bg-gray-50 rounded-xl text-center">
+                        <p className="text-xs text-gray-500 mb-1">
+                          Customer Code
+                        </p>
+                        <p className="text-2xl font-bold text-agrivibe-green tracking-widest">
+                          {delivery.deliveryCode}
+                        </p>
+                      </div>
+                    )}
                   <div className="flex gap-2">
                     <input
                       type="text"
                       maxLength={6}
                       placeholder="Enter 6-digit code"
                       value={code}
-                      onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                      disabled={isDelivered}
+                      onChange={(e) =>
+                        setCode(e.target.value.replace(/\D/g, ""))
+                      }
+                      disabled={isDelivered || isFailed}
                       className="flex-1 px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all text-center text-2xl tracking-widest disabled:opacity-50"
                     />
                     <button
                       onClick={handleVerifyCode}
-                      disabled={loading || isDelivered}
+                      disabled={loading || isDelivered || isFailed}
                       className="bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-xl hover:shadow-agrivibe-green/30 transition-all duration-300 hover:scale-105 disabled:opacity-50"
                     >
                       {loading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        'Verify'
+                        "Verify"
                       )}
                     </button>
                   </div>
-                  <button
-                    onClick={handleCopyCode}
-                    className="text-sm text-agrivibe-green hover:text-emerald-600 transition-colors flex items-center gap-1"
-                  >
-                    <Copy className="w-4 h-4" />
-                    {copied ? 'Copied!' : 'Copy code to clipboard'}
-                  </button>
+                  {delivery.deliveryCode &&
+                    delivery.deliveryCode !== "Not set" && (
+                      <button
+                        onClick={handleCopyCode}
+                        className="text-sm text-agrivibe-green hover:text-emerald-600 transition-colors flex items-center gap-1"
+                      >
+                        <Copy className="w-4 h-4" />
+                        {copied ? "Copied!" : "Copy code to clipboard"}
+                      </button>
+                    )}
                 </div>
               )}
             </motion.div>
@@ -414,8 +578,8 @@ export default function DeliveryDetails() {
                 Update Status
               </h3>
               <div className="space-y-2">
-                {['picked_up', 'in_transit', 'delivered'].map((s) => {
-                  const isActive = status === s;
+                {["picked_up", "in_transit", "delivered"].map((s) => {
+                  const isActive = delivery.status === s;
                   const isDisabled = isDelivered || isFailed;
                   return (
                     <button
@@ -424,13 +588,13 @@ export default function DeliveryDetails() {
                       disabled={isDisabled}
                       className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
                         isActive
-                          ? 'bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30'
-                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                          ? "bg-agrivibe-green text-white shadow-lg shadow-agrivibe-green/30"
+                          : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {s === 'picked_up' && '📦 Picked Up'}
-                      {s === 'in_transit' && '🚚 In Transit'}
-                      {s === 'delivered' && '✅ Delivered'}
+                      {s === "picked_up" && "📦 Picked Up"}
+                      {s === "in_transit" && "🚚 In Transit"}
+                      {s === "delivered" && "✅ Delivered"}
                     </button>
                   );
                 })}
@@ -487,7 +651,9 @@ export default function DeliveryDetails() {
               className="bg-gradient-to-r from-agrivibe-green/10 to-emerald-500/10 rounded-2xl border border-agrivibe-green/20 p-4 text-center"
             >
               <p className="text-sm text-gray-500">Delivery Fee</p>
-              <p className="text-2xl font-bold text-agrivibe-green">KES {delivery.fee}</p>
+              <p className="text-2xl font-bold text-agrivibe-green">
+                KES {delivery.fee}
+              </p>
             </motion.div>
           </div>
         </div>

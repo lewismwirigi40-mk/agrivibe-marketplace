@@ -1,12 +1,12 @@
 // src/pages/driver/deliveries.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Truck, 
-  Package, 
-  MapPin, 
-  Clock, 
-  CheckCircle, 
+import {
+  Truck,
+  Package,
+  MapPin,
+  Clock,
+  CheckCircle,
   XCircle,
   AlertCircle,
   Search,
@@ -58,7 +58,7 @@ export default function DriverDeliveries() {
       const response = await api.get('/deliveries/my-deliveries');
       const deliveriesData = response.data.deliveries || [];
       setDeliveries(deliveriesData);
-      
+
       // Calculate stats
       setStats({
         total: deliveriesData.length,
@@ -122,7 +122,7 @@ export default function DriverDeliveries() {
   // Filter and sort deliveries
   const filteredDeliveries = deliveries
     .filter(delivery => {
-      const matchesSearch = 
+      const matchesSearch =
         delivery.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         delivery.delivery_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         delivery.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -300,7 +300,7 @@ export default function DriverDeliveries() {
                 const StatusIcon = getStatusIcon(delivery.status);
                 const statusColor = getStatusColor(delivery.status);
                 const isActive = delivery.status !== 'delivered' && delivery.status !== 'failed' && delivery.status !== 'cancelled';
-                
+
                 return (
                   <motion.div
                     key={delivery.id}
@@ -327,7 +327,7 @@ export default function DriverDeliveries() {
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="mt-2 space-y-1">
                           <p className="text-sm text-gray-600 flex items-start gap-2">
                             <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
@@ -368,7 +368,7 @@ export default function DriverDeliveries() {
                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                           </div>
                         )}
-                        
+
                         <Link
                           href={`/driver/deliveries/${delivery.id}`}
                           className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all duration-300 group-hover:scale-105"
@@ -385,7 +385,7 @@ export default function DriverDeliveries() {
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <span>Progress:</span>
                           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className={`h-full rounded-full transition-all duration-500 ${
                                 delivery.status === 'assigned' ? 'w-1/4 bg-yellow-400' :
                                 delivery.status === 'picked_up' ? 'w-1/2 bg-blue-400' :

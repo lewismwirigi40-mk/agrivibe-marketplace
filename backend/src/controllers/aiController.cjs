@@ -34,7 +34,7 @@ const knowledgeBase = {
     'mpesa': '📱 To pay with M-Pesa:\n1. Select M-Pesa at checkout\n2. Enter your phone number\n3. Receive prompt on your phone\n4. Enter your PIN\n5. Payment confirmed instantly!',
     'wallet': '👛 You can add funds to your AgriVibe Wallet and use them for faster checkout.',
 
-    // Fruits
+    // Fruits (Full Knowledge Base - Keeping all existing entries)
     'mango': '🥭 MANGOES (Embe)\n\nBenefits:\n• High in vitamin C and A\n• Rich in antioxidants\n• Supports immune system\n• Promotes eye health\n• Good for digestion\n\nUses: Fresh, juiced, in smoothies, or in desserts.\n\nStorage: Ripen at room temperature, refrigerate for 3-5 days.',
     'banana': '🍌 BANANAS (Ndizi)\n\nBenefits:\n• Rich in potassium and vitamin B6\n• Good source of energy\n• Supports heart health\n• Aids digestion\n• Helps with muscle recovery',
     'avocado': '🥑 AVOCADOS (Parachichi)\n\nBenefits:\n• Rich in healthy fats\n• High in fiber\n• Supports heart health\n• Good for skin and hair\n• Contains vitamins E and K',
@@ -113,7 +113,7 @@ const closingResponses = {
 };
 
 // ============================================
-// DYNAMIC MATCHING ENGINE
+// DYNAMIC MATCHING ENGINE - FIXED
 // ============================================
 
 async function findAnswer(message) {
@@ -126,13 +126,14 @@ async function findAnswer(message) {
         }
     }
     
-    // 2. Check database for answered questions (DYNAMIC!)
+    // 2. ✅ FIXED: Check database for answered questions with attributes
     try {
         const answered = await UnansweredQuestion.findOne({
             where: {
                 question: { [Op.iLike]: `%${lowerMsg}%` },
                 status: 'answered'
             },
+            attributes: ['id', 'question', 'answer', 'status', 'answered_at', 'asked_at'],
             order: [['answered_at', 'DESC']]
         });
         if (answered) {
@@ -150,7 +151,7 @@ async function findAnswer(message) {
     }
     
     // 4. No match found
-return "🤖 I'm still learning! I don't have an answer for that yet. I've noted your question and my team will review it. In the meantime, I can help with:\n• Orders and deliveries\n• Payments and refunds\n• Produce information\n• About AgriVibe\n• Becoming a vendor\n\nTry asking differently or check our FAQ section! 🌾";
+    return "🤖 I'm still learning! I don't have an answer for that yet. I've noted your question and my team will review it. In the meantime, I can help with:\n• Orders and deliveries\n• Payments and refunds\n• Produce information\n• About AgriVibe\n• Becoming a vendor\n\nTry asking differently or check our FAQ section! 🌾";
 }
 
 // ============================================
@@ -168,13 +169,37 @@ exports.chat = async (req, res) => {
         
         const response = await findAnswer(message);
         
+        // ✅ If AI couldn't answer, save question as unanswered
+        if (response.includes("I'm still learning")) {
+            try {
+                // ✅ FIXED: Added attributes to prevent column errors
+                const existing = await UnansweredQuestion.findOne({
+                    where: { 
+                        question: message,
+                        status: ['pending', 'answered']
+                    },
+                    attributes: ['id', 'question', 'status']
+                });
+                
+                if (!existing) {
+                    await UnansweredQuestion.create({
+                        question: message,
+                        status: 'pending'
+                    });
+                    console.log(`📝 Unanswered question saved from chat: ${message}`);
+                }
+            } catch (saveError) {
+                console.error('Failed to save unanswered question:', saveError);
+            }
+        }
+        
         res.json({
             message: response,
             timestamp: new Date().toISOString()
         });
 
     } catch (error) {
-        console.error('Chat error:', error);
+        console.error('❌ Chat error:', error);
         res.status(500).json({ error: 'Failed to process message' });
     }
 };
@@ -225,10 +250,10 @@ exports.getProduceCategories = async (req, res) => {
 };
 
 // ============================================
-// UNANSWERED QUESTIONS CRUD
+// UNANSWERED QUESTIONS CRUD - FIXED
 // ============================================
 
-// Save unanswered question
+// ✅ Save unanswered question - Only save fields that exist
 exports.saveUnansweredQuestion = async (req, res) => {
     try {
         const { question } = req.body;
@@ -237,12 +262,13 @@ exports.saveUnansweredQuestion = async (req, res) => {
             return res.status(400).json({ error: 'Question is required' });
         }
 
-        // Check if question already exists
+        // ✅ FIXED: Added attributes to prevent column errors
         const existing = await UnansweredQuestion.findOne({
             where: { 
                 question: question,
                 status: ['pending', 'answered']
-            }
+            },
+            attributes: ['id', 'question', 'status']
         });
 
         if (existing) {
@@ -253,9 +279,9 @@ exports.saveUnansweredQuestion = async (req, res) => {
             });
         }
 
+        // ✅ Only create with fields that exist in the database
         const record = await UnansweredQuestion.create({
             question,
-            asked_by: req.user?.id || null,
             status: 'pending'
         });
 
@@ -268,26 +294,68 @@ exports.saveUnansweredQuestion = async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Save unanswered question error:', error);
+        console.error('❌ Save unanswered question error:', error);
         res.status(500).json({ error: 'Failed to save question' });
     }
 };
 
-// Get all unanswered questions (Admin only)
+// ✅ Get unanswered questions - Only query existing columns
 exports.getUnansweredQuestions = async (req, res) => {
     try {
         const questions = await UnansweredQuestion.findAll({
+            where: {
+                status: ['pending']
+            },
+            // ✅ Only query for fields that exist in your database
+            attributes: [
+                'id', 'question', 'answer', 'status',
+                'asked_at', 'updated_at'
+            ],
             order: [['asked_at', 'DESC']]
         });
         
-        res.json({ questions });
+        res.json({ 
+            success: true,
+            questions 
+        });
     } catch (error) {
-        console.error('Get unanswered questions error:', error);
-        res.status(500).json({ error: 'Failed to fetch questions' });
+        console.error('❌ Get unanswered questions error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch questions' 
+        });
     }
 };
 
-// Answer a question (Admin only)
+// ✅ Get answered questions - Only query existing columns
+exports.getAnsweredQuestions = async (req, res) => {
+    try {
+        const questions = await UnansweredQuestion.findAll({
+            where: {
+                status: 'answered'
+            },
+            // ✅ Only query for fields that exist in your database
+            attributes: [
+                'id', 'question', 'answer', 'status',
+                'answered_at', 'asked_at', 'updated_at'
+            ],
+            order: [['answered_at', 'DESC']]
+        });
+        
+        res.json({ 
+            success: true,
+            questions 
+        });
+    } catch (error) {
+        console.error('❌ Get answered questions error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch answered questions' 
+        });
+    }
+};
+
+// ✅ Answer a question - Only update fields that exist
 exports.answerQuestion = async (req, res) => {
     try {
         const { id } = req.params;
@@ -302,11 +370,13 @@ exports.answerQuestion = async (req, res) => {
             return res.status(404).json({ error: 'Question not found' });
         }
 
+        // ✅ Only update fields that exist in the database
         question.answer = answer;
         question.status = 'answered';
-        question.answered_by = req.user.id;
         question.answered_at = new Date();
         await question.save();
+
+        console.log(`✅ Question ${id} answered`);
 
         res.json({
             success: true,
@@ -315,7 +385,55 @@ exports.answerQuestion = async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Answer question error:', error);
+        console.error('❌ Answer question error:', error);
         res.status(500).json({ error: 'Failed to answer question' });
+    }
+};
+
+// ✅ Get single question details
+exports.getQuestionById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const question = await UnansweredQuestion.findByPk(id);
+        if (!question) {
+            return res.status(404).json({ error: 'Question not found' });
+        }
+        
+        res.json({ 
+            success: true,
+            question 
+        });
+    } catch (error) {
+        console.error('❌ Get question error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch question' 
+        });
+    }
+};
+
+// ✅ Delete answered question
+exports.deleteQuestion = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const question = await UnansweredQuestion.findByPk(id);
+        if (!question) {
+            return res.status(404).json({ error: 'Question not found' });
+        }
+        
+        await question.destroy();
+        
+        res.json({
+            success: true,
+            message: 'Question deleted successfully'
+        });
+    } catch (error) {
+        console.error('❌ Delete question error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to delete question' 
+        });
     }
 };

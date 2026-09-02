@@ -86,18 +86,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         }
 
         // Fetch user profile
-        const userRes = await api.get("/auth/me");
-        const userData = userRes.data.user || {};
+        const userRes = await api.get("/auth/profile");
+        const userData = userRes.data.user || userRes.data || {};
         setUser(userData);
 
-        if (userData.role !== "admin") {
+        // ✅ Check both role and userData.role
+        const userRole = userData.role || userData.role;
+        console.log("👤 User role from API:", userRole);
+
+        if (userRole !== "admin") {
+          console.log("❌ Access denied - not admin");
           router.push("/");
           return;
         }
         setIsAdmin(true);
 
         // Fetch dashboard stats for quick stats and badges
-        const statsRes = await api.get("/admin/dashboard");
+        const statsRes = await api.get("/dashboard/stats"); // ✅ Correct endpoint
         const stats = statsRes.data.stats || {};
 
         // Set quick stats

@@ -5,6 +5,8 @@ const morgan = require('morgan');
 const compression = require('compression');
 const path = require('path');
 const dotenv = require('dotenv');
+const fileUpload = require('express-fileupload'); 
+// const fileUpload = require('express-fileupload');
 
 // ============================================
 // ENVIRONMENT CONFIGURATION
@@ -47,15 +49,15 @@ console.log('🔥 CONSOLE LOG FLUSH ENABLED');
 const sequelize = require('./config/database.cjs');
 
 // ============================================
-// MODELS
+// MODELS - ✅ ONLY DECLARE EACH ONCE
 // ============================================
 const User = require('./models/User.cjs');
 const Store = require('./models/Store.cjs');
 const Product = require('./models/Product.cjs');
 const Order = require('./models/Order.cjs');
+const OrderItem = require('./models/OrderItem.cjs'); // ✅ MUST BE HERE
 const Cart = require('./models/Cart.cjs');
 const Wallet = require('./models/Wallet.cjs');
-const Delivery = require('./models/Delivery.cjs');
 const Review = require('./models/Review.cjs');
 const Campus = require('./models/Campus.cjs');
 const Category = require('./models/Category.cjs');
@@ -63,21 +65,223 @@ const Notification = require('./models/Notification.cjs');
 const Guide = require('./models/Guide.cjs');
 const GuidePurchase = require('./models/GuidePurchase.cjs');
 const UnansweredQuestion = require('./models/UnansweredQuestion.cjs');
-// ============================================
-// DEFINE MODEL ASSOCIATIONS
-// ============================================
-// 🟢 A product belongs to a store, and a store has many products
-Product.belongsTo(Store, { foreignKey: 'store_id', as: 'store' });
-Store.hasMany(Product, { foreignKey: 'store_id', as: 'products' });
-// 🟢 NEW: An Order belongs to a User (Customer), and a User can have many Orders
-Order.belongsTo(User, { foreignKey: 'customer_id', as: 'customer' });
-User.hasMany(Order, { foreignKey: 'customer_id', as: 'orders' });
+const Vendor = require('./models/Vendor.cjs');
+const Driver = require('./models/Driver.cjs');        // ✅ ADD THIS
+const Delivery = require('./models/Delivery.cjs');  // ✅ ADDED
+// backend/src/app.cjs
 
-// 🟢 ADD THESE TWO LINES TO FIX THE NEW ERROR:
-Order.belongsTo(Store, { foreignKey: 'store_id', as: 'store' });
-Store.hasMany(Order, { foreignKey: 'store_id', as: 'orders' });
+// ✅ ADD THIS WITH YOUR OTHER MODEL IMPORTS
+const Wishlist = require('./models/Wishlist.cjs');
+// backend/src/app.cjs
+
+// ... after all your model imports and before starting the server ...
+
 // ============================================
-// ROUTES
+// ✅ DEFINE ALL ASSOCIATIONS HERE
+// (After all models are loaded)
+// ============================================
+
+// ============================================
+// UNANSWERED QUESTION ASSOCIATIONS
+// ============================================
+UnansweredQuestion.belongsTo(User, {
+    foreignKey: 'asked_by',
+    as: 'asker'
+});
+
+UnansweredQuestion.belongsTo(User, {
+    foreignKey: 'answered_by',
+    as: 'answerer'
+});
+
+// ============================================
+// ✅ DEFINE ALL ASSOCIATIONS HERE
+// ============================================
+
+// ---------- PRODUCT ASSOCIATIONS ----------
+Product.belongsTo(Store, {
+    foreignKey: 'store_id',
+    as: 'store'
+});
+
+Store.hasMany(Product, {
+    foreignKey: 'store_id',
+    as: 'storeProducts'
+});
+
+Product.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'category'
+});
+
+Category.hasMany(Product, {
+    foreignKey: 'category_id',
+    as: 'categoryProducts'
+});
+
+// ---------- ORDER - USER (Customer) ----------
+Order.belongsTo(User, {
+    foreignKey: 'customer_id',
+    as: 'customer'
+});
+
+User.hasMany(Order, {
+    foreignKey: 'customer_id',
+    as: 'orders'
+});
+
+// ---------- ORDER - STORE ----------
+Order.belongsTo(Store, {
+    foreignKey: 'store_id',
+    as: 'orderstore'   // ✅ Must match controller
+});
+
+Store.hasMany(Order, {
+    foreignKey: 'store_id',
+    as: 'storeOrders'
+});
+
+// ---------- STORE - USER (Vendor) ----------
+Store.belongsTo(User, {
+    foreignKey: 'vendor_id',
+    as: 'vendorUser'
+});
+
+User.hasOne(Store, {
+    foreignKey: 'vendor_id',
+    as: 'userStore'
+});
+
+// ---------- ORDERITEM - ORDER ----------
+OrderItem.belongsTo(Order, {
+    foreignKey: 'order_id',
+    as: 'order'
+});
+
+Order.hasMany(OrderItem, {
+    foreignKey: 'order_id',
+    as: 'items'   // ✅ Changed to match controller
+});
+
+// ---------- ORDERITEM - STORE (Vendor) ----------
+OrderItem.belongsTo(Store, {
+    foreignKey: 'vendor_id',
+    as: 'vendor'
+});
+
+Store.hasMany(OrderItem, {
+    foreignKey: 'vendor_id',
+    as: 'vendorOrderItems'
+});
+
+// ---------- ORDERITEM - PRODUCT ----------
+OrderItem.belongsTo(Product, {
+    foreignKey: 'product_id',
+    as: 'product'
+});
+
+Product.hasMany(OrderItem, {
+    foreignKey: 'product_id',
+    as: 'productOrderItems'
+});
+
+// ---------- DELIVERY - ORDER ----------
+Delivery.belongsTo(Order, {
+    foreignKey: 'order_id',
+    as: 'order'
+});
+
+Order.hasOne(Delivery, {
+    foreignKey: 'order_id',
+    as: 'delivery'
+});
+
+// ---------- DELIVERY - USER (Driver) ----------
+Delivery.belongsTo(User, {
+    foreignKey: 'driver_id',
+    as: 'driver'
+});
+
+User.hasMany(Delivery, {
+    foreignKey: 'driver_id',
+    as: 'deliveries'
+});
+
+// ---------- DELIVERY - STORE (Vendor) ----------
+Delivery.belongsTo(Store, {
+    foreignKey: 'vendor_id',
+    as: 'vendor'
+});
+
+Store.hasMany(Delivery, {
+    foreignKey: 'vendor_id',
+    as: 'deliveries'
+});
+
+// ---------- DRIVER - USER ----------
+Driver.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+User.hasOne(Driver, {
+    foreignKey: 'user_id',
+    as: 'driver'
+});
+
+// ---------- WISHLIST - USER ----------
+Wishlist.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+User.hasMany(Wishlist, {
+    foreignKey: 'user_id',
+    as: 'wishlists'
+});
+
+// ---------- WISHLIST - PRODUCT ----------
+Wishlist.belongsTo(Product, {
+    foreignKey: 'product_id',
+    as: 'product'
+});
+
+Product.hasMany(Wishlist, {
+    foreignKey: 'product_id',
+    as: 'wishlists'
+});
+
+// ---------- WALLET - USER ----------
+Wallet.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+User.hasOne(Wallet, {
+    foreignKey: 'user_id',
+    as: 'wallet'
+});
+
+// ---------- NOTIFICATION - USER ----------
+Notification.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
+
+User.hasMany(Notification, {
+    foreignKey: 'user_id',
+    as: 'notifications'
+});
+
+console.log('✅ All associations defined!');
+// app.use(fileUpload({
+//     limits: { fileSize: 5 * 1024 * 1024 },
+//     abortOnLimit: true,
+//     createParentPath: true,
+// }));
+
+// ============================================
+// ROUTES - ✅ REMOVED DUPLICATE UnansweredQuestion IMPORT
 // ============================================
 const authRoutes = require('./routes/authRoutes.cjs');
 const userRoutes = require('./routes/userRoutes.cjs');
@@ -105,6 +309,10 @@ const uploadRoutes = require('./routes/uploadRoutes.cjs');
 const settingRoutes = require('./routes/settingRoutes.cjs');
 const auditRoutes = require('./routes/auditRoutes.cjs');
 const dashboardRoutes = require('./routes/dashboardRoutes.cjs');
+const vendorRoutes = require('./routes/vendorRoutes.cjs');
+const wishlistRoutes = require('./routes/wishlistRoutes.cjs');
+const driverRoutes = require('./routes/driverRoutes.cjs');  //
+// ❌ REMOVED: const UnansweredQuestion = require('./UnansweredQuestion.cjs');
 
 // ============================================
 // SERVICES
@@ -135,9 +343,17 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../storage/uploads')));
-
+// ✅ ADD FILE UPLOAD MIDDLEWARE (after other middleware)
+app.use(fileUpload({
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    abortOnLimit: true,
+    useTempFiles: true,
+    tempFileDir: '/tmp/',
+    createParentPath: true,
+    parseNested: true
+}));
 // ============================================
-// REQUEST LOGGING MIDDLEWARE - CRITICAL FOR DEBUGGING
+// REQUEST LOGGING MIDDLEWARE
 // ============================================
 app.use((req, res, next) => {
     process.stdout.write(`\n📡 ${req.method} ${req.url}\n`);
@@ -187,6 +403,35 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/vendor', vendorRoutes);
+// 🟢 FIXED: Add this line to map the plural prefix string directly to the same controller!
+app.use('/api/vendors', vendorRoutes); 
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/driver', driverRoutes);  
+
+// 🟢 FIXED: Dedicated, explicit bridge route mapping directly to the admin controller method
+// This completely bypasses the admin file role middleware lock for this specific frontend URL path string!
+const adminController = require('./controllers/adminController.cjs');
+const { authMiddleware } = require('./middleware/auth.cjs');
+
+app.get('/api/vendors/pending', authMiddleware, async (req, res) => {
+    try {
+        // Fetch users registered as vendors
+        const pendingVendors = await User.findAll({
+            where: { role: 'vendor' },
+            attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'created_at']
+        });
+
+        return res.json({ 
+            success: true, 
+            vendors: pendingVendors || [] 
+        });
+    } catch (error) {
+        console.error('❌ Root pending vendors fetch error:', error);
+        return res.status(500).json({ error: 'Failed to fetch pending registration requests' });
+    }
+});
+
 app.use('/api/escrow', escrowRoutes);
 app.use('/api/payments', paymentRoutes);
 console.log("✅ Payment routes registered");
@@ -196,6 +441,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/vendors', vendorRoutes);
 
 // ============================================
 // DIRECT SMS TEST ROUTE

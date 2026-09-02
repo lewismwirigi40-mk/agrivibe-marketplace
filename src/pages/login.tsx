@@ -1,29 +1,31 @@
 // src/pages/login.tsx
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   ArrowRight,
   Shield,
   CheckCircle,
   AlertCircle,
   Sparkles,
   User,
-  Fingerprint
-} from 'lucide-react';
-import { login } from '../services/auth';
+  Fingerprint,
+  Smartphone,
+  ChevronLeft,
+} from "lucide-react";
+import { login } from "../services/auth";
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [backendAvailable, setBackendAvailable] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
@@ -33,7 +35,7 @@ export default function Login() {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await fetch('http://localhost:5000/health');
+        const response = await fetch("http://localhost:5000/health");
         if (!response.ok) setBackendAvailable(false);
       } catch {
         setBackendAvailable(false);
@@ -45,81 +47,110 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       const userData = await login(email, password);
-      
-      // Check user role and redirect accordingly
-      if (userData.user.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else if (userData.user.role === 'vendor') {
-        router.push('/vendor/dashboard');
-      } else if (userData.user.role === 'driver') {
-        router.push('/driver/dashboard');
+
+      if (userData && userData.token) {
+        localStorage.setItem("token", userData.token);
+      }
+      if (userData && userData.user) {
+        localStorage.setItem("user", JSON.stringify(userData.user));
+      }
+
+      if (userData?.vendor) {
+        localStorage.setItem(
+          "vendorStatus",
+          userData.vendor.status || "pending",
+        );
+      }
+
+      localStorage.removeItem("isRedirecting");
+
+      if (userData?.user?.role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (userData?.user?.role === "vendor") {
+        const redirectPath = userData.redirectTo || "/vendor/dashboard";
+        router.push(redirectPath);
+      } else if (userData?.user?.role === "driver") {
+        router.push("/driver/dashboard");
       } else {
-        router.push('/');
+        router.push("/");
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      console.error("❌ Authentication error:", err);
+      setError(
+        err.response?.data?.error ||
+          "Login failed. Please verify your credentials and try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-premium-dark flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-gradient-to-br from-agrivibe-green/20 to-transparent rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-gradient-to-tr from-agrivibe-gold/20 to-transparent rounded-full blur-3xl animate-float-slow" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Background Glows */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-30%] right-[-20%] w-[600px] h-[600px] bg-gradient-to-br from-agrivibe-green/15 to-transparent rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-[-30%] left-[-20%] w-[600px] h-[600px] bg-gradient-to-tr from-agrivibe-gold/10 to-transparent rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-agrivibe-green/5 via-transparent to-agrivibe-gold/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Main Container */}
+      {/* ====== PHONE FRAME CONTAINER ====== */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="relative w-full max-w-md"
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, type: "spring", damping: 25 }}
+        className="relative w-full max-w-[420px]"
       >
-        <motion.div
-          whileHover={{ 
-            scale: 1.02,
-            rotateX: 2,
-            rotateY: 2,
-          }}
-          transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="relative"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green/20 via-agrivibe-gold/20 to-agrivibe-green/20 rounded-3xl blur-2xl" />
-          
-          <div className="relative bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-agrivibe-green via-agrivibe-gold to-agrivibe-green" />
-            
-            <div className="p-8 md:p-10">
-              {/* Logo & Header */}
-              <motion.div 
+        {/* Phone Frame Outer */}
+        <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-[3rem] p-4 shadow-2xl shadow-black/50 border border-white/10">
+          {/* Phone Frame Inner */}
+          <div className="relative bg-gradient-to-b from-gray-900/95 to-black/95 rounded-[2.5rem] overflow-hidden border border-white/5">
+            {/* Status Bar - Top */}
+            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-white/40">
+                <span>9:41</span>
+                <span className="text-xs">📶</span>
+                <span className="text-xs">🔋</span>
+              </div>
+            </div>
+
+            {/* Back Button - Top Left */}
+            <button
+              onClick={() => router.push("/")}
+              className="absolute top-14 left-4 z-10 p-1.5 rounded-full hover:bg-white/10 transition-colors text-white/50 hover:text-white/80"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* ====== MAIN CONTENT ====== */}
+            <div className="relative z-10 px-6 pt-16 pb-8">
+              {/* Logo */}
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-center mb-8"
+                className="text-center mb-6"
               >
                 <motion.div
                   whileHover={{ rotate: 360 }}
                   transition={{ duration: 0.8 }}
-                  className="w-20 h-20 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-green"
+                  className="w-16 h-16 bg-gradient-to-br from-agrivibe-green to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-agrivibe-green/30 cursor-pointer"
                 >
-                  <span className="text-4xl">🌾</span>
+                  <span className="text-3xl">🌾</span>
                 </motion.div>
-                <h1 className="text-3xl font-bold text-white">Welcome Back</h1>
-                <p className="text-gray-400 mt-1">Login to your AgriVibe account</p>
-                
-                <div className="flex items-center justify-center gap-3 mt-4">
-                  <div className="w-12 h-px bg-gradient-to-r from-transparent to-agrivibe-gold/50" />
-                  <Sparkles className="w-4 h-4 text-agrivibe-gold" />
-                  <div className="w-12 h-px bg-gradient-to-l from-transparent to-agrivibe-gold/50" />
-                </div>
+                <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+                <p className="text-gray-400 text-sm mt-0.5">
+                  Login to your AgriVibe account
+                </p>
               </motion.div>
 
               {/* Backend Warning */}
@@ -129,110 +160,93 @@ export default function Login() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-yellow-500/20 text-yellow-300 text-sm p-4 rounded-xl border border-yellow-500/30 mb-6 flex items-start gap-3"
+                    className="bg-yellow-500/20 text-yellow-300 text-xs p-3 rounded-xl border border-yellow-500/30 mb-4 flex items-start gap-2"
                   >
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold">Backend Offline</span>
-                      <p className="text-yellow-300/70 text-xs mt-0.5">Please start the backend server to login</p>
+                      <p className="text-yellow-300/70 text-xs">
+                        Please start the backend server to login
+                      </p>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Email Field */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">
                     Email Address
                   </label>
-                  <div className={`relative group transition-all duration-300 ${
-                    focusedField === 'email' ? 'scale-[1.02]' : ''
-                  }`}>
-                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                      focusedField === 'email' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
                       type="email"
                       placeholder="you@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      onFocus={() => setFocusedField('email')}
+                      onFocus={() => setFocusedField("email")}
                       onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-11 pr-4 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'email' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
+                      className={`w-full pl-10 pr-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 outline-none transition-all text-sm ${
+                        focusedField === "email"
+                          ? "border-agrivibe-green shadow-lg shadow-agrivibe-green/20"
+                          : "border-white/10 hover:border-white/20"
                       }`}
                       required
                     />
-                    <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-agrivibe-green to-agrivibe-gold transition-all duration-300 ${
-                      focusedField === 'email' ? 'w-full' : 'w-0'
-                    }`} />
                   </div>
-                </motion.div>
+                </div>
 
-                {/* Password Field */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                {/* Password */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1">
                     Password
                   </label>
-                  <div className={`relative group transition-all duration-300 ${
-                    focusedField === 'password' ? 'scale-[1.02]' : ''
-                  }`}>
-                    <Lock className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                      focusedField === 'password' ? 'text-agrivibe-green' : 'text-gray-400'
-                    }`} />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      onFocus={() => setFocusedField('password')}
+                      onFocus={() => setFocusedField("password")}
                       onBlur={() => setFocusedField(null)}
-                      className={`w-full pl-11 pr-12 py-3.5 bg-white/5 border-2 rounded-xl text-white placeholder-gray-400 outline-none transition-all duration-300 ${
-                        focusedField === 'password' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/20' 
-                          : 'border-white/10 hover:border-white/20'
+                      className={`w-full pl-10 pr-10 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 outline-none transition-all text-sm ${
+                        focusedField === "password"
+                          ? "border-agrivibe-green shadow-lg shadow-agrivibe-green/20"
+                          : "border-white/10 hover:border-white/20"
                       }`}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
-                    <div className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-agrivibe-green to-agrivibe-gold transition-all duration-300 ${
-                      focusedField === 'password' ? 'w-full' : 'w-0'
-                    }`} />
                   </div>
-                </motion.div>
+                </div>
 
-                {/* Remember Me & Forgot Password */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-center justify-between"
-                >
-                  <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer group">
-                    <div className={`w-4 h-4 rounded border-2 transition-all duration-300 flex items-center justify-center ${
-                      rememberMe 
-                        ? 'bg-agrivibe-green border-agrivibe-green' 
-                        : 'border-gray-500 group-hover:border-gray-400'
-                    }`}>
-                      {rememberMe && <CheckCircle className="w-3 h-3 text-white" />}
+                {/* Remember Me + Forgot Password - BOTH WORKING */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+                    <div
+                      className={`w-4 h-4 rounded border-2 transition-all flex items-center justify-center ${
+                        rememberMe
+                          ? "bg-agrivibe-green border-agrivibe-green"
+                          : "border-gray-500 hover:border-gray-400"
+                      }`}
+                    >
+                      {rememberMe && (
+                        <CheckCircle className="w-3 h-3 text-white" />
+                      )}
                     </div>
                     <input
                       type="checkbox"
@@ -242,113 +256,96 @@ export default function Login() {
                     />
                     Remember me
                   </label>
-                  <Link 
-                    href="/forgot-password" 
-                    className="text-sm text-agrivibe-gold hover:text-yellow-300 transition-colors font-medium"
+                  {/* ✅ FORGOT PASSWORD - FULLY CLICKABLE */}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/forgot-password")}
+                    className="text-xs text-agrivibe-gold hover:text-yellow-300 transition-colors font-medium bg-transparent border-none cursor-pointer"
                   >
                     Forgot password?
-                  </Link>
-                </motion.div>
+                  </button>
+                </div>
 
-                {/* Error Message */}
+                {/* Error */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="bg-red-500/20 text-red-300 text-sm p-4 rounded-xl border border-red-500/30 flex items-start gap-3"
+                      className="bg-red-500/20 text-red-300 text-xs p-3 rounded-xl border border-red-500/30 flex items-start gap-2"
                     >
-                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <span>{error}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 {/* Login Button */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="relative w-full group overflow-hidden"
                 >
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="relative w-full group overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green via-agrivibe-green-light to-agrivibe-green bg-[length:200%_100%] animate-gradient rounded-xl" />
-                    <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500" />
-                    <div className="relative flex items-center justify-center gap-2 w-full px-6 py-4 text-white font-bold text-lg">
-                      {loading ? (
-                        <>
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Logging in...
-                        </>
-                      ) : (
-                        <>
-                          <Fingerprint className="w-5 h-5" />
-                          Login
-                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </div>
-                  </button>
-                </motion.div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green via-emerald-500 to-agrivibe-green bg-[length:200%_100%] animate-gradient rounded-xl" />
+                  <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <div className="relative flex items-center justify-center gap-2 w-full px-6 py-3.5 text-white font-semibold text-sm">
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        <Fingerprint className="w-4 h-4" />
+                        Login
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </div>
+                </button>
               </form>
 
-              {/* Register Link - Fixed: Now properly clickable */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.7 }}
-                className="text-center mt-6"
-              >
-                <p className="text-gray-400">
-                  Don't have an account?{' '}
-                  <Link 
-                    href="/register" 
-                    className="text-agrivibe-gold font-semibold hover:text-yellow-300 transition-colors hover:underline"
+              {/* ✅ CREATE ACCOUNT - FULLY CLICKABLE */}
+              <div className="text-center mt-5">
+                <p className="text-gray-400 text-sm">
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => router.push("/register")}
+                    className="text-agrivibe-gold font-semibold hover:text-yellow-300 transition-colors hover:underline cursor-pointer bg-transparent border-none text-sm"
                   >
-                    Register
-                  </Link>
+                    Create Account
+                  </button>
                 </p>
-              </motion.div>
+              </div>
 
               {/* Trust Badges */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="mt-6 pt-6 border-t border-white/5"
-              >
-                <div className="flex justify-center gap-6 text-xs text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-agrivibe-green" />
-                    <span>Secure Login</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-agrivibe-green" />
-                    <span>256-bit SSL</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-agrivibe-green" />
-                    <span>Verified Users</span>
-                  </div>
+              <div className="mt-5 pt-4 border-t border-white/5 flex justify-center gap-4 text-[10px] text-gray-500">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3 h-3 text-agrivibe-green" />
+                  <span>Secure Login</span>
                 </div>
-              </motion.div>
+                <div className="flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-agrivibe-green" />
+                  <span>256-bit SSL</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3 h-3 text-agrivibe-green" />
+                  <span>Verified Users</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </motion.div>
 
-        {/* Bottom Decorative Text */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="text-center text-gray-500 text-xs mt-6"
-        >
+            {/* Bottom Home Indicator */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/20 rounded-full" />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-600 text-[10px] mt-4">
           © 2026 AgriVibe KE Farm Solutions. All rights reserved.
-        </motion.p>
+        </p>
       </motion.div>
     </div>
   );

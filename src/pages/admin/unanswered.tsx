@@ -1,11 +1,11 @@
 // src/pages/admin/unanswered.tsx
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageCircle, 
-  Send, 
-  X, 
-  CheckCircle, 
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MessageCircle,
+  Send,
+  X,
+  CheckCircle,
   Clock,
   AlertCircle,
   Search,
@@ -26,21 +26,44 @@ import {
   Zap,
   Shield,
   TrendingUp,
-  Star
-} from 'lucide-react';
-import AdminLayout from '../../components/AdminLayout';
-import api from '../../services/api';
+  Star,
+  Package,
+  ShoppingBag,
+  Truck,
+  CreditCard,
+  Store,
+  Eye,
+  RefreshCw,
+  Check,
+  History,
+  FileText,
+  Copy,
+  Share2,
+  Download,
+  Printer,
+  MoreVertical,
+  ArrowUp,
+  ArrowDown,
+  Loader2,
+} from "lucide-react";
+import AdminLayout from "../../components/AdminLayout";
+import api from "../../services/api";
 
 export default function UnansweredQuestions() {
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [unansweredQuestions, setUnansweredQuestions] = useState<any[]>([]);
+  const [answeredQuestions, setAnsweredQuestions] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"unanswered" | "answered">(
+    "unanswered",
+  );
   const [loading, setLoading] = useState(true);
   const [answering, setAnswering] = useState<string | null>(null);
-  const [answerText, setAnswerText] = useState('');
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [error, setError] = useState('');
+  const [answerText, setAnswerText] = useState("");
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [error, setError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
+  const [viewingAnswer, setViewingAnswer] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestions();
@@ -48,16 +71,24 @@ export default function UnansweredQuestions() {
 
   const fetchQuestions = async () => {
     try {
-      const token = localStorage.getItem('token');
+      setLoading(true);
+      const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
         return;
       }
-      const response = await api.get('/ai/unanswered');
-      setQuestions(response.data.questions || []);
+
+      // Fetch both unanswered and answered questions
+      const [unansweredRes, answeredRes] = await Promise.all([
+        api.get("/ai/unanswered"),
+        api.get("/ai/answered"),
+      ]);
+
+      setUnansweredQuestions(unansweredRes.data.questions || []);
+      setAnsweredQuestions(answeredRes.data.questions || []);
     } catch (error: any) {
-      console.error('Failed to fetch questions:', error);
-      setError(error.response?.data?.error || 'Failed to load questions');
+      console.error("Failed to fetch questions:", error);
+      setError(error.response?.data?.error || "Failed to load questions");
     } finally {
       setLoading(false);
     }
@@ -65,66 +96,109 @@ export default function UnansweredQuestions() {
 
   const handleAnswer = async (id: string) => {
     if (!answerText.trim()) {
-      setError('Please enter an answer');
+      setError("Please enter an answer");
       return;
     }
-    
-    setError('');
+
+    setError("");
     try {
-      await api.put(`/ai/unanswered/${id}`, { answer: answerText });
+      const response = await api.put(`/ai/unanswered/${id}`, {
+        answer: answerText,
+      });
+
+      // ✅ Remove from unanswered list
+      setUnansweredQuestions((prev) => prev.filter((q) => q.id !== id));
+
+      // ✅ Add to answered list
+      const answeredQuestion = response.data.question;
+      if (answeredQuestion) {
+        setAnsweredQuestions((prev) => [answeredQuestion, ...prev]);
+      }
+
       setAnswering(null);
-      setAnswerText('');
-      setSuccessMessage('✅ Answer submitted successfully!');
+      setAnswerText("");
+      setSuccessMessage("✅ Answer submitted successfully!");
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      fetchQuestions();
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Failed to answer question');
+      setError(error.response?.data?.error || "Failed to answer question");
     }
   };
 
   const getCategoryIcon = (category: string) => {
     const icons: Record<string, any> = {
-      'general': MessageCircle,
-      'product': ShoppingBag,
-      'delivery': Truck,
-      'payment': CreditCard,
-      'vendor': Store,
-      'technical': Bot,
-      'other': HelpCircle,
+      general: MessageCircle,
+      product: ShoppingBag,
+      delivery: Truck,
+      payment: CreditCard,
+      vendor: Store,
+      technical: Bot,
+      other: HelpCircle,
     };
     return icons[category?.toLowerCase()] || HelpCircle;
   };
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      'general': 'from-blue-500 to-blue-600',
-      'product': 'from-green-500 to-emerald-500',
-      'delivery': 'from-orange-500 to-orange-600',
-      'payment': 'from-yellow-500 to-yellow-600',
-      'vendor': 'from-purple-500 to-purple-600',
-      'technical': 'from-cyan-500 to-cyan-600',
-      'other': 'from-gray-500 to-gray-600',
+      general: "from-blue-500 to-blue-600",
+      product: "from-green-500 to-emerald-500",
+      delivery: "from-orange-500 to-orange-600",
+      payment: "from-yellow-500 to-yellow-600",
+      vendor: "from-purple-500 to-purple-600",
+      technical: "from-cyan-500 to-cyan-600",
+      other: "from-gray-500 to-gray-600",
     };
-    return colors[category?.toLowerCase()] || 'from-gray-500 to-gray-600';
+    return colors[category?.toLowerCase()] || "from-gray-500 to-gray-600";
   };
 
-  const filteredQuestions = questions
-    .filter(q => {
-      const matchesSearch = 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString("en-KE", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const filteredUnanswered = unansweredQuestions
+    .filter((q) => {
+      const matchesSearch =
         q.question?.toLowerCase().includes(search.toLowerCase()) ||
-        q.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        q.customer?.email?.toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === 'all' || q.category === filter;
+        q.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
+        q.customer_email?.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === "all" || q.category === filter;
       return matchesSearch && matchesFilter;
     })
-    .sort((a, b) => new Date(a.asked_at || 0).getTime() - new Date(b.asked_at || 0).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.asked_at || 0).getTime() -
+        new Date(b.asked_at || 0).getTime(),
+    );
+
+  const filteredAnswered = answeredQuestions
+    .filter((q) => {
+      const matchesSearch =
+        q.question?.toLowerCase().includes(search.toLowerCase()) ||
+        q.answer?.toLowerCase().includes(search.toLowerCase()) ||
+        q.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
+        q.customer_email?.toLowerCase().includes(search.toLowerCase());
+      const matchesFilter = filter === "all" || q.category === filter;
+      return matchesSearch && matchesFilter;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.answered_at || 0).getTime() -
+        new Date(a.answered_at || 0).getTime(),
+    );
 
   const stats = {
-    total: questions.length,
-    urgent: questions.filter(q => q.is_urgent).length,
-    general: questions.filter(q => q.category === 'general').length,
-    product: questions.filter(q => q.category === 'product').length,
+    totalUnanswered: unansweredQuestions.length,
+    urgent: unansweredQuestions.filter((q) => q.is_urgent).length,
+    general: unansweredQuestions.filter((q) => q.category === "general").length,
+    product: unansweredQuestions.filter((q) => q.category === "product").length,
+    totalAnswered: answeredQuestions.length,
   };
 
   if (loading) {
@@ -146,18 +220,31 @@ export default function UnansweredQuestions() {
         {/* ====== HEADER ====== */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">❓ Unanswered Questions</h1>
-            <p className="text-gray-500 mt-1">Review and answer customer questions</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">❓ Questions</h1>
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                  stats.totalUnanswered > 0
+                    ? "bg-yellow-100 text-yellow-700 border border-yellow-200"
+                    : "bg-green-100 text-green-700 border border-green-200"
+                }`}
+              >
+                <Clock className="w-3 h-3" />
+                {stats.totalUnanswered} Pending
+              </span>
+            </div>
+            <p className="text-gray-500 mt-1">
+              Review and answer customer questions
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-              questions.length > 0 
-                ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' 
-                : 'bg-green-50 text-green-700 border border-green-200'
-            }`}>
-              <Clock className="w-4 h-4" />
-              {questions.length} Pending
-            </span>
+            <button
+              onClick={fetchQuestions}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
           </div>
         </div>
 
@@ -168,10 +255,14 @@ export default function UnansweredQuestions() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3"
+              className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3 shadow-lg shadow-green-500/10"
             >
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <span className="text-sm font-medium text-green-700">{successMessage}</span>
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-sm font-medium text-green-700">
+                {successMessage}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -179,10 +270,34 @@ export default function UnansweredQuestions() {
         {/* ====== STATS CARDS ====== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Pending', value: stats.total, icon: MessageCircle, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50' },
-            { label: 'Urgent', value: stats.urgent, icon: AlertCircle, color: 'from-red-500 to-red-600', bg: 'bg-red-50' },
-            { label: 'General', value: stats.general, icon: HelpCircle, color: 'from-green-500 to-emerald-500', bg: 'bg-green-50' },
-            { label: 'Product', value: stats.product, icon: Package, color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50' },
+            {
+              label: "Pending",
+              value: stats.totalUnanswered,
+              icon: Clock,
+              color: "from-yellow-500 to-orange-500",
+              bg: "bg-yellow-50",
+            },
+            {
+              label: "Answered",
+              value: stats.totalAnswered,
+              icon: CheckCircle,
+              color: "from-green-500 to-emerald-500",
+              bg: "bg-green-50",
+            },
+            {
+              label: "Urgent",
+              value: stats.urgent,
+              icon: AlertCircle,
+              color: "from-red-500 to-red-600",
+              bg: "bg-red-50",
+            },
+            {
+              label: "General",
+              value: stats.general,
+              icon: HelpCircle,
+              color: "from-blue-500 to-blue-600",
+              bg: "bg-blue-50",
+            },
           ].map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -196,15 +311,67 @@ export default function UnansweredQuestions() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-500">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}>
+                  <div
+                    className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}
+                  >
                     <Icon className="w-5 h-5 text-white" />
                   </div>
                 </div>
               </motion.div>
             );
           })}
+        </div>
+
+        {/* ====== TABS ====== */}
+        <div className="flex gap-2 bg-white rounded-2xl shadow-md border border-gray-100 p-2">
+          <button
+            onClick={() => setActiveTab("unanswered")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all ${
+              activeTab === "unanswered"
+                ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/30"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            Unanswered
+            {stats.totalUnanswered > 0 && (
+              <span
+                className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "unanswered"
+                    ? "bg-white/20 text-white"
+                    : "bg-yellow-100 text-yellow-700"
+                }`}
+              >
+                {stats.totalUnanswered}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("answered")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-all ${
+              activeTab === "answered"
+                ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <CheckCircle className="w-4 h-4" />
+            Answered
+            {stats.totalAnswered > 0 && (
+              <span
+                className={`ml-1 px-2 py-0.5 text-xs rounded-full ${
+                  activeTab === "answered"
+                    ? "bg-white/20 text-white"
+                    : "bg-green-100 text-green-700"
+                }`}
+              >
+                {stats.totalAnswered}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* ====== FILTERS ====== */}
@@ -214,7 +381,7 @@ export default function UnansweredQuestions() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search questions or customers..."
+                placeholder={`Search ${activeTab} questions...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:border-agrivibe-green focus:ring-4 focus:ring-agrivibe-green/10 outline-none transition-all"
@@ -241,174 +408,319 @@ export default function UnansweredQuestions() {
         </div>
 
         {/* ====== QUESTIONS LIST ====== */}
-        {filteredQuestions.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20 bg-white rounded-2xl shadow-md border border-gray-100"
-          >
-            {questions.length === 0 ? (
-              <>
-                <div className="text-8xl mb-6">🎉</div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">All questions answered!</h3>
-                <p className="text-gray-500 text-lg">Great job! No pending questions.</p>
-              </>
-            ) : (
-              <>
-                <div className="text-8xl mb-6">🔍</div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">No matching questions</h3>
-                <p className="text-gray-500 text-lg">Try adjusting your search or filters</p>
-                <button
-                  onClick={() => { setSearch(''); setFilter('all'); }}
-                  className="mt-4 text-agrivibe-green font-medium hover:underline"
-                >
-                  Clear Filters
-                </button>
-              </>
-            )}
-          </motion.div>
-        ) : (
-          <div className="space-y-4">
-            <AnimatePresence>
-              {filteredQuestions.map((q, index) => {
-                const Icon = getCategoryIcon(q.category);
-                const color = getCategoryColor(q.category);
-                const isUrgent = q.is_urgent;
-                const isAnswering = answering === q.id;
-
-                return (
-                  <motion.div
-                    key={q.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${
-                      isUrgent 
-                        ? 'border-red-200 bg-red-50/30' 
-                        : 'border-gray-100 hover:border-gray-200'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                      {/* Question Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                            <Icon className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="font-medium text-gray-900">{q.question}</h3>
-                              {isUrgent && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium">
-                                  🔴 Urgent
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <User className="w-3.5 h-3.5" />
-                                {q.customer?.name || 'Anonymous'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />
-                                {new Date(q.asked_at).toLocaleString()}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageSquare className="w-3.5 h-3.5" />
-                                {q.category || 'General'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Status Badge */}
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium border border-yellow-200">
-                          <Clock className="w-3.5 h-3.5" />
-                          Pending
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Answer Section */}
-                    {isAnswering ? (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-4 pt-4 border-t border-gray-100 space-y-3"
-                      >
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                            Your Answer
-                          </label>
-                          <textarea
-                            placeholder="Type your answer here..."
-                            value={answerText}
-                            onChange={(e) => setAnswerText(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all duration-300 resize-none"
-                            rows={3}
-                            autoFocus
-                          />
-                        </div>
-                        {error && (
-                          <div className="bg-red-50 text-red-600 p-3 rounded-xl border border-red-200 flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm">{error}</span>
-                          </div>
-                        )}
-                        <div className="flex gap-3">
-                          <button
-                            onClick={() => handleAnswer(q.id)}
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all duration-300 hover:scale-105"
-                          >
-                            <Send className="w-4 h-4" />
-                            Submit Answer
-                          </button>
-                          <button
-                            onClick={() => {
-                              setAnswering(null);
-                              setAnswerText('');
-                              setError('');
-                            }}
-                            className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                            Cancel
-                          </button>
-                        </div>
-                      </motion.div>
-                    ) : (
+        <AnimatePresence mode="wait">
+          {activeTab === "unanswered" && (
+            <motion.div
+              key="unanswered"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              {filteredUnanswered.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl shadow-md border border-gray-100">
+                  {unansweredQuestions.length === 0 ? (
+                    <>
+                      <div className="text-8xl mb-6">🎉</div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                        All questions answered!
+                      </h3>
+                      <p className="text-gray-500 text-lg">
+                        Great job! No pending questions.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-8xl mb-6">🔍</div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                        No matching questions
+                      </h3>
+                      <p className="text-gray-500 text-lg">
+                        Try adjusting your search or filters
+                      </p>
                       <button
                         onClick={() => {
-                          setAnswering(q.id);
-                          setError('');
+                          setSearch("");
+                          setFilter("all");
                         }}
-                        className="mt-4 inline-flex items-center gap-2 text-agrivibe-green hover:text-emerald-600 font-medium transition-colors group"
+                        className="mt-4 text-agrivibe-green font-medium hover:underline"
                       >
-                        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        Answer Question
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        Clear Filters
                       </button>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                filteredUnanswered.map((q, index) => {
+                  const Icon = getCategoryIcon(q.category);
+                  const color = getCategoryColor(q.category);
+                  const isUrgent = q.is_urgent;
+                  const isAnswering = answering === q.id;
+
+                  return (
+                    <motion.div
+                      key={q.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`bg-white rounded-2xl shadow-lg border-2 p-6 transition-all duration-300 ${
+                        isUrgent
+                          ? "border-red-200 bg-red-50/30"
+                          : "border-gray-100 hover:border-gray-200"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Question Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`w-10 h-10 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center flex-shrink-0`}
+                            >
+                              <Icon className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-medium text-gray-900">
+                                  {q.question}
+                                </h3>
+                                {isUrgent && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium">
+                                    🔴 Urgent
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5" />
+                                  {q.customer_name || "Anonymous"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  {formatDate(q.asked_at)}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  {q.category || "General"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium border border-yellow-200">
+                            <Clock className="w-3.5 h-3.5" />
+                            Pending
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Answer Section */}
+                      {isAnswering ? (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-4 pt-4 border-t border-gray-100 space-y-3"
+                        >
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                              Your Answer
+                            </label>
+                            <textarea
+                              placeholder="Type your answer here..."
+                              value={answerText}
+                              onChange={(e) => setAnswerText(e.target.value)}
+                              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-agrivibe-green focus:shadow-lg focus:shadow-agrivibe-green/10 outline-none transition-all duration-300 resize-none"
+                              rows={3}
+                              autoFocus
+                            />
+                          </div>
+                          {error && (
+                            <div className="bg-red-50 text-red-600 p-3 rounded-xl border border-red-200 flex items-start gap-2">
+                              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm">{error}</span>
+                            </div>
+                          )}
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => handleAnswer(q.id)}
+                              className="inline-flex items-center gap-2 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white px-6 py-2.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-agrivibe-green/30 transition-all duration-300 hover:scale-105"
+                            >
+                              <Send className="w-4 h-4" />
+                              Submit Answer
+                            </button>
+                            <button
+                              onClick={() => {
+                                setAnswering(null);
+                                setAnswerText("");
+                                setError("");
+                              }}
+                              className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                              Cancel
+                            </button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setAnswering(q.id);
+                            setError("");
+                          }}
+                          className="mt-4 inline-flex items-center gap-2 text-agrivibe-green hover:text-emerald-600 font-medium transition-colors group"
+                        >
+                          <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                          Answer Question
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      )}
+                    </motion.div>
+                  );
+                })
+              )}
+            </motion.div>
+          )}
+
+          {/* ====== ANSWERED QUESTIONS TAB ====== */}
+          {activeTab === "answered" && (
+            <motion.div
+              key="answered"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-4"
+            >
+              {filteredAnswered.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl shadow-md border border-gray-100">
+                  <div className="text-8xl mb-6">📝</div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                    No answered questions yet
+                  </h3>
+                  <p className="text-gray-500 text-lg">
+                    Questions you answer will appear here
+                  </p>
+                </div>
+              ) : (
+                filteredAnswered.map((q, index) => {
+                  const Icon = getCategoryIcon(q.category);
+                  const color = getCategoryColor(q.category);
+                  const isViewing = viewingAnswer === q.id;
+
+                  return (
+                    <motion.div
+                      key={q.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white rounded-2xl shadow-lg border border-green-100 p-6 hover:shadow-xl transition-all duration-300"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Question Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start gap-3">
+                            <div
+                              className={`w-10 h-10 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center flex-shrink-0`}
+                            >
+                              <Icon className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="font-medium text-gray-900">
+                                  {q.question}
+                                </h3>
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-medium">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Answered
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5" />
+                                  {q.customer_name || "Anonymous"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  Asked: {formatDate(q.asked_at)}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                  Answered: {formatDate(q.answered_at)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* View Answer Button */}
+                        <button
+                          onClick={() =>
+                            setViewingAnswer(isViewing ? null : q.id)
+                          }
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors text-sm font-medium"
+                        >
+                          <Eye className="w-4 h-4" />
+                          {isViewing ? "Hide Answer" : "View Answer"}
+                        </button>
+                      </div>
+
+                      {/* Answer Display */}
+                      {isViewing && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-4 pt-4 border-t border-green-100"
+                        >
+                          <div className="bg-green-50 rounded-xl p-4">
+                            <div className="flex items-start gap-2">
+                              <MessageCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-700">
+                                  Answer:
+                                </p>
+                                <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
+                                  {q.answer}
+                                </p>
+                                {q.answered_by && (
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    Answered by: {q.answered_by_name || "Admin"}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                })
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ====== QUESTION COUNT ====== */}
-        {filteredQuestions.length > 0 && (
-          <div className="text-center text-sm text-gray-500">
-            Showing {filteredQuestions.length} of {questions.length} pending questions
-          </div>
-        )}
+        <div className="text-center text-sm text-gray-500">
+          {activeTab === "unanswered" && filteredUnanswered.length > 0 && (
+            <>
+              Showing {filteredUnanswered.length} of{" "}
+              {unansweredQuestions.length} pending questions
+            </>
+          )}
+          {activeTab === "answered" && filteredAnswered.length > 0 && (
+            <>
+              Showing {filteredAnswered.length} of {answeredQuestions.length}{" "}
+              answered questions
+            </>
+          )}
+        </div>
 
         {/* ====== AI ASSISTANT CTA ====== */}
-        {questions.length > 0 && (
+        {(unansweredQuestions.length > 0 || answeredQuestions.length > 0) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,8 +732,12 @@ export default function UnansweredQuestions() {
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-700">💡 AI Assistant Available</p>
-                <p className="text-xs text-gray-500">Use AI to suggest answers for questions</p>
+                <p className="text-sm font-medium text-gray-700">
+                  💡 AI Assistant Available
+                </p>
+                <p className="text-xs text-gray-500">
+                  Use AI to suggest answers for questions
+                </p>
               </div>
               <button className="ml-auto text-sm text-purple-600 hover:text-purple-700 font-medium">
                 Try AI Suggestion →
@@ -433,6 +749,3 @@ export default function UnansweredQuestions() {
     </AdminLayout>
   );
 }
-
-// Add missing imports
-import { ShoppingBag, Truck, CreditCard, Store, Package } from 'lucide-react';

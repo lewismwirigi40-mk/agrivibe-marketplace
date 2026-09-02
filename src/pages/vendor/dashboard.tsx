@@ -1,188 +1,445 @@
-// src/pages/admin/dashboard.tsx
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// src/pages/vendor/dashboard.tsx
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/router";
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, 
-  ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid,
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
-} from 'recharts';
-import { 
-  Users, 
-  Store, 
-  Truck, 
-  User, 
-  Package, 
-  DollarSign,
+  LayoutDashboard,
+  ShoppingBag,
+  Package,
+  Users,
+  Wallet,
   TrendingUp,
   TrendingDown,
-  Sparkles,
-  AlertCircle,
-  CheckCircle,
   Clock,
-  ArrowRight,
-  Shield,
-  Award,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
-  Zap,
-  Eye,
-  ShoppingBag,
-  CreditCard,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Sparkles,
+  Store,
   Calendar,
-  ChevronRight
-} from 'lucide-react';
-import AdminLayout from '../../components/AdminLayout';
-import api from '../../services/api';
+  Award,
+  Shield,
+  Star,
+  Eye,
+  BarChart3,
+  PieChart,
+  LineChart,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
+  ChevronRight,
+  MoreVertical,
+  Download,
+  Printer,
+  Search,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  Copy,
+  Share2,
+  ExternalLink,
+  MessageCircle,
+  Bell,
+  Settings,
+  HelpCircle,
+  Zap,
+  Crown,
+  Gift,
+  Heart,
+  ThumbsUp,
+  Users as UsersIcon,
+  DollarSign,
+  Percent,
+  Target,
+  Compass,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Building,
+  User,
+  CalendarDays,
+  Clock as ClockIcon,
+  Activity,
+  Layers,
+  Grid,
+  List,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+import VendorLayout from "../../components/VendorLayout";
+import api from "../../services/api";
 
-export default function AdminDashboard() {
-  const [stats, setStats] = useState<any>(null);
+export default function VendorDashboard() {
+  const router = useRouter();
+  // ====== AUTHORIZATION STATE ======
+  const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState('week');
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalCustomers: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    averageRating: 0,
+    totalSales: 0,
+  });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [recentProducts, setRecentProducts] = useState<any[]>([]);
+  const [vendorData, setVendorData] = useState<any>(null);
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  // ====== AUTHORIZATION CHECK (RUNS FIRST) ======
+  const [redirecting, setRedirecting] = useState(false); // ✅ Add this with other states
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    // ✅ Prevent multiple redirects
+    if (redirecting) return;
 
-  const fetchDashboard = async () => {
+    const rawUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    const vendorStatus = localStorage.getItem("vendorStatus");
+    const isRedirecting = localStorage.getItem("isRedirecting");
+
+    // 🛑 Check if user is logged in
+    if (!token || !rawUser) {
+      setRedirecting(true);
+      router.push("/login");
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
+      const user = JSON.parse(rawUser);
+
+      // 🛑 Check if user has vendor role
+      if (user.role !== "vendor") {
+        setRedirecting(true);
+        router.push("/");
         return;
       }
-      const response = await api.get('/admin/dashboard');
-      setStats(response.data.stats);
+
+      // 🛑 Check if vendor is approved
+      if (vendorStatus !== "approved") {
+        // ✅ Prevent infinite loop: only redirect if not already redirecting
+        if (!isRedirecting) {
+          setRedirecting(true);
+          localStorage.setItem("isRedirecting", "true");
+          router.push("/vendor/pending-approval");
+        }
+        return;
+      }
+
+      // ✅ Clear redirecting flag if we're on dashboard
+      localStorage.removeItem("isRedirecting");
+      setRedirecting(false);
+
+      // ✅ All checks passed
+      setAuthorized(true);
+    } catch (err) {
+      console.error("Authorization error:", err);
+      setRedirecting(true);
+      router.push("/login");
+    }
+  }, [router, redirecting]); // ✅ Add redirecting to dependency array
+  // ====== FETCH DATA (ONLY IF AUTHORIZED) ======
+  useEffect(() => {
+    if (!authorized) return;
+
+    fetchDashboardData();
+    fetchVendorProfile();
+
+    // Hide welcome after 5 seconds
+    const timer = setTimeout(() => setShowWelcome(false), 5000);
+    return () => clearTimeout(timer);
+  }, [authorized]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      // Fetch vendor stats
+      const statsResponse = await api.get("/vendor/stats");
+      const statsData = statsResponse.data || {};
+
+      setStats({
+        totalProducts: statsData.totalProducts || 0,
+        totalOrders: statsData.totalOrders || 0,
+        totalRevenue: statsData.totalRevenue || 0,
+        totalCustomers: statsData.totalCustomers || 0,
+        pendingOrders: statsData.pendingOrders || 0,
+        completedOrders: statsData.completedOrders || 0,
+        averageRating: statsData.averageRating || 0,
+        totalSales: statsData.totalSales || 0,
+      });
+
+      // Fetch recent orders
+      const ordersResponse = await api.get("/vendor/orders?limit=5");
+      setRecentOrders(ordersResponse.data.orders || []);
+
+      // Fetch recent products
+      const productsResponse = await api.get("/vendor/products?limit=5");
+      setRecentProducts(productsResponse.data.products || []);
     } catch (error: any) {
-      console.error('Failed to fetch dashboard:', error);
-      setError(error.response?.data?.error || 'Failed to load dashboard');
+      console.error("Failed to fetch dashboard data:", error);
+      setError(error.response?.data?.error || "Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
-  // Sample chart data
-  const revenueData = [
-    { day: 'Mon', revenue: 12000, orders: 45 },
-    { day: 'Tue', revenue: 18000, orders: 62 },
-    { day: 'Wed', revenue: 15000, orders: 51 },
-    { day: 'Thu', revenue: 22000, orders: 78 },
-    { day: 'Fri', revenue: 28000, orders: 95 },
-    { day: 'Sat', revenue: 20000, orders: 68 },
-    { day: 'Sun', revenue: 16000, orders: 54 },
-  ];
+  const fetchVendorProfile = async () => {
+    try {
+      const response = await api.get("/vendor/profile");
+      setVendorData(response.data.vendor || response.data);
+    } catch (error) {
+      console.error("Failed to fetch vendor profile:", error);
+    }
+  };
 
-  const categoryData = [
-    { name: 'Vegetables', value: 35 },
-    { name: 'Fruits', value: 25 },
-    { name: 'Meat', value: 20 },
-    { name: 'Dairy', value: 12 },
-    { name: 'Other', value: 8 },
-  ];
+  const formatCurrency = (amount: number) => {
+    return `KES ${amount?.toLocaleString() || 0}`;
+  };
 
-  const COLORS = ['#22c55e', '#10b981', '#059669', '#047857', '#065f46'];
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-KE", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      completed: "bg-green-100 text-green-700 border-green-200",
+      cancelled: "bg-red-100 text-red-700 border-red-200",
+      processing: "bg-blue-100 text-blue-700 border-blue-200",
+      shipped: "bg-purple-100 text-purple-700 border-purple-200",
+    };
+    return colors[status] || "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
+  const getStatusIcon = (status: string) => {
+    const icons: Record<string, any> = {
+      pending: Clock,
+      completed: CheckCircle,
+      cancelled: XCircle,
+      processing: RefreshCw,
+      shipped: Package,
+    };
+    return icons[status] || AlertCircle;
+  };
+
+  // ====== LOADING / AUTHORIZATION CHECK ======
+  if (!authorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-agrivibe-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Verifying dashboard credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
-      <AdminLayout>
+      <VendorLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-agrivibe-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-500">Loading dashboard...</p>
           </div>
         </div>
-      </AdminLayout>
+      </VendorLayout>
     );
   }
-
-  if (error) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center text-red-500">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4" />
-            <p className="text-lg font-medium">{error}</p>
-            <button
-              onClick={fetchDashboard}
-              className="mt-4 btn-premium"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center text-gray-500">
-            <Package className="w-12 h-12 mx-auto mb-4" />
-            <p className="text-lg font-medium">No data available</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  const statCards = [
-    { label: 'Total Users', value: stats.totalUsers || 0, icon: Users, color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50' },
-    { label: 'Vendors', value: stats.totalVendors || 0, icon: Store, color: 'from-green-500 to-emerald-500', bg: 'bg-green-50' },
-    { label: 'Drivers', value: stats.totalDrivers || 0, icon: Truck, color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50' },
-    { label: 'Customers', value: stats.totalCustomers || 0, icon: User, color: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50' },
-    { label: 'Orders', value: stats.totalOrders || 0, icon: Package, color: 'from-indigo-500 to-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'Revenue', value: `KES ${(stats.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: 'from-emerald-500 to-green-500', bg: 'bg-emerald-50' },
-  ];
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
+    <VendorLayout>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-6"
+      >
+        {/* ====== WELCOME BANNER ====== */}
+        <AnimatePresence>
+          {showWelcome && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
+              className="relative overflow-hidden bg-gradient-to-r from-agrivibe-green to-emerald-600 rounded-2xl p-6 text-white"
+            >
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+              </div>
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-yellow-300" />
+                    <span className="text-sm font-medium text-white/80">
+                      Welcome back!
+                    </span>
+                  </div>
+                  <h2 className="text-2xl font-bold mt-1">
+                    {vendorData?.business_name || "Vendor Dashboard"}
+                  </h2>
+                  <p className="text-white/80 text-sm">
+                    Here's what's happening with your business today
+                  </p>
+                </div>
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 rounded-full text-xs">
+                    <CheckCircle className="w-3 h-3" />
+                    Verified
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 rounded-full text-xs">
+                    <Star className="w-3 h-3" />
+                    {stats.averageRating || 0}★
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ====== HEADER ====== */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-500 mt-1">Platform overview and key metrics</p>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-500 mt-1 flex items-center gap-2">
+              Overview of your vendor business
+              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span className="text-xs text-gray-400">
+                Last updated: {formatDate(new Date().toISOString())}
+              </span>
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Live
-            </span>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:border-agrivibe-green outline-none"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchDashboardData}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
             >
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="year">This Year</option>
-            </select>
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+            <button
+              onClick={() => router.push("/vendor/products/new")}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-agrivibe-green to-emerald-500 text-white rounded-xl hover:shadow-xl hover:shadow-agrivibe-green/30 transition-all duration-300 font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add Product
+            </button>
           </div>
         </div>
 
+        {/* ====== ERROR ====== */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-700">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ====== STATS CARDS ====== */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {statCards.map((stat, index) => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            {
+              label: "Total Revenue",
+              value: formatCurrency(stats.totalRevenue),
+              icon: Wallet,
+              color: "from-green-500 to-emerald-500",
+              bgColor: "bg-green-50",
+              change: "+12%",
+              trend: "up",
+            },
+            {
+              label: "Total Orders",
+              value: stats.totalOrders,
+              icon: ShoppingBag,
+              color: "from-blue-500 to-blue-600",
+              bgColor: "bg-blue-50",
+              change: `${stats.pendingOrders} pending`,
+              trend: "neutral",
+            },
+            {
+              label: "Products",
+              value: stats.totalProducts,
+              icon: Package,
+              color: "from-purple-500 to-purple-600",
+              bgColor: "bg-purple-50",
+              change: "+5 this month",
+              trend: "up",
+            },
+            {
+              label: "Customers",
+              value: stats.totalCustomers,
+              icon: UsersIcon,
+              color: "from-yellow-500 to-orange-500",
+              bgColor: "bg-yellow-50",
+              change: "+8%",
+              trend: "up",
+            },
+          ].map((stat, index) => {
             const Icon = stat.icon;
+            const TrendIcon =
+              stat.trend === "up"
+                ? TrendingUp
+                : stat.trend === "down"
+                  ? TrendingDown
+                  : Activity;
+            const trendColor =
+              stat.trend === "up"
+                ? "text-green-500"
+                : stat.trend === "down"
+                  ? "text-red-500"
+                  : "text-gray-400";
+
             return (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`${stat.bg} rounded-2xl border border-gray-100 p-4 hover:shadow-lg transition-all duration-300 group`}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -4 }}
+                className="bg-white rounded-2xl shadow-md border border-gray-100 p-5 cursor-pointer hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500">{stat.label}</p>
-                    <p className="text-xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500">
+                      {stat.label}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {stat.value}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <TrendIcon className={`w-3.5 h-3.5 ${trendColor}`} />
+                      <span className={`text-xs font-medium ${trendColor}`}>
+                        {stat.change}
+                      </span>
+                    </div>
                   </div>
-                  <div className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-5 h-5 text-white" />
+                  <div
+                    className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </motion.div>
@@ -190,213 +447,320 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* ====== CHARTS ROW ====== */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Revenue Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-100 p-6"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Revenue Overview</h3>
-                <p className="text-sm text-gray-500">Daily revenue and orders</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <span className="w-3 h-0.5 bg-agrivibe-green" />
-                  Revenue
-                </span>
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <span className="w-3 h-0.5 bg-blue-400" />
-                  Orders
-                </span>
-              </div>
-            </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorOrders" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} />
-                  <YAxis yAxisId="left" stroke="#94a3b8" fontSize={12} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#94a3b8" fontSize={12} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                  <Area 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="#22c55e" 
-                    fillOpacity={1}
-                    fill="url(#colorRevenue)"
-                  />
-                  <Area 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="orders" 
-                    stroke="#3b82f6" 
-                    fillOpacity={1}
-                    fill="url(#colorOrders)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Category Distribution */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Categories</h3>
-                <p className="text-sm text-gray-500">Product distribution</p>
-              </div>
-              <PieChartIcon className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={2}
-                    dataKey="value"
+        {/* ====== SECONDARY STATS ====== */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            {
+              label: "Pending Orders",
+              value: stats.pendingOrders,
+              icon: Clock,
+              color: "from-yellow-400 to-yellow-500",
+            },
+            {
+              label: "Completed Orders",
+              value: stats.completedOrders,
+              icon: CheckCircle,
+              color: "from-green-400 to-green-500",
+            },
+            {
+              label: "Total Sales",
+              value: stats.totalSales,
+              icon: DollarSign,
+              color: "from-blue-400 to-blue-500",
+            },
+            {
+              label: "Avg Rating",
+              value: `${stats.averageRating || 0}★`,
+              icon: Star,
+              color: "from-yellow-400 to-orange-500",
+            },
+          ].map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 + index * 0.1 }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-10 h-10 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center`}
                   >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-3 mt-2">
-              {categoryData.map((item, index) => (
-                <div key={index} className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index] }} />
-                  <span className="text-xs text-gray-600">{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* ====== QUICK ACTIONS & STATS ====== */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Quick Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-xl flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: 'Review Pending Vendors', icon: Store, color: 'text-yellow-500', bg: 'bg-yellow-50', count: stats.pendingVendors || 0 },
-                { label: 'Approve Pending Products', icon: Package, color: 'text-blue-500', bg: 'bg-blue-50', count: stats.pendingProducts || 0 },
-                { label: 'View Platform Wallet', icon: DollarSign, color: 'text-green-500', bg: 'bg-green-50', count: `KES ${(stats.platformWallet || 0).toLocaleString()}` },
-              ].map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={index}
-                    className={`w-full ${action.bg} rounded-xl p-3 flex items-center justify-between hover:shadow-md transition-all duration-300 group`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 ${action.bg} rounded-lg flex items-center justify-center`}>
-                        <Icon className={`w-4 h-4 ${action.color}`} />
-                      </div>
-                      <span className="text-sm font-medium text-gray-700">{action.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-bold ${action.color}`}>{action.count}</span>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* Quick Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                <Activity className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Platform Insights</h3>
-            </div>
-            <div className="space-y-4">
-              {[
-                { label: 'Pending Vendors', value: stats.pendingVendors || 0, icon: Store, color: 'text-yellow-500' },
-                { label: 'Pending Products', value: stats.pendingProducts || 0, icon: Package, color: 'text-blue-500' },
-                { label: 'Platform Wallet', value: `KES ${(stats.platformWallet || 0).toLocaleString()}`, icon: DollarSign, color: 'text-green-500' },
-                { label: 'Total Revenue', value: `KES ${(stats.totalRevenue || 0).toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-500' },
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                        <Icon className={`w-4 h-4 ${item.color}`} />
-                      </div>
-                      <span className="text-sm text-gray-600">{item.label}</span>
-                    </div>
-                    <span className={`text-sm font-bold ${item.color}`}>{item.value}</span>
+                    <Icon className="w-5 h-5 text-white" />
                   </div>
-                );
-              })}
-            </div>
-          </motion.div>
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {stat.value}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* ====== FOOTER ====== */}
-        <div className="text-center text-sm text-gray-400 pt-4 border-t border-gray-100">
-          <p>© 2026 AgriVibe KE Farm Solutions. All rights reserved.</p>
+        {/* ====== RECENT ACTIVITY ====== */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Orders */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-gray-400" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Recent Orders
+                </h3>
+              </div>
+              <button
+                onClick={() => router.push("/vendor/orders")}
+                className="text-sm text-agrivibe-green hover:underline font-medium flex items-center gap-1"
+              >
+                View All
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            {recentOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <ShoppingBag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No recent orders</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentOrders.map((order, index) => {
+                  const StatusIcon = getStatusIcon(order.status);
+                  const statusColor = getStatusColor(order.status);
+                  return (
+                    <motion.div
+                      key={order.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/vendor/orders/${order.id}`)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-agrivibe-green/10 rounded-full flex items-center justify-center">
+                          <ShoppingBag className="w-5 h-5 text-agrivibe-green" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            #{order.id?.slice(0, 8) || "N/A"}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(order.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          {formatCurrency(order.total_amount)}
+                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${statusColor}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {order.status}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Products */}
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-gray-400" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Recent Products
+                </h3>
+              </div>
+              <button
+                onClick={() => router.push("/vendor/products")}
+                className="text-sm text-agrivibe-green hover:underline font-medium flex items-center gap-1"
+              >
+                View All
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            {recentProducts.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">No products yet</p>
+                <button
+                  onClick={() => router.push("/vendor/products/new")}
+                  className="mt-2 text-sm text-agrivibe-green font-medium hover:underline"
+                >
+                  Add your first product
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={() =>
+                      router.push(`/vendor/products/${product.id}`)
+                    }
+                  >
+                    <div className="w-14 h-14 bg-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
+                      {product.images?.[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">
+                        {product.name}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatCurrency(product.price)}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        product.stock > 10
+                          ? "bg-green-100 text-green-700"
+                          : product.stock > 0
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {product.stock > 0
+                        ? `${product.stock} in stock`
+                        : "Out of stock"}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </AdminLayout>
+
+        {/* ====== QUICK ACTIONS ====== */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            {
+              label: "Add Product",
+              icon: Plus,
+              onClick: () => router.push("/vendor/products/new"),
+              color:
+                "bg-gradient-to-br from-green-50 to-green-100 text-green-600 hover:from-green-100 hover:to-green-200",
+              description: "List new product",
+            },
+            {
+              label: "View Orders",
+              icon: ShoppingBag,
+              onClick: () => router.push("/vendor/orders"),
+              color:
+                "bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 hover:from-blue-100 hover:to-blue-200",
+              description: "Manage orders",
+            },
+            {
+              label: "Analytics",
+              icon: BarChart3,
+              onClick: () => router.push("/vendor/analytics"),
+              color:
+                "bg-gradient-to-br from-purple-50 to-purple-100 text-purple-600 hover:from-purple-100 hover:to-purple-200",
+              description: "View insights",
+            },
+            {
+              label: "Profile",
+              icon: Store,
+              onClick: () => router.push("/vendor/settings"),
+              color:
+                "bg-gradient-to-br from-yellow-50 to-yellow-100 text-yellow-600 hover:from-yellow-100 hover:to-yellow-200",
+              description: "Manage store",
+            },
+          ].map((action, index) => {
+            const Icon = action.icon;
+            return (
+              <motion.button
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + index * 0.05 }}
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={action.onClick}
+                className={`${action.color} border border-white/20 rounded-2xl p-5 text-center transition-all duration-300 shadow-sm hover:shadow-lg group`}
+              >
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-2 shadow-sm group-hover:shadow-md transition-all">
+                  <Icon className="w-6 h-6" />
+                </div>
+                <span className="text-sm font-semibold block">
+                  {action.label}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {action.description}
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* ====== VENDOR BADGE ====== */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="relative overflow-hidden bg-gradient-to-r from-agrivibe-green via-emerald-500 to-green-600 rounded-2xl p-6 text-white"
+        >
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          </div>
+          <div className="relative flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-yellow-300" />
+                <span className="text-sm font-medium text-white/80">
+                  Verified Vendor
+                </span>
+                <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  Pro
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold mt-1">
+                {vendorData?.business_name || "Your Store"}
+              </h3>
+              <p className="text-white/80 text-sm">
+                {vendorData?.business_email || "vendor@agrivibe.com"}
+              </p>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-white/20 rounded-full">
+                  <CheckCircle className="w-3 h-3" />
+                  Verified
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-white/20 rounded-full">
+                  <Star className="w-3 h-3" />
+                  {stats.averageRating || 0}★ ({stats.totalSales || 0} sales)
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <Store className="w-8 h-8 text-white" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </VendorLayout>
   );
 }
