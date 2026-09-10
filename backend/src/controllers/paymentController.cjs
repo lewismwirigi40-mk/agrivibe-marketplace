@@ -31,15 +31,16 @@ exports.mpesaCallback = async (req, res) => {
             console.log('✅ Payment successful for order:', MerchantRequestID);
             
             // Extract M-Pesa receipt from metadata
-            let mpesaReceipt = null;
-            if (CallbackMetadata && CallbackMetadata.Item) {
-                const receiptItem = CallbackMetadata.Item.find(
-                    (item: any) => item.Name === 'MpesaReceiptNumber'
-                );
-                if (receiptItem) {
-                    mpesaReceipt = receiptItem.Value;
-                }
-            }
+           // Extract M-Pesa receipt from metadata
+let mpesaReceipt = null;
+if (CallbackMetadata && CallbackMetadata.Item) {
+  const receiptItem = CallbackMetadata.Item.find(
+    (item) => item.Name === 'MpesaReceiptNumber'
+  );
+  if (receiptItem) {
+    mpesaReceipt = receiptItem.Value;
+  }
+}
 
             // ✅ Update purchase
             purchase.payment_status = 'completed';
