@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ShieldCheck,
   Crown,
+  Info,
 } from "lucide-react";
 import { login } from "../services/auth";
 
@@ -29,22 +30,45 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [backendAvailable, setBackendAvailable] = useState(true);
+  const [serviceAvailable, setServiceAvailable] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const [isAdminMode, setIsAdminMode] = useState(false);
 
-  // Check backend connectivity
+  // ====== Soft, user-friendly error extractor ======
+  const getErrorMessage = (err: any, fallback: string) => {
+    // No response at all = network / service unreachable
+    if (!err?.response) {
+      if (err?.code === "ECONNABORTED") {
+        return "⏳ This is taking longer than usual. Please try again in a moment.";
+      }
+      if (err?.code === "ERR_NETWORK" || err?.message === "Network Error") {
+        return "⚠️ Service temporarily unavailable. Please try again in a moment.";
+      }
+      return "⚠️ We're having trouble connecting. Please try again in a moment.";
+    }
+
+    // Server responded with 5xx
+    if (err.response.status >= 500) {
+      return "⚠️ Something went wrong on our end. Please try again shortly.";
+    }
+
+    // Server responded with a real message
+    return err.response.data?.error || fallback;
+  };
+
+  // ====== Lightweight service availability check ======
   useEffect(() => {
-    const checkBackend = async () => {
+    const checkService = async () => {
       try {
-        const response = await fetch("http://localhost:5000/health");
-        if (!response.ok) setBackendAvailable(false);
+        const API_URL =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const response = await fetch(`${API_URL}/health`);
+        if (!response.ok) setServiceAvailable(false);
       } catch {
-        setBackendAvailable(false);
+        setServiceAvailable(false);
       }
     };
-    checkBackend();
+    checkService();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +97,6 @@ export default function Login() {
 
       // ✅ Check if admin - redirect to admin login page
       if (userData?.user?.role === "admin") {
-        // Admin should use /admin/login, not this page
         router.push("/admin/login");
         return;
       }
@@ -89,9 +112,17 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error("❌ Authentication error:", err);
+
+      // If it was a network error, flip the banner too
+      if (!err?.response) {
+        setServiceAvailable(false);
+      }
+
       setError(
-        err.response?.data?.error ||
+        getErrorMessage(
+          err,
           "Login failed. Please verify your credentials and try again.",
+        ),
       );
     } finally {
       setLoading(false);
@@ -175,20 +206,23 @@ export default function Login() {
                 </p>
               </motion.div>
 
-              {/* Backend Warning */}
+              {/* ====== Soft Service Notice (no tech jargon) ====== */}
               <AnimatePresence>
-                {!backendAvailable && (
+                {!serviceAvailable && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-yellow-500/20 text-yellow-300 text-xs p-3 rounded-xl border border-yellow-500/30 mb-4 flex items-start gap-2"
+                    className="bg-blue-500/15 text-blue-200 text-xs p-3 rounded-xl border border-blue-500/25 mb-4 flex items-start gap-2"
                   >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-semibold">Backend Offline</span>
-                      <p className="text-yellow-300/70 text-xs">
-                        Please start the backend server to login
+                      <span className="font-semibold">
+                        Service Temporarily Unavailable
+                      </span>
+                      <p className="text-blue-200/70 text-xs mt-0.5">
+                        We're having trouble connecting right now. Please try
+                        again in a moment.
                       </p>
                     </div>
                   </motion.div>
@@ -306,7 +340,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="relative w-full group overflow-hidden"
+                  className="relative w-full group overflow-hidden disabled:opacity-60"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-agrivibe-green via-emerald-500 to-agrivibe-green bg-[length:200%_100%] animate-gradient rounded-xl" />
                   <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
