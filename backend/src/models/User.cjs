@@ -73,14 +73,58 @@ const User = sequelize.define('User', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
         comment: 'Whether user allows location sharing'
+    },
+
+    // ============================================
+    // ✅ SECURITY FIELDS (ADD THESE)
+    // ============================================
+    totp_secret: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        defaultValue: null,
+        field: 'totp_secret'
+    },
+    totp_enabled: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        field: 'totp_enabled'
+    },
+    totp_verified_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+        field: 'totp_verified_at'
+    },
+    last_login_ip: {
+        type: DataTypes.STRING(45),
+        allowNull: true,
+        defaultValue: null,
+        field: 'last_login_ip'
+    },
+    login_attempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        field: 'login_attempts'
+    },
+    lockout_until: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+        field: 'lockout_until'
+    },
+    last_active: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+        field: 'last_active'
     }
 }, {
     tableName: 'users',
-    timestamps: true
-    // ✅ REMOVED: hooks block - Controller handles hashing
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
 });
 
-// ✅ Instance method to check password (KEEP THIS!)
 User.prototype.comparePassword = async function(password) {
     return await bcrypt.compare(password, this.password_hash);
 };

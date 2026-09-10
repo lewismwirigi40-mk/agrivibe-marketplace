@@ -1,13 +1,13 @@
 // src/pages/terms.tsx
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { 
-  Shield, 
-  Lock, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { motion, useScroll, useTransform } from "framer-motion";
+import {
+  Shield,
+  Lock,
+  Mail,
+  Phone,
+  MapPin,
   CheckCircle,
   AlertCircle,
   Sparkles,
@@ -24,38 +24,38 @@ import {
   Clock,
   UserCheck,
   FileCheck,
-  Award
-} from 'lucide-react';
+  Award,
+} from "lucide-react";
 
 export default function Terms() {
-  const [activeSection, setActiveSection] = useState('acceptance');
+  const [activeSection, setActiveSection] = useState("acceptance");
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end start"]
+    offset: ["start start", "end start"],
   });
-  
+
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
 
   const sections = [
-    { id: 'acceptance', label: 'Acceptance of Terms', icon: FileCheck },
-    { id: 'accounts', label: 'User Accounts', icon: Users },
-    { id: 'orders', label: 'Orders & Payments', icon: ShoppingCart },
-    { id: 'delivery', label: 'Delivery & Returns', icon: Truck },
-    { id: 'vendor', label: 'Vendor Terms', icon: Store },
-    { id: 'conduct', label: 'User Conduct', icon: Shield },
-    { id: 'liability', label: 'Limitation of Liability', icon: Scale },
-    { id: 'governing', label: 'Governing Law', icon: Gavel },
-    { id: 'changes', label: 'Changes to Terms', icon: Clock },
-    { id: 'contact', label: 'Contact Us', icon: Mail },
+    { id: "acceptance", label: "Acceptance of Terms", icon: FileCheck },
+    { id: "accounts", label: "User Accounts", icon: Users },
+    { id: "orders", label: "Orders & Payments", icon: ShoppingCart },
+    { id: "delivery", label: "Delivery & Returns", icon: Truck },
+    { id: "vendor", label: "Vendor Terms", icon: Store },
+    { id: "conduct", label: "User Conduct", icon: Shield },
+    { id: "liability", label: "Limitation of Liability", icon: Scale },
+    { id: "governing", label: "Governing Law", icon: Gavel },
+    { id: "changes", label: "Changes to Terms", icon: Clock },
+    { id: "contact", label: "Contact Us", icon: Mail },
   ];
 
   // Scroll to section
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
       setActiveSection(id);
     }
   };
@@ -75,14 +75,17 @@ export default function Terms() {
         }
       });
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-premium-light overflow-x-hidden">
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-premium-light overflow-x-hidden"
+    >
       {/* ====== HERO SECTION ====== */}
-      <motion.section 
+      <motion.section
         style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative min-h-[60vh] flex items-center overflow-hidden"
       >
@@ -91,14 +94,13 @@ export default function Terms() {
           <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1233318/pexels-photo-1233318.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center mix-blend-overlay opacity-20" />
         </div>
 
-       
-         {/* Floating Particles - Temporarily disabled for build */}
-{/* <div className="absolute inset-0 overflow-hidden">
+        {/* Floating Particles - Temporarily disabled for build */}
+        {/* <div className="absolute inset-0 overflow-hidden">
   {[...Array(30)].map((_, i) => (
     <motion.div
       key={i}
       className="absolute w-2 h-2 bg-white/10 rounded-full"
-      initial={{ 
+      initial={{
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
       }}
@@ -132,7 +134,8 @@ export default function Terms() {
               Terms & Conditions
             </h1>
             <p className="text-xl text-white/80 max-w-2xl leading-relaxed">
-              Please read these terms carefully before using AgriVibe Marketplace.
+              Please read these terms carefully before using AgriVibe
+              Marketplace.
             </p>
             <p className="text-white/50 text-sm mt-4 flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -142,7 +145,7 @@ export default function Terms() {
         </div>
 
         {/* Scroll Indicator */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
@@ -182,13 +185,17 @@ export default function Terms() {
                       onClick={() => scrollToSection(section.id)}
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
                         activeSection === section.id
-                          ? 'bg-agrivibe-green/10 text-agrivibe-green'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-agrivibe-green'
+                          ? "bg-agrivibe-green/10 text-agrivibe-green"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-agrivibe-green"
                       }`}
                     >
-                      <Icon className={`w-4 h-4 ${
-                        activeSection === section.id ? 'text-agrivibe-green' : 'text-gray-400'
-                      }`} />
+                      <Icon
+                        className={`w-4 h-4 ${
+                          activeSection === section.id
+                            ? "text-agrivibe-green"
+                            : "text-gray-400"
+                        }`}
+                      />
                       <span className="text-left">{section.label}</span>
                       {activeSection === section.id && (
                         <ChevronRight className="w-4 h-4 ml-auto text-agrivibe-green" />
@@ -204,11 +211,15 @@ export default function Terms() {
                   <div className="w-8 h-8 bg-agrivibe-green rounded-full flex items-center justify-center">
                     <Phone className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">Questions?</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    Questions?
+                  </span>
                 </div>
-                <p className="text-xs text-gray-600 mb-2">Contact our legal team</p>
-                <a 
-                  href="tel:+254769074319" 
+                <p className="text-xs text-gray-600 mb-2">
+                  Contact our legal team
+                </p>
+                <a
+                  href="tel:+254769074319"
                   className="text-agrivibe-green font-bold text-sm hover:underline flex items-center gap-1"
                 >
                   +254 769 074 319
@@ -232,15 +243,21 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-agrivibe-green to-agrivibe-green-light rounded-xl flex items-center justify-center">
                     <FileCheck className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Acceptance of Terms</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Acceptance of Terms
+                  </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed">
-                  By using AgriVibe Marketplace ("we", "our", "us"), you agree to comply with and be bound by these Terms & Conditions. If you do not agree with any part of these terms, please do not use our platform or services.
+                  By using AgriVibe Marketplace ("we", "our", "us"), you agree
+                  to comply with and be bound by these Terms & Conditions. If
+                  you do not agree with any part of these terms, please do not
+                  use our platform or services.
                 </p>
                 <div className="mt-4 p-4 bg-agrivibe-green/5 rounded-xl border border-agrivibe-green/10">
                   <p className="text-gray-600 text-sm flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-agrivibe-green flex-shrink-0 mt-0.5" />
-                    By continuing to use our platform, you acknowledge that you have read, understood, and agree to be bound by these terms.
+                    By continuing to use our platform, you acknowledge that you
+                    have read, understood, and agree to be bound by these terms.
                   </p>
                 </div>
               </div>
@@ -253,7 +270,9 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">User Accounts</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    User Accounts
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
@@ -261,21 +280,35 @@ export default function Terms() {
                       <UserCheck className="w-4 h-4 text-agrivibe-green" />
                       Registration
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">You must register an account to use certain features of our platform. You agree to provide accurate, current, and complete information during registration and to update it as necessary.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      You must register an account to use certain features of
+                      our platform. You agree to provide accurate, current, and
+                      complete information during registration and to update it
+                      as necessary.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Lock className="w-4 h-4 text-agrivibe-green" />
                       Account Security
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. Notify us immediately of any unauthorized use.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      You are responsible for maintaining the confidentiality of
+                      your account credentials and for all activities that occur
+                      under your account. Notify us immediately of any
+                      unauthorized use.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-red-500" />
                       Account Termination
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">We reserve the right to suspend or terminate accounts that violate these terms, engage in fraudulent activities, or misuse our platform.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      We reserve the right to suspend or terminate accounts that
+                      violate these terms, engage in fraudulent activities, or
+                      misuse our platform.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -288,7 +321,9 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
                     <ShoppingCart className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Orders & Payments</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Orders & Payments
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
@@ -296,21 +331,33 @@ export default function Terms() {
                       <ShoppingCart className="w-4 h-4 text-agrivibe-green" />
                       Order Placement
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">When you place an order, you agree to pay the listed price plus any applicable delivery fees and taxes. Orders are subject to availability and vendor confirmation.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      When you place an order, you agree to pay the listed price
+                      plus any applicable delivery fees and taxes. Orders are
+                      subject to availability and vendor confirmation.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Lock className="w-4 h-4 text-agrivibe-green" />
                       Payment Processing
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Payments are processed through secure payment gateways. We accept M-Pesa, Credit/Debit Cards, and Wallet Balance. All transactions are encrypted and secure.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Payments are processed through secure payment gateways. We
+                      accept M-Pesa, Credit/Debit Cards, and Wallet Balance. All
+                      transactions are encrypted and secure.
+                    </p>
                   </div>
                   <div className="p-4 bg-gradient-to-r from-agrivibe-green/10 to-emerald-500/10 rounded-xl border border-agrivibe-green/20">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Shield className="w-4 h-4 text-agrivibe-green" />
                       Escrow Protection
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Payments are held in escrow until delivery is confirmed. This ensures both buyers and sellers are protected throughout the transaction process.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Payments are held in escrow until delivery is confirmed.
+                      This ensures both buyers and sellers are protected
+                      throughout the transaction process.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -323,7 +370,9 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
                     <Truck className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Delivery & Returns</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Delivery & Returns
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
@@ -331,21 +380,33 @@ export default function Terms() {
                       <Truck className="w-4 h-4 text-agrivibe-green" />
                       Delivery Policy
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">We strive to deliver orders within the estimated timeframe. Delivery times are estimates and may vary based on location, vendor availability, and other factors.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      We strive to deliver orders within the estimated
+                      timeframe. Delivery times are estimates and may vary based
+                      on location, vendor availability, and other factors.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Shield className="w-4 h-4 text-agrivibe-green" />
                       Delivery Code
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Upon delivery, you will receive a 6-digit delivery code. Provide this code to the driver only upon receiving your items. Do not share this code with anyone else.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Upon delivery, you will receive a 6-digit delivery code.
+                      Provide this code to the driver only upon receiving your
+                      items. Do not share this code with anyone else.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <RefreshCw className="w-4 h-4 text-agrivibe-green" />
                       Returns & Refunds
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Returns and refunds are handled on a case-by-case basis. Please contact our support team within 7 days of delivery to initiate a return or refund request.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Returns and refunds are handled on a case-by-case basis.
+                      Please contact our support team within 7 days of delivery
+                      to initiate a return or refund request.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -358,7 +419,9 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
                     <Store className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Vendor Terms</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Vendor Terms
+                  </h2>
                 </div>
                 <div className="space-y-4">
                   <div className="p-4 bg-gray-50 rounded-xl">
@@ -366,21 +429,34 @@ export default function Terms() {
                       <Store className="w-4 h-4 text-agrivibe-green" />
                       Vendor Registration
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Vendors must complete the registration process and be approved by our admin team before listing products on our platform.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Vendors must complete the registration process and be
+                      approved by our admin team before listing products on our
+                      platform.
+                    </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <FileText className="w-4 h-4 text-agrivibe-green" />
                       Product Listings
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">Vendors are responsible for accurate product descriptions, pricing, and availability. Products must meet quality standards and comply with all applicable regulations.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Vendors are responsible for accurate product descriptions,
+                      pricing, and availability. Products must meet quality
+                      standards and comply with all applicable regulations.
+                    </p>
                   </div>
                   <div className="p-4 bg-gradient-to-r from-agrivibe-gold/10 to-orange-500/10 rounded-xl border border-agrivibe-gold/20">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Award className="w-4 h-4 text-agrivibe-gold" />
                       Commission
                     </h3>
-                    <p className="text-gray-600 text-sm mt-1">A commission fee applies to each sale made through our platform. The current commission rate is 10% of the product price. This supports platform operations and payment processing.</p>
+                    <p className="text-gray-600 text-sm mt-1">
+                      A commission fee applies to each sale made through our
+                      platform. The current commission rate is 10% of the
+                      product price. This supports platform operations and
+                      payment processing.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -393,18 +469,23 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
                     <Shield className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">User Conduct</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    User Conduct
+                  </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
-                    'Provide accurate and truthful information',
-                    'Do not engage in fraudulent activities',
-                    'Respect other users and vendors',
-                    'Do not misuse the platform or services',
-                    'Comply with all applicable laws and regulations',
-                    'Do not attempt to bypass security measures',
+                    "Provide accurate and truthful information",
+                    "Do not engage in fraudulent activities",
+                    "Respect other users and vendors",
+                    "Do not misuse the platform or services",
+                    "Comply with all applicable laws and regulations",
+                    "Do not attempt to bypass security measures",
                   ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 p-3 bg-gray-50 rounded-xl"
+                    >
                       <CheckCircle className="w-5 h-5 text-agrivibe-green flex-shrink-0 mt-0.5" />
                       <span className="text-gray-600 text-sm">{item}</span>
                     </div>
@@ -420,15 +501,24 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
                     <Scale className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Limitation of Liability</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Limitation of Liability
+                  </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed">
-                  AgriVibe Marketplace is provided "as is" and "as available". We do not warrant that our platform will be uninterrupted, error-free, or free of viruses or other harmful components. We are not liable for any damages arising from the use of our platform or services.
+                  AgriVibe Marketplace is provided "as is" and "as available".
+                  We do not warrant that our platform will be uninterrupted,
+                  error-free, or free of viruses or other harmful components. We
+                  are not liable for any damages arising from the use of our
+                  platform or services.
                 </p>
                 <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-amber-700 text-sm flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    We are not responsible for the quality, safety, or legality of products sold by vendors. All transactions are between buyers and vendors, with our platform facilitating the connection and payment process.
+                    We are not responsible for the quality, safety, or legality
+                    of products sold by vendors. All transactions are between
+                    buyers and vendors, with our platform facilitating the
+                    connection and payment process.
                   </p>
                 </div>
               </div>
@@ -441,10 +531,15 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center">
                     <Gavel className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Governing Law</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Governing Law
+                  </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed">
-                  These Terms & Conditions are governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts of Kenya.
+                  These Terms & Conditions are governed by and construed in
+                  accordance with the laws of the Republic of Kenya. Any
+                  disputes arising from these terms shall be subject to the
+                  exclusive jurisdiction of the courts of Kenya.
                 </p>
               </div>
             </section>
@@ -456,10 +551,15 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
                     <Clock className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Changes to Terms</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Changes to Terms
+                  </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed">
-                  We reserve the right to update or modify these Terms & Conditions at any time. Changes will be posted on this page with an updated date. Continued use of our platform after any changes constitutes acceptance of the new terms.
+                  We reserve the right to update or modify these Terms &
+                  Conditions at any time. Changes will be posted on this page
+                  with an updated date. Continued use of our platform after any
+                  changes constitutes acceptance of the new terms.
                 </p>
               </div>
             </section>
@@ -471,10 +571,13 @@ export default function Terms() {
                   <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
                     <Mail className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">Contact Us</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Contact Us
+                  </h2>
                 </div>
                 <p className="text-gray-600 leading-relaxed mb-6">
-                  If you have any questions about these Terms & Conditions, please contact us:
+                  If you have any questions about these Terms & Conditions,
+                  please contact us:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 bg-gray-50 rounded-xl flex items-center gap-3">
@@ -483,7 +586,10 @@ export default function Terms() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Email</p>
-                      <a href="mailto:legal@agrivibe.com" className="text-agrivibe-green font-semibold hover:underline text-sm">
+                      <a
+                        href="mailto:legal@agrivibe.com"
+                        className="text-agrivibe-green font-semibold hover:underline text-sm"
+                      >
                         legal@agrivibe.com
                       </a>
                     </div>
@@ -494,7 +600,10 @@ export default function Terms() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Phone</p>
-                      <a href="tel:+254769074319" className="text-agrivibe-green font-semibold hover:underline text-sm">
+                      <a
+                        href="tel:+254769074319"
+                        className="text-agrivibe-green font-semibold hover:underline text-sm"
+                      >
                         +254 769 074 319
                       </a>
                     </div>
@@ -505,7 +614,9 @@ export default function Terms() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Address</p>
-                      <p className="text-gray-700 text-sm">AgriVibe KE Farm Solutions, Nairobi, Kenya</p>
+                      <p className="text-gray-700 text-sm">
+                        AgriVibe KE Farm Solutions, Nyeri, Kenya
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -522,7 +633,7 @@ export default function Terms() {
 
       {/* ====== BACK TO TOP ====== */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="fixed bottom-6 right-6 bg-agrivibe-green text-white p-4 rounded-full shadow-2xl shadow-agrivibe-green/30 hover:scale-110 transition-all duration-300 z-40"
       >
         <ArrowRight className="w-5 h-5 -rotate-90" />

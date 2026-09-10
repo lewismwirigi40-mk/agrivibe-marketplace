@@ -38,6 +38,12 @@ import {
   Globe,
   Phone,
   Mail,
+  Eye,
+  Plus,
+  Check,
+  Flame,
+  Tag,
+  Percent,
 } from "lucide-react";
 import api from "../services/api";
 
@@ -48,8 +54,12 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const containerRef = useRef(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [likedProducts, setLikedProducts] = useState<Record<number, boolean>>(
+    {},
+  );
+  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
 
-  // REAL DATA STATES
+  // REAL DATA STATES (for when API is available)
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +69,7 @@ export default function Home() {
   });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-  // ✅ Animated Counter Hook (defined once at top level)
+  // ✅ Animated Counter Hook
   const useCounter = (target: number, duration = 2000) => {
     const [count, setCount] = useState(0);
     useEffect(() => {
@@ -77,13 +87,12 @@ export default function Home() {
     return count;
   };
 
-  // ✅ ALL COUNTERS CALLED AT TOP LEVEL (NOT INSIDE MAP)
   const studentsCount = useCounter(15000, 2500);
   const vendorsCount = useCounter(800, 2000);
   const productsCount = useCounter(5000, 2000);
   const satisfactionCount = useCounter(98, 1800);
 
-  // FETCH REAL DATA
+  // FETCH REAL DATA (silent fallback)
   useEffect(() => {
     setIsHydrated(true);
     fetchAllData();
@@ -92,13 +101,9 @@ export default function Home() {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-
-      // Fetch products
       const productsRes = await api.get("/products?limit=4");
       const productsData = productsRes.data.products || [];
       setProducts(productsData);
-
-      // Fetch categories
       const categoriesRes = await api.get("/categories");
       setCategories(categoriesRes.data.categories || []);
     } catch (error) {
@@ -129,11 +134,106 @@ export default function Home() {
     router.push(`/marketplace?category=${encodeURIComponent(categoryName)}`);
   };
 
-  const handleProductClick = (productId: string) => {
-    router.push(`/product/${productId}`);
+  const handleLike = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLikedProducts((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+    setLikeCounts((prev) => ({
+      ...prev,
+      [id]: (prev[id] || 0) + (likedProducts[id] ? -1 : 1),
+    }));
   };
 
-  // Testimonials
+  // ✅ Enhanced Featured Products (Decoration - Premium)
+  const featuredProducts = [
+    {
+      id: 1,
+      name: "Fresh Organic Tomatoes",
+      price: 150,
+      originalPrice: 200,
+      discount: 25,
+      vendor: "Green Farm Produce",
+      location: "Nyeri, Kenya",
+      image:
+        "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&h=400&fit=crop&auto=format",
+      badge: "🌱 Organic",
+      badgeColor: "from-emerald-500 to-green-500",
+      rating: 4.8,
+      reviews: 234,
+      stock: 156,
+      category: "Vegetables",
+      isOrganic: true,
+      isFeatured: true,
+      isFlashSale: false,
+      isBestSeller: true,
+    },
+    {
+      id: 2,
+      name: "Premium Hass Avocado (6pc)",
+      price: 299,
+      originalPrice: 450,
+      discount: 33,
+      vendor: "Avocado Paradise",
+      location: "Kiambu, Kenya",
+      image:
+        "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=600&h=400&fit=crop&auto=format",
+      badge: "🌟 Premium",
+      badgeColor: "from-yellow-400 to-orange-400",
+      rating: 4.9,
+      reviews: 189,
+      stock: 300,
+      category: "Fruits",
+      isOrganic: true,
+      isFeatured: true,
+      isFlashSale: false,
+      isBestSeller: true,
+    },
+    {
+      id: 3,
+      name: "Organic Kale Bunch (500g)",
+      price: 89,
+      originalPrice: 150,
+      discount: 40,
+      vendor: "Healthy Greens",
+      location: "Nairobi, Kenya",
+      image:
+        "https://images.unsplash.com/photo-1524179094475-0a6c6a89df4a?w=600&h=400&fit=crop&auto=format",
+      badge: "🔥 Flash Sale",
+      badgeColor: "from-red-500 to-orange-500",
+      rating: 4.7,
+      reviews: 456,
+      stock: 800,
+      category: "Vegetables",
+      isOrganic: true,
+      isFeatured: false,
+      isFlashSale: true,
+      isBestSeller: false,
+    },
+    {
+      id: 4,
+      name: "Sweet Pineapple (Large)",
+      price: 229,
+      originalPrice: 350,
+      discount: 34,
+      vendor: "Tropical Fruits Ltd",
+      location: "Thika, Kenya",
+      image:
+        "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=600&h=400&fit=crop&auto=format",
+      badge: "🏆 Best Seller",
+      badgeColor: "from-blue-500 to-purple-500",
+      rating: 4.8,
+      reviews: 312,
+      stock: 450,
+      category: "Fruits",
+      isOrganic: false,
+      isFeatured: false,
+      isFlashSale: false,
+      isBestSeller: true,
+    },
+  ];
+
   const testimonials = [
     {
       id: 1,
@@ -164,11 +264,36 @@ export default function Home() {
     },
   ];
 
-  const whatsappNumber = "254700000000";
+  // ✅ Updated WhatsApp number
+  const whatsappNumber = "254769074319";
   const preFilledMessage = encodeURIComponent(
     "Hello AgriVibe! I would like to make an inquiry.",
   );
   const targetUrl = `https://wa.me/${whatsappNumber}?text=${preFilledMessage}`;
+
+  // Render stars
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating - fullStars >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(fullStars)].map((_, i) => (
+          <Star
+            key={`full-${i}`}
+            className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400"
+          />
+        ))}
+        {hasHalf && (
+          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+        )}
+        {[...Array(emptyStars)].map((_, i) => (
+          <Star key={`empty-${i}`} className="w-3.5 h-3.5 text-gray-300" />
+        ))}
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -403,7 +528,6 @@ export default function Home() {
       >
         <div className="absolute inset-0 hero-glow" />
         <div className="container-premium relative z-10 py-32">
-          {/* ✅ ADDED: mx-auto text-center to center everything */}
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -439,7 +563,6 @@ export default function Home() {
               payments and last-mile delivery across all Kenyan universities.
             </motion.p>
 
-            {/* ✅ Center the buttons */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -463,7 +586,6 @@ export default function Home() {
               </Link>
             </motion.div>
 
-            {/* ✅ Center the trust badges */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -506,7 +628,7 @@ export default function Home() {
         </motion.div>
       </motion.section>
 
-      {/* ====== STATS SECTION WITH ANIMATED COUNTERS (FIXED) ====== */}
+      {/* ====== STATS SECTION ====== */}
       <section className="section-premium bg-white relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-green-50/50 to-emerald-50/50" />
         <div className="container-premium relative">
@@ -675,7 +797,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ====== FEATURED PRODUCTS - STATIC SHOWCASE ====== */}
+      {/* ====== FEATURED PRODUCTS - PREMIUM (DECORATION) ====== */}
       <section className="section-premium bg-white">
         <div className="container-premium">
           <motion.div
@@ -703,138 +825,169 @@ export default function Home() {
             </Link>
           </motion.div>
 
-          {/* Premium Static Featured Products */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                id: 1,
-                name: "Fresh Organic Tomatoes",
-                price: 150,
-                vendor: "Green Farm",
-                location: "Nyeri",
-                image:
-                  "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&h=400&fit=crop&auto=format",
-                badge: "🌱 Organic",
-                badgeColor: "bg-agrivibe-green",
-                is_organic: true,
-              },
-              {
-                id: 2,
-                name: "Premium Hass Avocado",
-                price: 200,
-                vendor: "Avocado Paradise",
-                location: "Kiambu",
-                image:
-                  "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=600&h=400&fit=crop&auto=format",
-                badge: "🌟 Premium",
-                badgeColor: "bg-gradient-to-r from-yellow-400 to-orange-400",
-                is_organic: true,
-              },
-              {
-                id: 3,
-                name: "Organic Kale Bunch",
-                price: 80,
-                vendor: "Healthy Greens",
-                location: "Nairobi",
-                image:
-                  "https://images.unsplash.com/photo-1524179094475-0a6c6a89df4a?w=600&h=400&fit=crop&auto=format",
-                badge: "🌱 Organic",
-                badgeColor: "bg-agrivibe-green",
-                is_organic: true,
-              },
-              {
-                id: 4,
-                name: "Sweet Pineapple",
-                price: 180,
-                vendor: "Tropical Fruits",
-                location: "Thika",
-                image:
-                  "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=600&h=400&fit=crop&auto=format",
-                badge: "🔥 Fresh",
-                badgeColor: "bg-gradient-to-r from-red-400 to-orange-400",
-                is_organic: false,
-              },
-            ].map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                whileHover={{ y: -12 }}
-                className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer"
-                onClick={() => router.push("/marketplace")}
-              >
-                <div className="relative h-56 overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {featuredProducts.map((product, index) => {
+              const isLiked = likedProducts[product.id] || false;
+              const likeCount = likeCounts[product.id] || 0;
+              const hasDiscount = product.discount && product.discount > 0;
+              const discountPrice = product.originalPrice || product.price;
 
-                  {/* Premium Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span
-                      className={`${product.badgeColor} text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg`}
-                    >
-                      {product.badge}
-                    </span>
-                  </div>
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  whileHover={{ y: -12 }}
+                  className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 cursor-pointer relative"
+                  onClick={() => router.push("/marketplace")}
+                >
+                  <div className="relative h-56 overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* Rating */}
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-white text-sm font-semibold">
-                      4.8
-                    </span>
-                  </div>
-
-                  {/* Quick View Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push("/marketplace");
-                      }}
-                      className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:bg-agrivibe-green hover:text-white transition-all duration-300 transform -translate-y-4 group-hover:translate-y-0"
-                    >
-                      Shop Now →
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-lg group-hover:text-agrivibe-green transition-colors line-clamp-1">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{product.vendor}</p>
-                    </div>
-                    {product.is_organic && (
-                      <span className="text-xs font-medium text-agrivibe-green bg-green-50 px-2 py-1 rounded-full border border-green-200">
-                        🌱 Organic
+                    {/* Badges - Left Side */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                      <span
+                        className={`bg-gradient-to-r ${product.badgeColor} text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1`}
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        {product.badge}
                       </span>
+                      {hasDiscount && (
+                        <span className="bg-red-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                          <Percent className="w-3 h-3" />
+                          {product.discount}% OFF
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Discount Tag - Right Side */}
+                    {hasDiscount && (
+                      <div className="absolute top-3 right-3">
+                        <span className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          Save KES {product.originalPrice - product.price}
+                        </span>
+                      </div>
                     )}
+
+                    {/* Rating & Stock */}
+                    <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                        <span className="text-white text-xs font-semibold">
+                          {product.rating}
+                        </span>
+                      </div>
+                      <span className="text-white/40 text-xs">•</span>
+                      <span className="text-white text-xs">
+                        {product.reviews} sold
+                      </span>
+                      <span className="text-white/40 text-xs">•</span>
+                      <span className="text-green-400 text-xs">
+                        {product.stock > 100
+                          ? "In Stock"
+                          : product.stock > 0
+                            ? `${product.stock} left`
+                            : "Out of Stock"}
+                      </span>
+                    </div>
+
+                    {/* Quick View Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push("/marketplace");
+                        }}
+                        className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold hover:bg-agrivibe-green hover:text-white transition-all duration-300 transform -translate-y-4 group-hover:translate-y-0"
+                      >
+                        Shop Now →
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                    <MapPin className="w-3 h-3" />
-                    <span>{product.location}</span>
-                  </div>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-lg group-hover:text-agrivibe-green transition-colors line-clamp-1">
+                          {product.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 flex items-center gap-1">
+                          <Store className="w-3 h-3" />
+                          {product.vendor}
+                        </p>
+                      </div>
+                      {product.isOrganic && (
+                        <span className="text-xs font-medium text-agrivibe-green bg-green-50 px-2 py-1 rounded-full border border-green-200 flex items-center gap-0.5">
+                          <Leaf className="w-3 h-3" />
+                          Organic
+                        </span>
+                      )}
+                    </div>
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                    <span className="text-2xl font-bold text-agrivibe-green">
-                      KES {product.price}
-                    </span>
-                    <span className="text-xs font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-                      ⭐ Popular
-                    </span>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                      <MapPin className="w-3 h-3" />
+                      <span>{product.location}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-2">
+                      {renderStars(product.rating)}
+                      <span className="text-xs text-gray-500">
+                        ({product.reviews})
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        {hasDiscount ? (
+                          <>
+                            <span className="text-2xl font-bold text-agrivibe-green">
+                              KES {product.price}
+                            </span>
+                            <span className="text-sm text-gray-400 line-through">
+                              KES {product.originalPrice}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-2xl font-bold text-agrivibe-green">
+                            KES {product.price}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={(e) => handleLike(product.id, e)}
+                          className={`p-1.5 rounded-lg transition-all duration-300 ${
+                            isLiked
+                              ? "text-red-500 bg-red-50"
+                              : "text-gray-300 hover:text-red-400 hover:bg-red-50"
+                          }`}
+                        >
+                          <Heart
+                            className={`w-5 h-5 transition-all duration-300 ${
+                              isLiked ? "fill-red-500 text-red-500" : ""
+                            }`}
+                          />
+                        </motion.button>
+                        <span className="text-xs text-gray-400">
+                          {likeCount + product.reviews}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -953,7 +1106,22 @@ export default function Home() {
                 Connecting farmers, vendors, and students across Kenyan
                 campuses.
               </p>
-              <div className="flex gap-4 mt-6">
+              <div className="flex flex-col gap-1 mt-3 text-sm">
+                <p className="text-gray-400 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-agrivibe-green" />
+                  <a
+                    href="tel:+254769074319"
+                    className="hover:text-white transition-colors"
+                  >
+                    +254 769 074 319
+                  </a>
+                </p>
+                <p className="text-gray-400 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-agrivibe-green" />
+                  <span>657-10100, Nyeri, Kenya</span>
+                </p>
+              </div>
+              <div className="flex gap-4 mt-4">
                 <a
                   href="#"
                   className="text-gray-400 hover:text-agrivibe-gold transition-colors text-sm"
@@ -1094,7 +1262,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* ====== FLOATING WHATSAPP BUTTON - Bottom Right ====== */}
+      {/* ====== FLOATING WHATSAPP BUTTON ====== */}
       <a
         href={targetUrl}
         target="_blank"
@@ -1115,7 +1283,7 @@ export default function Home() {
         </svg>
       </a>
 
-      {/* ====== FLOATING AI CHAT BUTTON - Bottom Left ====== */}
+      {/* ====== FLOATING AI CHAT BUTTON ====== */}
       <motion.button
         onClick={() => router.push("/ai-chat")}
         whileHover={{ scale: 1.08 }}

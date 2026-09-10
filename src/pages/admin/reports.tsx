@@ -1,5 +1,5 @@
 // src/pages/admin/reports.tsx
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LineChart,
@@ -95,9 +95,8 @@ export default function AdminReports() {
   const [isFetching, setIsFetching] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [viewMode, setViewMode] = useState<"detailed" | "summary">("detailed");
-  const [exportFormat, setExportFormat] = useState<"csv" | "pdf" | "json">(
-    "csv",
-  );
+  const [sharing, setSharing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   // REAL DATA STATES
@@ -109,10 +108,10 @@ export default function AdminReports() {
     totalOrders: 0,
     activeUsers: 0,
     totalVendors: 0,
-    revenueChange: "+12.5%",
-    ordersChange: "+8.3%",
-    usersChange: "+5.2%",
-    vendorsChange: "+2.1%",
+    revenueChange: "+0%",
+    ordersChange: "+0%",
+    usersChange: "+0%",
+    vendorsChange: "+0%",
   });
 
   const COLORS = [
@@ -141,6 +140,34 @@ export default function AdminReports() {
     month: "long",
     day: "numeric",
   });
+
+  // ✅ THEME-AWARE COLORS
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark";
+      setIsDarkMode(isDark);
+    };
+    checkDarkMode();
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const chartColors = {
+    grid: isDarkMode ? "#374151" : "#f3f4f6",
+    axis: isDarkMode ? "#9ca3af" : "#6b7280",
+    axisLabel: isDarkMode ? "#9ca3af" : "#6b7280",
+    tooltipBg: isDarkMode ? "#1f2937" : "#ffffff",
+    tooltipBorder: isDarkMode ? "#374151" : "#e5e7eb",
+    tooltipText: isDarkMode ? "#f9fafb" : "#1f2937",
+    legendText: isDarkMode ? "#d1d5db" : "#374151",
+  };
 
   // FETCH REAL DATA
   useEffect(() => {
@@ -185,305 +212,157 @@ export default function AdminReports() {
     }
   };
 
+  // ✅ PRINT FUNCTION
   const handlePrint = () => {
-    if (printRef.current) {
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>AgriVibe Report</title>
-              <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; background: white; color: #1a1a2e; }
-                h1 { color: #2d7d2d; font-size: 28px; }
-                .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2d7d2d; padding-bottom: 20px; }
-                .report-title { font-size: 24px; font-weight: 700; color: #1a1a2e; }
-                .report-meta { color: #666; font-size: 14px; margin-top: 5px; }
-                .section { margin: 20px 0; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; }
-                .section-title { font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 15px; }
-                .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 15px 0; }
-                .stat-card { padding: 15px; background: #f8fafc; border-radius: 10px; text-align: center; }
-                .stat-value { font-size: 24px; font-weight: 700; color: #2d7d2d; }
-                .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
-                table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; font-size: 14px; }
-                th { background: #f1f5f9; font-weight: 600; color: #1a1a2e; }
-                .footer { text-align: center; margin-top: 30px; color: #94a3b8; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 20px; }
-                .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-                .badge-success { background: #dcfce7; color: #166534; }
-                .badge-warning { background: #fef3c7; color: #92400e; }
-                .badge-info { background: #dbeafe; color: #1e40af; }
-                .badge-danger { background: #fee2e2; color: #991b1b; }
-              </style>
-            </head>
-            <body>
-              <div class="header">
-                <h1>🌾 AgriVibe</h1>
-                <div class="report-title">Platform Report</div>
-                <div class="report-meta">${currentDate} • ${reportTypes.find((t) => t.value === reportType)?.label || "Revenue"} Report</div>
-              </div>
-              <div class="stats-grid">
-                <div class="stat-card"><div class="stat-value">KES ${stats.totalRevenue.toLocaleString()}</div><div class="stat-label">Total Revenue</div></div>
-                <div class="stat-card"><div class="stat-value">${stats.totalOrders}</div><div class="stat-label">Total Orders</div></div>
-                <div class="stat-card"><div class="stat-value">${stats.activeUsers}</div><div class="stat-label">Active Users</div></div>
-                <div class="stat-card"><div class="stat-value">${stats.totalVendors}</div><div class="stat-label">Total Vendors</div></div>
-              </div>
-              ${printRef.current ? printRef.current.innerHTML : ""}
-              <div class="footer">© 2026 AgriVibe KE Farm Solutions. All rights reserved.</div>
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
+    window.print();
+  };
+
+  // ✅ SHARE FUNCTION - FIXED
+  const handleShare = async () => {
+    if (!reportData) {
+      alert("No data to share. Generate a report first.");
+      return;
+    }
+
+    setSharing(true);
+    // ✅ Define shareText OUTSIDE try block so it's accessible in catch
+    const shareText = `🌾 AgriVibe Platform Report
+━━━━━━━━━━━━━━━━━━━━
+📊 Report: ${reportTypes.find((t) => t.value === reportType)?.label || "Revenue"}
+📅 Period: ${dateRanges.find((r) => r.value === dateRange)?.label || "Month"}
+💰 Total Revenue: KES ${stats.totalRevenue.toLocaleString()}
+📦 Total Orders: ${stats.totalOrders}
+👥 Active Users: ${stats.activeUsers}
+🏪 Total Vendors: ${stats.totalVendors}
+📈 Revenue Change: ${stats.revenueChange}
+━━━━━━━━━━━━━━━━━━━━
+Powered by AgriVibe 🌱`;
+
+    try {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "AgriVibe Platform Report",
+            text: shareText,
+            url: window.location.href,
+          });
+        } catch (shareError: any) {
+          if (
+            shareError.name === "AbortError" ||
+            shareError.message?.includes("cancel")
+          ) {
+            console.log("Share cancelled");
+          } else {
+            await navigator.clipboard.writeText(shareText);
+            alert("✅ Report summary copied to clipboard!");
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert("✅ Report summary copied to clipboard!");
       }
+    } catch (error) {
+      console.error("Share failed:", error);
+      alert("📋 Copy this summary:\n\n" + shareText);
+    } finally {
+      setSharing(false);
     }
   };
 
-  // ============================================
-  // ============================================
-  // ✅ UPDATED: PREMIUM DOWNLOAD FUNCTION
-  // ============================================
-  const handleDownload = () => {
-    setLoading(true);
-    setError("");
+  // ✅ EXPORT CSV FUNCTION
+  const handleExportCSV = () => {
+    if (!reportData) {
+      alert("No data to export. Generate a report first.");
+      return;
+    }
 
+    setExporting(true);
     try {
-      const data = reportData;
-      if (!data) {
-        setError("No data to download. Generate a report first.");
-        setLoading(false);
-        return;
-      }
-
-      const reportLabel =
-        reportTypes.find((t) => t.value === reportType)?.label || "Revenue";
-      const dateLabel =
-        dateRanges.find((r) => r.value === dateRange)?.label || "Month";
-      const timestamp = new Date().toISOString().split("T")[0];
-      const fileName = `AgriVibe_Report_${reportType}_${timestamp}`;
-
-      // ============================================
-      // BUILD DATA STRUCTURES
-      // ============================================
-
-      // 1. Executive Summary Data
-      const summaryData = [
+      const rows = [
+        ["AgriVibe Platform Report"],
+        [
+          `Report Type: ${reportTypes.find((t) => t.value === reportType)?.label || "Revenue"}`,
+        ],
+        [
+          `Date Range: ${dateRanges.find((r) => r.value === dateRange)?.label || "Month"}`,
+        ],
+        [`Generated: ${new Date().toLocaleString()}`],
+        [],
         ["Metric", "Value"],
-        ["Total Revenue", `KES ${data.totalRevenue?.toLocaleString() || 0}`],
-        ["Total Orders", data.totalOrders || 0],
-        ["Active Users", data.activeUsers || 0],
-        ["Total Vendors", data.totalVendors || 0],
-        ["Revenue Change", data.revenueChange || "+0%"],
-        ["Orders Change", data.ordersChange || "+0%"],
-        ["Users Change", data.usersChange || "+0%"],
-        ["Vendors Change", data.vendorsChange || "+0%"],
+        ["Total Revenue", `KES ${stats.totalRevenue.toLocaleString()}`],
+        ["Total Orders", stats.totalOrders],
+        ["Active Users", stats.activeUsers],
+        ["Total Vendors", stats.totalVendors],
+        ["Revenue Change", stats.revenueChange],
+        ["Orders Change", stats.ordersChange],
+        ["Users Change", stats.usersChange],
+        ["Vendors Change", stats.vendorsChange],
       ];
 
-      // 2. Revenue Trend Data
-      const trendData =
-        data.revenueTrend && data.revenueTrend.length > 0
-          ? [
-              ["Date", "Revenue (KES)", "Orders"],
-              ...data.revenueTrend.map((item: any) => [
-                item.month,
-                item.revenue || 0,
-                item.orders || 0,
-              ]),
-            ]
-          : [
-              ["Date", "Revenue (KES)", "Orders"],
-              ["No Data", 0, 0],
-            ];
-
-      // 3. Category Sales Data
-      const categoryData =
-        data.categorySales && data.categorySales.length > 0
-          ? [
-              ["Category", "Amount (KES)"],
-              ...data.categorySales
-                .filter(
-                  (item: any) =>
-                    item.name &&
-                    item.name !== "No Sales Yet" &&
-                    item.name !== "Categories Not Assigned" &&
-                    item.name !== "Data Unavailable",
-                )
-                .map((item: any) => [item.name, item.value || 0]),
-            ]
-          : [
-              ["Category", "Amount (KES)"],
-              ["No Sales Data", 0],
-            ];
-
-      // 4. Transactions Data
-      const transactionsData =
-        data.transactions && data.transactions.length > 0
-          ? [
-              [
-                "Order ID",
-                "Customer",
-                "Vendor",
-                "Amount (KES)",
-                "Status",
-                "Date",
-              ],
-              ...data.transactions.map((item: any) => [
-                item.order_number || item.id,
-                item.customer?.name || "Customer",
-                item.vendor?.store_name || "Vendor",
-                item.total || 0,
-                item.status || "pending",
-                item.created_at
-                  ? new Date(item.created_at).toLocaleDateString()
-                  : "",
-              ]),
-            ]
-          : [
-              [
-                "Order ID",
-                "Customer",
-                "Vendor",
-                "Amount (KES)",
-                "Status",
-                "Date",
-              ],
-              ["No Transactions", "", "", 0, "", ""],
-            ];
-
-      // ============================================
-      // BUILD EXCEL WORKBOOK (if xlsx is available)
-      // ============================================
-      let excelData: any = null;
-      try {
-        const XLSX = require("xlsx");
-
-        // Create workbook
-        const wb = XLSX.utils.book_new();
-
-        // Summary Sheet
-        const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, summaryWs, "Executive Summary");
-
-        // Revenue Trend Sheet
-        const trendWs = XLSX.utils.aoa_to_sheet(trendData);
-        XLSX.utils.book_append_sheet(wb, trendWs, "Revenue Trend");
-
-        // Category Sales Sheet
-        const categoryWs = XLSX.utils.aoa_to_sheet(categoryData);
-        XLSX.utils.book_append_sheet(wb, categoryWs, "Category Sales");
-
-        // Transactions Sheet
-        const transactionsWs = XLSX.utils.aoa_to_sheet(transactionsData);
-        XLSX.utils.book_append_sheet(wb, transactionsWs, "Transactions");
-
-        // Generate Excel file
-        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        excelData = new Blob([excelBuffer], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      if (revenueData.length > 0) {
+        rows.push([]);
+        rows.push(["Revenue Trend"]);
+        rows.push(["Date", "Revenue (KES)", "Orders"]);
+        revenueData.forEach((item: any) => {
+          rows.push([item.month, item.revenue || 0, item.orders || 0]);
         });
-      } catch (xlsxError) {
-        console.log("Excel export not available, falling back to CSV");
-        excelData = null;
       }
 
-      // ============================================
-      // BUILD CSV DATA (Fallback)
-      // ============================================
-      let csvContent = "AgriVibe Platform Report\n";
-      csvContent += `Generated: ${new Date().toLocaleString()}\n`;
-      csvContent += `Report Type: ${reportLabel}\n`;
-      csvContent += `Date Range: ${dateLabel}\n`;
-      csvContent += "=".repeat(60) + "\n\n";
-
-      // Executive Summary
-      csvContent += "EXECUTIVE SUMMARY\n";
-      csvContent += "-----------------\n";
-      summaryData.slice(1).forEach((row: any[]) => {
-        csvContent += `${row[0]},${row[1]}\n`;
-      });
-      csvContent += "\n";
-
-      // Revenue Trend
-      if (data.revenueTrend && data.revenueTrend.length > 0) {
-        csvContent += "REVENUE TREND\n";
-        csvContent += "-------------\n";
-        csvContent += "Date,Revenue (KES),Orders\n";
-        data.revenueTrend.forEach((item: any) => {
-          csvContent += `${item.month},${item.revenue || 0},${item.orders || 0}\n`;
-        });
-        csvContent += "\n";
-      }
-
-      // Category Sales
-      if (data.categorySales && data.categorySales.length > 0) {
-        csvContent += "SALES BY CATEGORY\n";
-        csvContent += "-----------------\n";
-        csvContent += "Category,Amount (KES)\n";
-        data.categorySales.forEach((item: any) => {
-          if (
-            item.name &&
-            item.name !== "No Sales Yet" &&
-            item.name !== "Categories Not Assigned" &&
-            item.name !== "Data Unavailable"
-          ) {
-            csvContent += `${item.name},${item.value || 0}\n`;
+      if (categorySales.length > 0) {
+        rows.push([]);
+        rows.push(["Category Sales"]);
+        rows.push(["Category", "Amount (KES)"]);
+        categorySales.forEach((item: any) => {
+          if (item.name && item.name !== "No Sales Yet") {
+            rows.push([item.name, item.value || 0]);
           }
         });
-        csvContent += "\n";
       }
 
-      // Recent Transactions
-      if (data.transactions && data.transactions.length > 0) {
-        csvContent += "RECENT TRANSACTIONS\n";
-        csvContent += "-------------------\n";
-        csvContent += "Order ID,Customer,Vendor,Amount (KES),Status,Date\n";
-        data.transactions.forEach((item: any) => {
-          csvContent += `${item.order_number || item.id},${item.customer?.name || "Customer"},${item.vendor?.store_name || "Vendor"},${item.total || 0},${item.status || "pending"},${item.created_at ? new Date(item.created_at).toLocaleDateString() : ""}\n`;
+      if (transactions.length > 0) {
+        rows.push([]);
+        rows.push(["Recent Transactions"]);
+        rows.push([
+          "Order ID",
+          "Customer",
+          "Vendor",
+          "Amount (KES)",
+          "Status",
+          "Date",
+        ]);
+        transactions.slice(0, 10).forEach((item: any) => {
+          rows.push([
+            item.order_number || item.id?.slice(0, 8) || "",
+            item.customer?.name || "Customer",
+            item.vendor?.store_name || "Vendor",
+            item.total || 0,
+            item.status || "pending",
+            item.created_at
+              ? new Date(item.created_at).toLocaleDateString()
+              : "",
+          ]);
         });
       }
 
-      // ============================================
-      // DOWNLOAD FILE
-      // ============================================
+      const csvContent = rows.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `AgriVibe_Report_${reportType}_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      // Prefer Excel if available
-      if (excelData) {
-        const url = window.URL.createObjectURL(excelData);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileName}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        setSuccessMessage("Excel report downloaded successfully!");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      } else {
-        // Fallback to CSV
-        const blob = new Blob([csvContent], {
-          type: "text/csv;charset=utf-8;",
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${fileName}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        setSuccessMessage("CSV report downloaded successfully!");
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      }
+      setSuccessMessage("CSV report downloaded successfully!");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error("Download error:", error);
-      setError("Failed to download report. Please try again.");
+      console.error("Export failed:", error);
+      setError("Failed to export report. Please try again.");
     } finally {
-      setLoading(false);
+      setExporting(false);
     }
   };
 
@@ -527,25 +406,11 @@ export default function AdminReports() {
     { value: "year", label: "This Year" },
   ];
 
-  const tooltipFormatter = (value: any, name: string, props: any) => {
-    if (name === "orders" || name === "Orders") {
-      return [value, "Orders"];
-    }
-    if (name === "revenue" || name === "Revenue") {
+  const tooltipFormatter = (value: any, name: string) => {
+    if (name === "orders" || name === "Orders") return [value, "Orders"];
+    if (name === "revenue" || name === "Revenue")
       return [`KES ${value?.toLocaleString() || 0}`, "Revenue"];
-    }
     return [value, name];
-  };
-
-  const pieLabelFormatter = ({ name, percent }: any) => {
-    if (
-      name === "No Sales Yet" ||
-      name === "Categories Not Assigned" ||
-      name === "Data Unavailable"
-    ) {
-      return "";
-    }
-    return `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`;
   };
 
   const statCards = [
@@ -556,7 +421,6 @@ export default function AdminReports() {
       icon: DollarSign,
       color: "from-emerald-500 to-green-500",
       bg: "bg-emerald-50 dark:bg-emerald-500/10",
-      border: "border-emerald-200 dark:border-emerald-500/20",
     },
     {
       label: "Total Orders",
@@ -565,7 +429,6 @@ export default function AdminReports() {
       icon: ShoppingBag,
       color: "from-blue-500 to-indigo-500",
       bg: "bg-blue-50 dark:bg-blue-500/10",
-      border: "border-blue-200 dark:border-blue-500/20",
     },
     {
       label: "Active Users",
@@ -574,7 +437,6 @@ export default function AdminReports() {
       icon: Users,
       color: "from-purple-500 to-pink-500",
       bg: "bg-purple-50 dark:bg-purple-500/10",
-      border: "border-purple-200 dark:border-purple-500/20",
     },
     {
       label: "Vendors",
@@ -583,49 +445,6 @@ export default function AdminReports() {
       icon: Store,
       color: "from-orange-500 to-amber-500",
       bg: "bg-orange-50 dark:bg-orange-500/10",
-      border: "border-orange-200 dark:border-orange-500/20",
-    },
-  ];
-
-  // Premium KPI Cards
-  const kpiCards = [
-    {
-      label: "Avg Order Value",
-      value:
-        stats.totalOrders > 0
-          ? `KES ${(stats.totalRevenue / stats.totalOrders).toFixed(2)}`
-          : "KES 0",
-      icon: TrendingUp,
-      color: "text-emerald-500",
-      bg: "bg-emerald-50 dark:bg-emerald-500/10",
-    },
-    {
-      label: "Conversion Rate",
-      value:
-        stats.activeUsers > 0
-          ? `${((stats.totalOrders / stats.activeUsers) * 100).toFixed(1)}%`
-          : "0%",
-      icon: Target,
-      color: "text-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-500/10",
-    },
-    {
-      label: "Revenue Growth",
-      value: stats.revenueChange || "+0%",
-      icon: TrendingUp,
-      color: stats.revenueChange?.startsWith("+")
-        ? "text-emerald-500"
-        : "text-red-500",
-      bg: stats.revenueChange?.startsWith("+")
-        ? "bg-emerald-50 dark:bg-emerald-500/10"
-        : "bg-red-50 dark:bg-red-500/10",
-    },
-    {
-      label: "Customer Retention",
-      value: "85%",
-      icon: Heart,
-      color: "text-pink-500",
-      bg: "bg-pink-50 dark:bg-pink-500/10",
     },
   ];
 
@@ -634,36 +453,30 @@ export default function AdminReports() {
       <AdminLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="relative">
-              <div className="w-20 h-20 border-4 border-agrivibe-green/20 border-t-agrivibe-green rounded-full animate-spin mx-auto" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-agrivibe-green animate-pulse" />
-              </div>
-            </div>
-            <p className="text-gray-500 mt-4 font-medium">
+            <div className="w-16 h-16 border-4 border-agrivibe-green/20 border-t-agrivibe-green rounded-full animate-spin mx-auto" />
+            <p className="text-gray-500 dark:text-gray-400 mt-4 font-medium">
               Loading premium analytics...
             </p>
-            <p className="text-gray-400 text-sm">Preparing your report data</p>
           </div>
         </div>
       </AdminLayout>
     );
   }
 
+  const hasData = revenueData.length > 0 || categorySales.length > 0;
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* ====== PREMIUM HEADER ====== */}
+      <div className="space-y-6" ref={printRef}>
+        {/* ====== HEADER ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative overflow-hidden bg-gradient-to-br from-agrivibe-green via-emerald-600 to-teal-700 rounded-2xl p-8 text-white"
         >
-          {/* Animated Background */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 animate-pulse" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 animate-pulse delay-1000" />
-            <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse delay-2000" />
           </div>
 
           <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -712,20 +525,16 @@ export default function AdminReports() {
                 )}
               </button>
               <button
-                onClick={handleDownload}
-                disabled={loading}
+                onClick={handleExportCSV}
+                disabled={exporting || !hasData}
                 className="flex items-center gap-2 px-5 py-2.5 bg-white text-agrivibe-green rounded-xl font-semibold hover:shadow-xl hover:scale-[1.02] transition-all duration-300 disabled:opacity-50"
               >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-agrivibe-green border-t-transparent rounded-full animate-spin" />{" "}
-                    Downloading...
-                  </>
+                {exporting ? (
+                  <div className="w-4 h-4 border-2 border-agrivibe-green border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <Download className="w-4 h-4" /> Export
-                  </>
+                  <Download className="w-4 h-4" />
                 )}
+                {exporting ? "Exporting..." : "Export"}
               </button>
               <button
                 onClick={handlePrint}
@@ -734,33 +543,51 @@ export default function AdminReports() {
                 <Printer className="w-4 h-4" />
                 Print
               </button>
+              <button
+                onClick={handleShare}
+                disabled={sharing || !hasData}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-xl transition-all duration-300 text-white font-medium text-sm disabled:opacity-50"
+              >
+                {sharing ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Share2 className="w-4 h-4" />
+                )}
+                {sharing ? "Sharing..." : "Share"}
+              </button>
             </div>
           </div>
         </motion.div>
 
-        {/* ====== SUCCESS TOAST ====== */}
-        {showSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3"
-          >
-            <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="w-5 h-5 text-white" />
-            </div>
-            <div>
+        {/* ====== SUCCESS/ERROR ====== */}
+        <AnimatePresence>
+          {showSuccess && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3"
+            >
+              <CheckCircle className="w-5 h-5 text-emerald-500" />
               <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                {successMessage || "Report downloaded successfully!"}
+                {successMessage}
               </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-500">
-                Your file has been exported.
-              </p>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-2xl p-4 flex items-center gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* ====== PREMIUM CONTROLS ====== */}
+        {/* ====== CONTROLS ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -820,7 +647,7 @@ export default function AdminReports() {
           </div>
         </motion.div>
 
-        {/* ====== PREMIUM STATS CARDS ====== */}
+        {/* ====== STATS CARDS ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -839,7 +666,7 @@ export default function AdminReports() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.05 * index }}
                 whileHover={{ y: -4, scale: 1.02 }}
-                className={`${stat.bg} ${stat.border} rounded-2xl border p-5 hover:shadow-xl transition-all duration-300 group`}
+                className={`${stat.bg} rounded-2xl border border-gray-100 dark:border-white/10 p-5 hover:shadow-xl transition-all duration-300`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -860,7 +687,7 @@ export default function AdminReports() {
                     </div>
                   </div>
                   <div
-                    className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}
+                    className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}
                   >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
@@ -870,325 +697,170 @@ export default function AdminReports() {
           })}
         </motion.div>
 
-        {/* ====== KPI CARDS ====== */}
-        {viewMode === "detailed" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
-            {kpiCards.map((kpi, index) => {
-              const Icon = kpi.icon;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * index + 0.2 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 p-4 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 ${kpi.bg} rounded-xl flex items-center justify-center`}
-                    >
-                      <Icon className={`w-5 h-5 ${kpi.color}`} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {kpi.label}
-                      </p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">
-                        {kpi.value}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        )}
-
-        {/* ====== PREMIUM CHARTS ====== */}
+        {/* ====== CHARTS ====== */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Trend - Premium */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6 hover:shadow-2xl transition-shadow duration-300"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  </div>
+          {/* Revenue Trend */}
+          {revenueData.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                     Revenue Trend
                   </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Revenue performance over selected period
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Daily revenue performance over selected period
-                </p>
+                <Activity className="w-5 h-5 text-gray-400" />
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-medium border border-emerald-200 dark:border-emerald-500/30">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                Live
-              </span>
-            </div>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient
-                      id="premiumRevenueGrad"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient
-                      id="premiumOrdersGrad"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="month"
-                    stroke="#94a3b8"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "16px",
-                      boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-                      padding: "12px 16px",
-                    }}
-                    formatter={tooltipFormatter}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#22c55e"
-                    strokeWidth={3}
-                    fill="url(#premiumRevenueGrad)"
-                    name="Revenue"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    fill="url(#premiumOrdersGrad)"
-                    name="Orders"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={revenueData}>
+                    <defs>
+                      <linearGradient
+                        id="revenueGrad"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#22c55e"
+                          stopOpacity={0.3}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#22c55e"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={chartColors.grid}
+                    />
+                    <XAxis
+                      dataKey="month"
+                      stroke={chartColors.axis}
+                      fontSize={12}
+                      tick={{ fill: chartColors.axisLabel }}
+                    />
+                    <YAxis
+                      stroke={chartColors.axis}
+                      fontSize={12}
+                      tick={{ fill: chartColors.axisLabel }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: chartColors.tooltipBg,
+                        border: `1px solid ${chartColors.tooltipBorder}`,
+                        borderRadius: "12px",
+                        color: chartColors.tooltipText,
+                      }}
+                      formatter={tooltipFormatter}
+                      labelStyle={{ color: chartColors.tooltipText }}
+                    />
+                    <Legend wrapperStyle={{ color: chartColors.legendText }} />
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#22c55e"
+                      strokeWidth={3}
+                      fill="url(#revenueGrad)"
+                      name="Revenue"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
 
-          {/* Sales by Category - Premium */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6 hover:shadow-2xl transition-shadow duration-300"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <PieChartIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                  </div>
+          {/* Category Sales - FIXED LABEL FUNCTION */}
+          {categorySales.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                     Category Distribution
                   </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Sales breakdown by product category
+                  </p>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Sales breakdown by product category
-                </p>
+                <PieChartIcon className="w-5 h-5 text-gray-400" />
               </div>
-            </div>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categorySales}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={90}
-                    paddingAngle={3}
-                    label={pieLabelFormatter}
-                    labelLine={false}
-                  >
-                    {categorySales.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={PREMIUM_COLORS[index % PREMIUM_COLORS.length]}
-                        stroke="#fff"
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "16px",
-                      boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-                      padding: "12px 16px",
-                    }}
-                    formatter={(value: any) => [
-                      `KES ${value?.toLocaleString() || 0}`,
-                      "Sales",
-                    ]}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    iconType="circle"
-                    iconSize={8}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categorySales}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      label={({ name, percent }: any) => {
+                        // ✅ FIXED: Ensure percent is a number
+                        const pct = percent
+                          ? parseFloat((percent * 100).toFixed(0))
+                          : 0;
+                        return pct > 5 ? `${name} ${pct}%` : "";
+                      }}
+                    >
+                      {categorySales.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={PREMIUM_COLORS[index % PREMIUM_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: chartColors.tooltipBg,
+                        border: `1px solid ${chartColors.tooltipBorder}`,
+                        borderRadius: "12px",
+                        color: chartColors.tooltipText,
+                      }}
+                      formatter={(value: any) => [
+                        `KES ${value?.toLocaleString() || 0}`,
+                        "Sales",
+                      ]}
+                      labelStyle={{ color: chartColors.tooltipText }}
+                    />
+                    <Legend wrapperStyle={{ color: chartColors.legendText }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
         </div>
 
-        {/* ====== ORDER VOLUME CHART ====== */}
+        {/* ====== TRANSACTIONS ====== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6 hover:shadow-2xl transition-shadow duration-300"
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Orders & Revenue Overview
-                </h3>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Combined view of order volume and revenue generation
-              </p>
-            </div>
-          </div>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={revenueData}>
-                <defs>
-                  <linearGradient
-                    id="composedRevenueGrad"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="month"
-                  stroke="#94a3b8"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  yAxisId="left"
-                  stroke="#94a3b8"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#94a3b8"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#ffffff",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "16px",
-                    boxShadow: "0 20px 60px rgba(0,0,0,0.1)",
-                    padding: "12px 16px",
-                  }}
-                  formatter={tooltipFormatter}
-                />
-                <Legend />
-                <Bar
-                  yAxisId="left"
-                  dataKey="orders"
-                  fill="#3b82f6"
-                  radius={[6, 6, 0, 0]}
-                  name="Orders"
-                />
-                <Area
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#22c55e"
-                  strokeWidth={3}
-                  fill="url(#composedRevenueGrad)"
-                  name="Revenue"
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* ====== RECENT TRANSACTIONS ====== */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 p-6 hover:shadow-2xl transition-shadow duration-300"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-cyan-100 dark:bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  Recent Transactions
-                </h3>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Recent Transactions
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Latest order activity on the platform
               </p>
             </div>
@@ -1196,39 +868,35 @@ export default function AdminReports() {
               {transactions.length} transactions
             </span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-white/5">
-                  <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
-                    Vendor
-                  </th>
-                  <th className="text-right text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="text-center text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-white/5">
-                {transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-gray-500">
-                      <div className="flex flex-col items-center gap-2">
-                        <Package className="w-8 h-8 text-gray-300" />
-                        <p>No transactions found</p>
-                      </div>
-                    </td>
+          {transactions.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p>No transactions found</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-white/5">
+                    <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
+                      Order ID
+                    </th>
+                    <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
+                      Customer
+                    </th>
+                    <th className="text-left text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
+                      Vendor
+                    </th>
+                    <th className="text-right text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="text-center text-gray-500 dark:text-gray-400 font-medium py-3 px-4 text-xs uppercase tracking-wider">
+                      Status
+                    </th>
                   </tr>
-                ) : (
-                  transactions.map((row: any, index: number) => (
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+                  {transactions.slice(0, 10).map((row: any, index: number) => (
                     <motion.tr
                       key={row.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -1237,7 +905,7 @@ export default function AdminReports() {
                       className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                     >
                       <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
-                        {row.order_number || row.id?.slice(0, 8)}
+                        {row.order_number || row.id?.slice(0, 8) || "N/A"}
                       </td>
                       <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                         {row.customer?.name || "Customer"}
@@ -1275,25 +943,24 @@ export default function AdminReports() {
                         </span>
                       </td>
                     </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </motion.div>
 
-        {/* ====== PREMIUM FOOTER ====== */}
+        {/* ====== FOOTER ====== */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.45 }}
+          transition={{ delay: 0.4 }}
           className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-white/5"
         >
           <div className="flex items-center gap-4 text-xs text-gray-400">
             <span>© 2026 AgriVibe KE Farm Solutions</span>
             <span className="w-px h-4 bg-gray-200 dark:bg-white/10" />
             <span>All rights reserved</span>
-            <span className="w-px h-4 bg-gray-200 dark:bg-white/10" />
             <span className="flex items-center gap-1">
               <Shield className="w-3 h-3" />
               Secure Report

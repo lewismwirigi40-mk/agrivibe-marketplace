@@ -12,12 +12,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
-  CartesianGrid,
   ComposedChart,
+  CartesianGrid,
+  Area,
 } from "recharts";
 import {
   TrendingUp,
@@ -36,10 +33,6 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Activity,
-  Zap,
-  Eye,
-  Store,
-  CreditCard,
   Target,
   AlertCircle,
   RefreshCw,
@@ -47,20 +40,10 @@ import {
   Printer,
   Share2,
   Crown,
-  Star,
-  Zap as ZapIcon,
-  Rocket,
-  Gift,
   Heart,
-  ThumbsUp,
-  TrendingUp as TrendingUpIcon,
-  FileText,
-  CalendarDays,
-  ChevronRight,
-  MoreVertical,
-  Loader2,
-  CheckCircle,
   XCircle,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
 import VendorLayout from "../../components/VendorLayout";
 import api from "../../services/api";
@@ -73,13 +56,15 @@ export default function VendorAnalytics() {
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState<any>(null);
 
-  // ✅ REAL DATA STATES - No default dummy data
+  // ✅ REAL DATA STATES - All from backend
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [salesData, setSalesData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
   const [customerData, setCustomerData] = useState<any[]>([]);
+
+  // ✅ REAL STATS
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalOrders: 0,
@@ -94,10 +79,65 @@ export default function VendorAnalytics() {
     customerRetention: 0,
   });
 
+  const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  // ✅ Check if there's any data
+  const hasData =
+    revenueData.length > 0 || salesData.length > 0 || topProducts.length > 0;
+
+  // ============================================
+  // ✅ THEME-AWARE CHART COLORS - DARK BY DEFAULT
+  // ============================================
+  const [isDarkMode, setIsDarkMode] = useState(true); // ✅ Default to dark
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark";
+      // If no theme is set, default to dark
+      setIsDarkMode(isDark !== false);
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    // ✅ Listen for storage changes
+    const handleStorageChange = () => {
+      checkDarkMode();
+    };
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
+  // ✅ Chart colors based on theme (DARK by default)
+  const chartColors = {
+    grid: isDarkMode ? "#374151" : "#f3f4f6",
+    axis: isDarkMode ? "#9ca3af" : "#6b7280",
+    axisLabel: isDarkMode ? "#9ca3af" : "#6b7280",
+    tooltipBg: isDarkMode ? "#1f2937" : "#ffffff",
+    tooltipBorder: isDarkMode ? "#374151" : "#e5e7eb",
+    tooltipText: isDarkMode ? "#f9fafb" : "#1f2937",
+    legendText: isDarkMode ? "#d1d5db" : "#374151",
+  };
+
   useEffect(() => {
     fetchAnalytics();
   }, [timeframe]);
 
+  // ============================================
+  // ✅ FETCH ANALYTICS FROM BACKEND
+  // ============================================
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
@@ -108,13 +148,11 @@ export default function VendorAnalytics() {
         return;
       }
 
-      // ✅ ONLY fetch from backend - NO MOCK DATA
       const response = await api.get(
         `/vendor/analytics?timeframe=${timeframe}`,
       );
       const data = response.data;
 
-      // ✅ Set stats from backend
       setStats({
         totalRevenue: data.totalRevenue || 0,
         totalOrders: data.totalOrders || 0,
@@ -129,7 +167,6 @@ export default function VendorAnalytics() {
         customerRetention: data.customerRetention || 0,
       });
 
-      // ✅ Set chart data from backend
       setRevenueData(data.revenueTrend || []);
       setSalesData(data.dailySales || []);
       setCategoryData(data.salesByCategory || []);
@@ -144,8 +181,6 @@ export default function VendorAnalytics() {
         error.response?.data?.error ||
           "Failed to load analytics. Please try again.",
       );
-
-      // ✅ NO DUMMY DATA - Just empty arrays
       setRevenueData([]);
       setSalesData([]);
       setCategoryData([]);
@@ -155,6 +190,156 @@ export default function VendorAnalytics() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ============================================
+  // ✅ FALLBACK: Copy to Clipboard
+  // ============================================
+  const fallbackCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("✅ Analytics summary copied to clipboard!");
+    } catch (clipboardError) {
+      console.error("Clipboard failed:", clipboardError);
+      alert("📋 Copy this summary:\n\n" + text);
+    }
+  };
+
+  // ============================================
+  // ✅ SHARE - With Proper Error Handling
+  // ============================================
+  const shareAnalytics = async () => {
+    if (!hasData) {
+      alert("No data to share. Start selling to generate analytics!");
+      return;
+    }
+
+    setSharing(true);
+    try {
+      const shareText = `🌾 AgriVibe Vendor Analytics
+━━━━━━━━━━━━━━━━━━━━
+📊 Period: ${timeframe}
+💰 Total Revenue: KES ${stats.totalRevenue.toLocaleString()}
+📦 Total Orders: ${stats.totalOrders}
+👥 Total Customers: ${stats.totalCustomers}
+📈 Conversion Rate: ${stats.conversionRate}%
+💳 Avg Order Value: KES ${stats.averageOrderValue.toLocaleString()}
+━━━━━━━━━━━━━━━━━━━━
+Powered by AgriVibe 🌱`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "AgriVibe - Vendor Analytics",
+            text: shareText,
+            url: window.location.href,
+          });
+          console.log("✅ Shared successfully");
+        } catch (shareError: any) {
+          if (
+            shareError.name === "AbortError" ||
+            shareError.message?.includes("cancel") ||
+            shareError.message?.includes("dismissed")
+          ) {
+            console.log("📋 Share cancelled by user");
+          } else {
+            console.warn(
+              "⚠️ Share failed, falling back to clipboard:",
+              shareError,
+            );
+            await fallbackCopy(shareText);
+          }
+        }
+      } else {
+        console.log("📋 Web Share API not available, using clipboard");
+        await fallbackCopy(shareText);
+      }
+    } catch (error) {
+      console.error("❌ Share error:", error);
+      const shareText = `🌾 AgriVibe Vendor Analytics
+━━━━━━━━━━━━━━━━━━━━
+📊 Period: ${timeframe}
+💰 Revenue: KES ${stats.totalRevenue.toLocaleString()}
+📦 Orders: ${stats.totalOrders}
+👥 Customers: ${stats.totalCustomers}
+📈 Conversion: ${stats.conversionRate}%`;
+      alert("📋 Copy this summary:\n\n" + shareText);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // ============================================
+  // ✅ EXPORT REPORT - CSV
+  // ============================================
+  const exportCSV = () => {
+    if (!analytics && !stats) return;
+    setExporting(true);
+
+    try {
+      const rows = [
+        ["AgriVibe Vendor Analytics Report"],
+        [`Period: ${timeframe}`, `Generated: ${new Date().toLocaleString()}`],
+        [],
+        ["Metric", "Value"],
+        ["Total Revenue", `KES ${stats.totalRevenue.toLocaleString()}`],
+        ["Total Orders", stats.totalOrders],
+        ["Total Customers", stats.totalCustomers],
+        ["Conversion Rate", `${stats.conversionRate}%`],
+        [
+          "Average Order Value",
+          `KES ${stats.averageOrderValue.toLocaleString()}`,
+        ],
+        ["Return Rate", `${stats.returnRate}%`],
+        ["Customer Retention", `${stats.customerRetention}%`],
+      ];
+
+      if (revenueData.length > 0) {
+        rows.push([]);
+        rows.push(["Revenue Trend"]);
+        rows.push(["Date", "Revenue", "Orders"]);
+        revenueData.forEach((item: any) => {
+          rows.push([item.label, item.revenue || 0, item.orders || 0]);
+        });
+      }
+
+      if (topProducts.length > 0) {
+        rows.push([]);
+        rows.push(["Top Selling Products"]);
+        rows.push(["Rank", "Product", "Revenue", "Orders", "Trend"]);
+        topProducts.forEach((product: any, index: number) => {
+          rows.push([
+            index + 1,
+            product.name,
+            product.revenue || 0,
+            product.orders || 0,
+            `${product.trend === "up" ? "+" : ""}${product.trend_percentage || 0}%`,
+          ]);
+        });
+      }
+
+      let csvContent = rows.map((row) => row.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `analytics-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // ============================================
+  // ✅ PRINT
+  // ============================================
+  const exportPDF = () => {
+    window.print();
   };
 
   const COLORS = [
@@ -189,7 +374,7 @@ export default function VendorAnalytics() {
       <VendorLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-agrivibe-green border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <Loader2 className="w-16 h-16 text-agrivibe-green animate-spin mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400">
               Loading analytics...
             </p>
@@ -198,65 +383,6 @@ export default function VendorAnalytics() {
       </VendorLayout>
     );
   }
-
-  const statCards = [
-    {
-      label: "Total Revenue",
-      value: formatCurrency(stats.totalRevenue),
-      change: stats.revenueChange,
-      icon: DollarSign,
-      color: "from-green-500 to-emerald-500",
-      bg: "bg-green-50 dark:bg-green-500/10",
-    },
-    {
-      label: "Orders",
-      value: stats.totalOrders,
-      change: stats.ordersChange,
-      icon: ShoppingBag,
-      color: "from-blue-500 to-blue-600",
-      bg: "bg-blue-50 dark:bg-blue-500/10",
-    },
-    {
-      label: "New Customers",
-      value: stats.totalCustomers,
-      change: stats.customersChange,
-      icon: Users,
-      color: "from-purple-500 to-purple-600",
-      bg: "bg-purple-50 dark:bg-purple-500/10",
-    },
-    {
-      label: "Conversion Rate",
-      value: `${stats.conversionRate}%`,
-      change: stats.conversionChange,
-      icon: Target,
-      color: "from-yellow-500 to-orange-500",
-      bg: "bg-yellow-50 dark:bg-yellow-500/10",
-    },
-  ];
-
-  const secondaryStats = [
-    {
-      label: "Avg Order Value",
-      value: formatCurrency(stats.averageOrderValue),
-      icon: CreditCard,
-      color: "text-indigo-600",
-    },
-    {
-      label: "Return Rate",
-      value: `${stats.returnRate}%`,
-      icon: XCircle,
-      color: "text-red-500",
-    },
-    {
-      label: "Customer Retention",
-      value: `${stats.customerRetention}%`,
-      icon: Heart,
-      color: "text-pink-500",
-    },
-  ];
-
-  const hasData =
-    revenueData.length > 0 || salesData.length > 0 || topProducts.length > 0;
 
   return (
     <VendorLayout>
@@ -275,7 +401,7 @@ export default function VendorAnalytics() {
             </div>
             <p className="text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
               Track your store performance
-              <span className="w-1 h-1 bg-gray-300 rounded-full" />
+              <span className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
               <span className="text-xs text-gray-400">
                 {hasData
                   ? `Last updated: ${new Date().toLocaleTimeString()}`
@@ -283,7 +409,7 @@ export default function VendorAnalytics() {
               </span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
               {["week", "month", "year"].map((t) => (
                 <button
@@ -335,7 +461,40 @@ export default function VendorAnalytics() {
 
         {/* ====== STATS CARDS ====== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((stat, index) => {
+          {[
+            {
+              label: "Total Revenue",
+              value: formatCurrency(stats.totalRevenue),
+              change: stats.revenueChange,
+              icon: DollarSign,
+              color: "from-green-500 to-emerald-500",
+              bg: "bg-green-50 dark:bg-green-500/10",
+            },
+            {
+              label: "Orders",
+              value: stats.totalOrders,
+              change: stats.ordersChange,
+              icon: ShoppingBag,
+              color: "from-blue-500 to-blue-600",
+              bg: "bg-blue-50 dark:bg-blue-500/10",
+            },
+            {
+              label: "New Customers",
+              value: stats.totalCustomers,
+              change: stats.customersChange,
+              icon: Users,
+              color: "from-purple-500 to-purple-600",
+              bg: "bg-purple-50 dark:bg-purple-500/10",
+            },
+            {
+              label: "Conversion Rate",
+              value: `${stats.conversionRate}%`,
+              change: stats.conversionChange,
+              icon: Target,
+              color: "from-yellow-500 to-orange-500",
+              bg: "bg-yellow-50 dark:bg-yellow-500/10",
+            },
+          ].map((stat, index) => {
             const Icon = stat.icon;
             const isPositive = stat.change > 0;
             return (
@@ -344,7 +503,7 @@ export default function VendorAnalytics() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className={`${stat.bg} rounded-2xl border border-gray-100 dark:border-white/10 p-5 hover:shadow-lg transition-all duration-300`}
+                className={`${stat.bg} rounded-2xl border border-gray-100 dark:border-gray-800 p-5`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -383,7 +542,26 @@ export default function VendorAnalytics() {
 
         {/* ====== SECONDARY STATS ====== */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {secondaryStats.map((stat, index) => {
+          {[
+            {
+              label: "Avg Order Value",
+              value: formatCurrency(stats.averageOrderValue),
+              icon: CreditCard,
+              color: "text-indigo-600 dark:text-indigo-400",
+            },
+            {
+              label: "Return Rate",
+              value: `${stats.returnRate}%`,
+              icon: XCircle,
+              color: "text-red-500 dark:text-red-400",
+            },
+            {
+              label: "Customer Retention",
+              value: `${stats.customerRetention}%`,
+              icon: Heart,
+              color: "text-pink-500 dark:text-pink-400",
+            },
+          ].map((stat, index) => {
             const Icon = stat.icon;
             return (
               <motion.div
@@ -391,7 +569,7 @@ export default function VendorAnalytics() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 + index * 0.05 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 p-4 flex items-center gap-4"
+                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-center gap-4"
               >
                 <div
                   className={`w-12 h-12 ${stat.color} bg-opacity-10 rounded-xl flex items-center justify-center`}
@@ -409,10 +587,10 @@ export default function VendorAnalytics() {
           })}
         </div>
 
-        {/* ====== CHARTS GRID ====== */}
+        {/* ====== NO DATA STATE ====== */}
         {!hasData ? (
-          <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+            <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300">
               No Analytics Data Yet
             </h3>
@@ -424,12 +602,13 @@ export default function VendorAnalytics() {
           <>
             {/* ====== CHARTS ====== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Revenue Trend */}
               {revenueData.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -465,22 +644,39 @@ export default function VendorAnalytics() {
                             />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="label" stroke="#9ca3af" fontSize={12} />
-                        <YAxis stroke="#9ca3af" fontSize={12} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={chartColors.grid}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
+                        <YAxis
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: chartColors.tooltipBg,
+                            border: `1px solid ${chartColors.tooltipBorder}`,
                             borderRadius: "12px",
+                            color: chartColors.tooltipText,
                             boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                           }}
                           formatter={(value: any) => [
                             `KES ${value?.toLocaleString() || 0}`,
                             "Revenue",
                           ]}
+                          labelStyle={{ color: chartColors.tooltipText }}
                         />
-                        <Legend />
+                        <Legend
+                          wrapperStyle={{ color: chartColors.legendText }}
+                          iconType="circle"
+                        />
                         <Area
                           type="monotone"
                           dataKey="revenue"
@@ -501,12 +697,13 @@ export default function VendorAnalytics() {
                 </motion.div>
               )}
 
+              {/* Sales by Category */}
               {categoryData.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -534,6 +731,7 @@ export default function VendorAnalytics() {
                           label={({ name, percent }: any) =>
                             `${name} ${(percent * 100).toFixed(0)}%`
                           }
+                          labelLine={{ stroke: chartColors.axis }}
                         >
                           {categoryData.map((entry: any, index: number) => (
                             <Cell
@@ -544,29 +742,35 @@ export default function VendorAnalytics() {
                         </Pie>
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: chartColors.tooltipBg,
+                            border: `1px solid ${chartColors.tooltipBorder}`,
                             borderRadius: "12px",
+                            color: chartColors.tooltipText,
                             boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                           }}
                           formatter={(value: any) => [
                             `KES ${value?.toLocaleString() || 0}`,
                             "Sales",
                           ]}
+                          labelStyle={{ color: chartColors.tooltipText }}
                         />
-                        <Legend />
+                        <Legend
+                          wrapperStyle={{ color: chartColors.legendText }}
+                          iconType="circle"
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </motion.div>
               )}
 
+              {/* Daily Sales */}
               {salesData.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -582,20 +786,34 @@ export default function VendorAnalytics() {
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={salesData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="label" stroke="#9ca3af" fontSize={12} />
-                        <YAxis stroke="#9ca3af" fontSize={12} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={chartColors.grid}
+                        />
+                        <XAxis
+                          dataKey="label"
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
+                        <YAxis
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: chartColors.tooltipBg,
+                            border: `1px solid ${chartColors.tooltipBorder}`,
                             borderRadius: "12px",
+                            color: chartColors.tooltipText,
                             boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                           }}
                           formatter={(value: any) => [
                             `KES ${value?.toLocaleString() || 0}`,
                             "Sales",
                           ]}
+                          labelStyle={{ color: chartColors.tooltipText }}
                         />
                         <Bar
                           dataKey="sales"
@@ -608,12 +826,13 @@ export default function VendorAnalytics() {
                 </motion.div>
               )}
 
+              {/* Customer Insights */}
               {customerData.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -629,18 +848,35 @@ export default function VendorAnalytics() {
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={customerData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
-                        <YAxis stroke="#9ca3af" fontSize={12} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={chartColors.grid}
+                        />
+                        <XAxis
+                          dataKey="month"
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
+                        <YAxis
+                          stroke={chartColors.axis}
+                          fontSize={12}
+                          tick={{ fill: chartColors.axisLabel }}
+                        />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#fff",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: chartColors.tooltipBg,
+                            border: `1px solid ${chartColors.tooltipBorder}`,
                             borderRadius: "12px",
+                            color: chartColors.tooltipText,
                             boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                           }}
+                          labelStyle={{ color: chartColors.tooltipText }}
                         />
-                        <Legend />
+                        <Legend
+                          wrapperStyle={{ color: chartColors.legendText }}
+                          iconType="circle"
+                        />
                         <Bar
                           dataKey="new"
                           fill="#22c55e"
@@ -660,89 +896,32 @@ export default function VendorAnalytics() {
               )}
             </div>
 
-            {/* ====== ORDER STATUS ====== */}
-            {orderStatusData.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Order Status Distribution
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Current order breakdown
-                    </p>
-                  </div>
-                  <Clock className="w-5 h-5 text-gray-400" />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {orderStatusData.map((status, index) => (
-                    <div
-                      key={index}
-                      className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
-                    >
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {status.value}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {status.name}
-                      </p>
-                      <div className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-2 overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(status.value / orderStatusData.reduce((sum: number, s: any) => sum + s.value, 0)) * 100}%`,
-                            backgroundColor: COLORS[index % COLORS.length],
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
             {/* ====== TOP SELLING PRODUCTS ====== */}
             {topProducts.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-white/10 p-6"
+                className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-yellow-400" />
                       Top Selling Products
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Best performing products in your store
                     </p>
                   </div>
-                  <Award className="w-5 h-5 text-yellow-400" />
+                  <span className="text-xs text-gray-400">
+                    Last {timeframe}
+                  </span>
                 </div>
 
                 <div className="space-y-3">
                   {topProducts.map((product: any, index: number) => {
-                    const trend = product.trend || "up";
-                    const TrendIcon =
-                      trend === "up"
-                        ? TrendingUp
-                        : trend === "down"
-                          ? TrendingDown
-                          : Activity;
-                    const trendColor =
-                      trend === "up"
-                        ? "text-green-500"
-                        : trend === "down"
-                          ? "text-red-500"
-                          : "text-gray-400";
                     const isPositive = product.trend_percentage > 0;
-
                     return (
                       <div
                         key={index}
@@ -777,9 +956,13 @@ export default function VendorAnalytics() {
                               {formatCurrency(product.revenue || 0)}
                             </p>
                             <div
-                              className={`flex items-center gap-1 text-sm ${trendColor}`}
+                              className={`flex items-center gap-1 text-sm ${isPositive ? "text-green-500" : "text-red-500"}`}
                             >
-                              <TrendIcon className="w-3 h-3" />
+                              {isPositive ? (
+                                <TrendingUp className="w-3 h-3" />
+                              ) : (
+                                <TrendingDown className="w-3 h-3" />
+                              )}
                               <span>
                                 {isPositive ? "+" : ""}
                                 {product.trend_percentage || 0}%
@@ -806,17 +989,36 @@ export default function VendorAnalytics() {
 
         {/* ====== EXPORT BUTTONS ====== */}
         <div className="flex flex-wrap gap-3">
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium">
-            <Download className="w-4 h-4" />
-            Export Report
+          <button
+            onClick={exportCSV}
+            disabled={!hasData || exporting}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {exporting ? "Exporting..." : "Export Report"}
           </button>
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium">
+          <button
+            onClick={exportPDF}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
+          >
             <Printer className="w-4 h-4" />
             Print
           </button>
-          <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium">
-            <Share2 className="w-4 h-4" />
-            Share
+          <button
+            onClick={shareAnalytics}
+            disabled={!hasData || sharing}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sharing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            {sharing ? "Sharing..." : "Share"}
           </button>
         </div>
       </div>

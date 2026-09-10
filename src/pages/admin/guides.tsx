@@ -1,12 +1,12 @@
 // src/pages/admin/guides.tsx
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  BookOpen,
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
   Sparkles,
   Award,
   Clock,
@@ -101,7 +101,7 @@ export default function AdminGuides() {
   const uploadFile = async (file: File): Promise<string> => {
     const formDataUpload = new FormData();
     formDataUpload.append('image', file);
-    
+
     try {
       const response = await api.post('/upload/single', formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -155,7 +155,7 @@ export default function AdminGuides() {
   // ============================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim()) {
       setError('Title is required');
       return;
@@ -164,7 +164,7 @@ export default function AdminGuides() {
       setError('Please enter a valid price');
       return;
     }
-    
+
     setUploading(true);
     setError('');
 
@@ -196,7 +196,7 @@ export default function AdminGuides() {
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-      
+
       setShowForm(false);
       setEditing(null);
       resetForm();
@@ -257,11 +257,11 @@ export default function AdminGuides() {
   // ============================================
   const filteredGuides = guides
     .filter(guide => {
-      const matchesSearch = 
+      const matchesSearch =
         guide.title?.toLowerCase().includes(search.toLowerCase()) ||
         guide.category?.toLowerCase().includes(search.toLowerCase()) ||
         guide.description?.toLowerCase().includes(search.toLowerCase());
-      const matchesFilter = filter === 'all' || 
+      const matchesFilter = filter === 'all' ||
         (filter === 'active' && guide.is_active) ||
         (filter === 'inactive' && !guide.is_active) ||
         (filter === 'featured' && guide.is_featured);
@@ -632,8 +632,8 @@ export default function AdminGuides() {
                       type="button"
                       onClick={() => setFormData({ ...formData, is_featured: !formData.is_featured })}
                       className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-300 ${
-                        formData.is_featured 
-                          ? 'bg-yellow-400 border-yellow-400' 
+                        formData.is_featured
+                          ? 'bg-yellow-400 border-yellow-400'
                           : 'border-gray-300 hover:border-gray-400'
                       }`}
                     >
@@ -719,9 +719,9 @@ export default function AdminGuides() {
                   {/* Cover Image */}
                   <div className="relative h-48 overflow-hidden">
                     {guide.cover_image ? (
-                      <img 
-                        src={guide.cover_image} 
-                        alt={guide.title} 
+                      <img
+                        src={guide.cover_image}
+                        alt={guide.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
                     ) : (
@@ -730,7 +730,7 @@ export default function AdminGuides() {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                    
+
                     {/* Badges */}
                     <div className="absolute top-3 left-3 flex gap-1.5">
                       {guide.is_featured && (
@@ -762,7 +762,7 @@ export default function AdminGuides() {
                       <p className="text-xs text-gray-500 mt-1">{guide.category}</p>
                     )}
                     <p className="text-gray-500 text-sm mt-2 line-clamp-2">{guide.description || 'No description'}</p>
-                    
+
                     <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
                       <span className="flex items-center gap-1">
                         <Download className="w-3.5 h-3.5" />

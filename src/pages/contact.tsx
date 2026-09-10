@@ -2,12 +2,12 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock, 
-  Send, 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Send,
   CheckCircle,
   AlertCircle,
   Sparkles,
@@ -36,12 +36,12 @@ export default function Contact() {
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"]
   });
-  
+
   const heroOpacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.3], [1, 0.98]);
 
@@ -54,7 +54,7 @@ export default function Contact() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     // Simulate API call
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -86,7 +86,7 @@ export default function Contact() {
     {
       icon: MapPin,
       label: 'Address',
-      value: 'AgriVibe KE Farm Solutions, Nairobi, Kenya',
+      value: 'AgriVibe KE Farm Solutions, Nyeri, Kenya',
       color: 'from-red-500 to-red-600'
     },
     {
@@ -118,7 +118,7 @@ export default function Contact() {
   return (
     <div ref={containerRef} className="min-h-screen bg-premium-light overflow-x-hidden">
       {/* ====== HERO SECTION ====== */}
-      <motion.section 
+      <motion.section
         style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative min-h-[50vh] flex items-center overflow-hidden"
       >
@@ -133,7 +133,7 @@ export default function Contact() {
     <motion.div
       key={i}
       className="absolute w-2 h-2 bg-white/10 rounded-full"
-      initial={{ 
+      initial={{
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight,
       }}
@@ -173,7 +173,7 @@ export default function Contact() {
         </div>
 
         {/* Scroll Indicator */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
@@ -210,7 +210,7 @@ export default function Contact() {
                   <p className="text-sm text-gray-500">We'll get back to you within 24 hours</p>
                 </div>
               </div>
-              
+
               {/* Success Message */}
               <AnimatePresence>
                 {success && (
@@ -263,8 +263,8 @@ export default function Contact() {
                         onFocus={() => setFocusedField('name')}
                         onBlur={() => setFocusedField(null)}
                         className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                          focusedField === 'name' 
-                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10' 
+                          focusedField === 'name'
+                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                         required
@@ -288,8 +288,8 @@ export default function Contact() {
                         onFocus={() => setFocusedField('email')}
                         onBlur={() => setFocusedField(null)}
                         className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-                          focusedField === 'email' 
-                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10' 
+                          focusedField === 'email'
+                            ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
                         required
@@ -315,14 +315,14 @@ export default function Contact() {
       onFocus={() => setFocusedField('phone')}
       onBlur={() => setFocusedField(null)}
       className={`w-full pl-11 pr-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 ${
-        focusedField === 'phone' 
-          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10' 
+        focusedField === 'phone'
+          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10'
           : 'border-gray-200 hover:border-gray-300'
       }`}
     />
   </div>
 </div>
-                
+
 
                 {/* Subject */}
                 <div>
@@ -362,8 +362,8 @@ export default function Contact() {
                       onFocus={() => setFocusedField('message')}
                       onBlur={() => setFocusedField(null)}
                       className={`w-full px-4 py-3.5 bg-gray-50 border-2 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition-all duration-300 resize-none ${
-                        focusedField === 'message' 
-                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10' 
+                        focusedField === 'message'
+                          ? 'border-agrivibe-green shadow-lg shadow-agrivibe-green/10'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       required
@@ -413,7 +413,7 @@ export default function Contact() {
                 <Sparkles className="w-5 h-5 text-agrivibe-gold" />
                 Contact Information
               </h3>
-              
+
               <div className="space-y-4">
                 {contactInfo.map((info, index) => {
                   const Icon = info.icon;
@@ -448,7 +448,7 @@ export default function Contact() {
                 <Globe className="w-5 h-5 text-agrivibe-green" />
                 Quick Links
               </h3>
-              
+
               <ul className="space-y-2">
                 {quickLinks.map((link, index) => {
                   const Icon = link.icon;

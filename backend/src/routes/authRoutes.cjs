@@ -1,30 +1,56 @@
+// backend/src/routes/authRoutes.cjs
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController.cjs');
-const { authMiddleware } = require('../middleware/auth.cjs');
+const { authMiddleware, authorize } = require('../middleware/auth.cjs');
 
-// ====== PUBLIC ROUTES ======
+// ============================================
+// PUBLIC ROUTES
+// ============================================
+
+// Register
 router.post('/register', authController.register);
+
+// Login (normal users)
 router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.post('/verify-otp', authController.verifyOTP);
-router.post('/resend-otp', authController.resendOTP);
+
+// ✅ Admin routes (TOTP)
+router.post('/admin-login', authController.adminLogin);
+router.post('/admin-verify-totp', authController.adminVerifyTOTP);
+
+// Forgot password
 router.post('/forgot-password', authController.forgotPassword);
+
+// Reset password
 router.post('/reset-password', authController.resetPassword);
 
-// ====== PROTECTED ROUTES ======
-router.get('/me', authMiddleware, authController.getCurrentUser);
+// ============================================
+// PROTECTED ROUTES (Require Auth)
+// ============================================
 
-// ====== PROFILE ROUTES (NEW) ======
+// Get profile
 router.get('/profile', authMiddleware, authController.getProfile);
+
+// Update profile
 router.put('/profile', authMiddleware, authController.updateProfile);
 
-// ====== PASSWORD ROUTES (NEW) ======
+// Change password
 router.put('/change-password', authMiddleware, authController.changePassword);
 
-// ====== LOCATION ROUTES ======
-router.put('/location', authMiddleware, authController.updateLocation);
-router.get('/location', authMiddleware, authController.getLocation);
-router.put('/location/toggle', authMiddleware, authController.toggleLocationSharing);
+// ============================================
+// ✅ TOTP ROUTES - ADD THESE
+// ============================================
+
+// Setup TOTP (Generate QR Code)
+router.post('/setup-totp', authMiddleware, authorize('admin'), authController.setupTOTP);
+
+// Verify TOTP (Enable after verification)
+router.post('/verify-totp', authMiddleware, authorize('admin'), authController.verifyTOTP);
+
+// Disable TOTP
+router.post('/disable-totp', authMiddleware, authorize('admin'), authController.disableTOTP);
+
+// Get TOTP Status
+router.get('/totp-status', authMiddleware, authorize('admin'), authController.getTOTPStatus);
 
 module.exports = router;

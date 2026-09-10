@@ -311,7 +311,8 @@ const auditRoutes = require('./routes/auditRoutes.cjs');
 const dashboardRoutes = require('./routes/dashboardRoutes.cjs');
 const vendorRoutes = require('./routes/vendorRoutes.cjs');
 const wishlistRoutes = require('./routes/wishlistRoutes.cjs');
-const driverRoutes = require('./routes/driverRoutes.cjs');  //
+const driverRoutes = require('./routes/driverRoutes.cjs'); 
+const liveRoutes = require('./routes/liveRoutes.cjs'); //
 // ❌ REMOVED: const UnansweredQuestion = require('./UnansweredQuestion.cjs');
 
 // ============================================
@@ -408,6 +409,7 @@ app.use('/api/vendor', vendorRoutes);
 app.use('/api/vendors', vendorRoutes); 
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/driver', driverRoutes);  
+app.use('/api/admin/live', liveRoutes);
 
 // 🟢 FIXED: Dedicated, explicit bridge route mapping directly to the admin controller method
 // This completely bypasses the admin file role middleware lock for this specific frontend URL path string!

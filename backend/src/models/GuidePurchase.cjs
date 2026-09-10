@@ -28,29 +28,63 @@ const GuidePurchase = sequelize.define('GuidePurchase', {
         allowNull: false
     },
     payment_method: {
-        type: DataTypes.STRING(50),
-        allowNull: true
+        type: DataTypes.ENUM('mpesa', 'card', 'wallet'),
+        defaultValue: 'mpesa'
+    },
+    // ✅ CHANGE THIS: 'status' to 'payment_status'
+    payment_status: {
+        type: DataTypes.ENUM('pending', 'completed', 'failed', 'refunded'),
+        defaultValue: 'pending',
+        field: 'payment_status'
     },
     transaction_id: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.STRING(100),
         allowNull: true
     },
-    status: {
-        type: DataTypes.ENUM('pending', 'completed', 'failed'),
-        defaultValue: 'pending'
+    mpesa_code: {
+        type: DataTypes.STRING(50),
+        allowNull: true
     },
     download_token: {
         type: DataTypes.STRING(100),
         allowNull: true,
         unique: true
     },
+    download_count: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
     downloaded_at: {
         type: DataTypes.DATE,
         allowNull: true
     },
-    download_count: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+    escrow_status: {
+        type: DataTypes.ENUM('held', 'released', 'refunded'),
+        defaultValue: 'held'
+    },
+    escrow_released_at: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    platform_fee: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true
+    },
+    vendor_id: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id'
+        }
+    },
+    vendor_amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true
+    },
+    order_number: {
+        type: DataTypes.STRING(50),
+        allowNull: true
     }
 }, {
     tableName: 'guide_purchases',

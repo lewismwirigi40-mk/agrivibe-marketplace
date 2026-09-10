@@ -17,6 +17,8 @@ import {
   Fingerprint,
   Smartphone,
   ChevronLeft,
+  ShieldCheck,
+  Crown,
 } from "lucide-react";
 import { login } from "../services/auth";
 
@@ -30,6 +32,7 @@ export default function Login() {
   const [backendAvailable, setBackendAvailable] = useState(true);
   const [rememberMe, setRememberMe] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   // Check backend connectivity
   useEffect(() => {
@@ -68,9 +71,15 @@ export default function Login() {
 
       localStorage.removeItem("isRedirecting");
 
+      // ✅ Check if admin - redirect to admin login page
       if (userData?.user?.role === "admin") {
-        router.push("/admin/dashboard");
-      } else if (userData?.user?.role === "vendor") {
+        // Admin should use /admin/login, not this page
+        router.push("/admin/login");
+        return;
+      }
+
+      // ✅ Normal user redirects
+      if (userData?.user?.role === "vendor") {
         const redirectPath = userData.redirectTo || "/vendor/dashboard";
         router.push(redirectPath);
       } else if (userData?.user?.role === "driver") {
@@ -131,6 +140,15 @@ export default function Login() {
               <ChevronLeft className="w-5 h-5" />
             </button>
 
+            {/* ✅ Admin Login Button - Top Right */}
+            <Link
+              href="/admin/login"
+              className="absolute top-14 right-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-agrivibe-green/20 to-emerald-500/20 border border-agrivibe-green/30 rounded-full text-[10px] text-agrivibe-green hover:bg-agrivibe-green/30 transition-all duration-300"
+            >
+              <Crown className="w-3 h-3" />
+              Admin Login
+            </Link>
+
             {/* ====== MAIN CONTENT ====== */}
             <div className="relative z-10 px-6 pt-16 pb-8">
               {/* Logo */}
@@ -150,6 +168,10 @@ export default function Login() {
                 <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
                 <p className="text-gray-400 text-sm mt-0.5">
                   Login to your AgriVibe account
+                </p>
+                <p className="text-[10px] text-gray-500 mt-0.5 flex items-center justify-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  For Customers, Vendors & Drivers
                 </p>
               </motion.div>
 
@@ -234,7 +256,7 @@ export default function Login() {
                   </div>
                 </div>
 
-                {/* Remember Me + Forgot Password - BOTH WORKING */}
+                {/* Remember Me + Forgot Password */}
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
                     <div
@@ -256,7 +278,6 @@ export default function Login() {
                     />
                     Remember me
                   </label>
-                  {/* ✅ FORGOT PASSWORD - FULLY CLICKABLE */}
                   <button
                     type="button"
                     onClick={() => router.push("/forgot-password")}
@@ -306,7 +327,7 @@ export default function Login() {
                 </button>
               </form>
 
-              {/* ✅ CREATE ACCOUNT - FULLY CLICKABLE */}
+              {/* Create Account */}
               <div className="text-center mt-5">
                 <p className="text-gray-400 text-sm">
                   Don't have an account?{" "}

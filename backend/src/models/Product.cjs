@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database.cjs');
 const OrderItem = require('./OrderItem.cjs');
+
 const Product = sequelize.define('Product', {
     id: {
         type: DataTypes.UUID,
@@ -88,6 +89,38 @@ const Product = sequelize.define('Product', {
         type: DataTypes.DECIMAL(3, 2),
         defaultValue: 0.00
     },
+
+    // ✅ ====== NEW DISCOUNT FIELDS ======
+
+    original_price: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: null,
+        field: 'original_price',
+        comment: 'Original price before discount (for crossed-out display)'
+    },
+    discount_percentage: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+        field: 'discount_percentage',
+        comment: 'Discount percentage (e.g., 25 for 25% off)'
+    },
+    discount_expiry: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+        field: 'discount_expiry',
+        comment: 'When the discount expires (for "2 days left" display)'
+    },
+    review_count: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+        field: 'review_count',
+        comment: 'Total number of reviews for this product'
+    },
+
 }, {
     tableName: 'products',
     timestamps: true,

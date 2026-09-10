@@ -3,13 +3,10 @@ const router = express.Router();
 const paymentController = require('../controllers/paymentController.cjs');
 const { authMiddleware } = require('../middleware/auth.cjs');
 
-// All payment routes require authentication
-router.use(authMiddleware);
+// ✅ M-Pesa callback (public - Safaricom calls this)
+router.post('/mpesa/callback', paymentController.mpesaCallback);
 
-// Initiate M-Pesa payment
-router.post('/mpesa', paymentController.initiateMpesaPayment);
-
-// Check payment status
-router.get('/mpesa/status/:checkoutRequestId', paymentController.checkPaymentStatus);
+// ✅ Check payment status (authenticated)
+router.get('/status/:purchase_id', authMiddleware, paymentController.checkPaymentStatus);
 
 module.exports = router;

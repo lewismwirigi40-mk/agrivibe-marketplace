@@ -97,14 +97,18 @@ exports.getAllProducts = async (req, res) => {
             where,
             attributes: [
                 'id', 'store_id', 'name', 'slug', 'description',
-                'price', 'compare_price', 'cost_price',
+                'price', 
+                'original_price',           // ✅ ADDED
+                'discount_percentage',      // ✅ ADDED
+                'discount_expiry',          // ✅ ADDED
+                'compare_price', 'cost_price',
                 'stock_quantity', 'low_stock_threshold',
                 'unit', 'images', 'category_id',
                 'is_active', 'is_featured', 'is_digital',
                 'weight', 'weight_unit', 'views',
                 'sales_count', 'rating',
+                'review_count',             // ✅ ADDED
                 'created_at', 'updated_at'
-                // ❌ REMOVED: 'status'
             ],
             include: [
                 {
@@ -123,9 +127,20 @@ exports.getAllProducts = async (req, res) => {
             order: [['created_at', 'DESC']]
         });
 
+        // ✅ Add computed discount percentage if not set
+        const productsWithDiscount = products.rows.map(product => {
+            const p = product.toJSON();
+            if (p.original_price && p.original_price > p.price) {
+                p.discount_percentage = Math.round(
+                    ((p.original_price - p.price) / p.original_price) * 100
+                );
+            }
+            return p;
+        });
+
         res.json({
             success: true,
-            products: products.rows,
+            products: productsWithDiscount,
             total: products.count
         });
 
@@ -167,9 +182,17 @@ exports.getProductById = async (req, res) => {
         // ✅ Increment views
         await product.increment('views');
 
+        // ✅ Add discount info if applicable
+        const productData = product.toJSON();
+        if (productData.original_price && productData.original_price > productData.price) {
+            productData.discount_percentage = Math.round(
+                ((productData.original_price - productData.price) / productData.original_price) * 100
+            );
+        }
+
         res.json({ 
             success: true,
-            product 
+            product: productData
         });
     } catch (error) {
         console.error('❌ Get product error:', error);
@@ -260,6 +283,21 @@ exports.getStoreProducts = async (req, res) => {
         const { storeId } = req.params;
         const products = await Product.findAll({
             where: { store_id: storeId, is_active: true },
+            attributes: [
+                'id', 'store_id', 'name', 'slug', 'description',
+                'price', 
+                'original_price',           // ✅ ADDED
+                'discount_percentage',      // ✅ ADDED
+                'discount_expiry',          // ✅ ADDED
+                'compare_price', 'cost_price',
+                'stock_quantity', 'low_stock_threshold',
+                'unit', 'images', 'category_id',
+                'is_active', 'is_featured', 'is_digital',
+                'weight', 'weight_unit', 'views',
+                'sales_count', 'rating',
+                'review_count',             // ✅ ADDED
+                'created_at', 'updated_at'
+            ],
             include: [
                 {
                     model: Store,
@@ -275,9 +313,20 @@ exports.getStoreProducts = async (req, res) => {
             order: [['created_at', 'DESC']]
         });
 
+        // ✅ Add computed discount percentage
+        const productsWithDiscount = products.map(product => {
+            const p = product.toJSON();
+            if (p.original_price && p.original_price > p.price) {
+                p.discount_percentage = Math.round(
+                    ((p.original_price - p.price) / p.original_price) * 100
+                );
+            }
+            return p;
+        });
+
         res.json({ 
             success: true,
-            products 
+            products: productsWithDiscount 
         });
     } catch (error) {
         console.error('❌ Get store products error:', error);
@@ -311,11 +360,16 @@ exports.getNearbyProducts = async (req, res) => {
             where: { is_active: true },
             attributes: [
                 'id', 'store_id', 'name', 'slug', 'description',
-                'price', 'stock_quantity', 'unit', 'images',
+                'price', 
+                'original_price',           // ✅ ADDED
+                'discount_percentage',      // ✅ ADDED
+                'discount_expiry',          // ✅ ADDED
+                'compare_price', 'cost_price',
+                'stock_quantity', 'unit', 'images',
                 'category_id', 'is_active', 'is_featured',
                 'views', 'sales_count', 'rating',
+                'review_count',             // ✅ ADDED
                 'created_at', 'updated_at'
-                // ❌ REMOVED: 'status'
             ],
             include: [
                 {
@@ -335,7 +389,7 @@ exports.getNearbyProducts = async (req, res) => {
             ]
         });
 
-        // ✅ Filter products by distance
+        // ✅ Filter products by distance and add discount info
         const nearbyProducts = products
             .map(product => {
                 const store = product.store;
@@ -349,8 +403,16 @@ exports.getNearbyProducts = async (req, res) => {
                     parseFloat(store.longitude)
                 );
 
+                const p = product.toJSON();
+                // ✅ Add discount info
+                if (p.original_price && p.original_price > p.price) {
+                    p.discount_percentage = Math.round(
+                        ((p.original_price - p.price) / p.original_price) * 100
+                    );
+                }
+
                 return {
-                    ...product.toJSON(),
+                    ...p,
                     distance_km: Math.round(distance * 10) / 10,
                     store: {
                         ...store.toJSON(),
@@ -450,11 +512,16 @@ exports.getFeaturedProducts = async (req, res) => {
             },
             attributes: [
                 'id', 'store_id', 'name', 'slug', 'description',
-                'price', 'stock_quantity', 'unit', 'images',
+                'price', 
+                'original_price',           // ✅ ADDED
+                'discount_percentage',      // ✅ ADDED
+                'discount_expiry',          // ✅ ADDED
+                'compare_price', 'cost_price',
+                'stock_quantity', 'unit', 'images',
                 'category_id', 'is_active', 'is_featured',
                 'views', 'sales_count', 'rating',
+                'review_count',             // ✅ ADDED
                 'created_at', 'updated_at'
-                // ❌ REMOVED: 'status'
             ],
             include: [
                 {
@@ -472,9 +539,20 @@ exports.getFeaturedProducts = async (req, res) => {
             order: [['sales_count', 'DESC'], ['rating', 'DESC']]
         });
 
+        // ✅ Add computed discount percentage
+        const productsWithDiscount = products.map(product => {
+            const p = product.toJSON();
+            if (p.original_price && p.original_price > p.price) {
+                p.discount_percentage = Math.round(
+                    ((p.original_price - p.price) / p.original_price) * 100
+                );
+            }
+            return p;
+        });
+
         res.json({
             success: true,
-            products
+            products: productsWithDiscount
         });
 
     } catch (error) {

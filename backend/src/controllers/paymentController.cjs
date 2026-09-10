@@ -1,67 +1,116 @@
-const { sendMpesaPayment, checkMpesaStatus } = require('../services/paymentService.cjs');
+// backend/src/controllers/paymentController.cjs
+const GuidePurchase = require('../models/GuidePurchase.cjs');
+const Guide = require('../models/Guide.cjs');
+const User = require('../models/User.cjs');
+const emailService = require('../services/emailService.cjs');
 
-// Initiate M-Pesa Payment
-exports.initiateMpesaPayment = async (req, res) => {
+// ============================================
+// M-PESA CALLBACK (Safaricom calls this)
+// ============================================
+exports.mpesaCallback = async (req, res) => {
     try {
-        const { phoneNumber, amount, orderId } = req.body;
+        console.log('📥 M-Pesa Callback received');
+        console.log('📦 Body:', JSON.stringify(req.body, null, 2));
+        
+        const { Body } = req.body;
+        const { stkCallback } = Body;
+        const { ResultCode, ResultDesc, MerchantRequestID, CheckoutRequestID, CallbackMetadata } = stkCallback;
 
-        if (!phoneNumber || !amount || !orderId) {
-            return res.status(400).json({ 
-                error: 'Phone number, amount, and order ID are required' 
-            });
+        // ✅ Find purchase by order number (MerchantRequestID)
+        const purchase = await GuidePurchase.findOne({
+            where: { order_number: MerchantRequestID }
+        });
+
+        if (!purchase) {
+            console.error('❌ Purchase not found for order:', MerchantRequestID);
+            return res.json({ ResultCode: 1, ResultDesc: 'Purchase not found' });
         }
 
-        const result = await sendMpesaPayment(phoneNumber, amount, orderId);
+        if (ResultCode === 0) {
+            // ✅ Payment successful
+            console.log('✅ Payment successful for order:', MerchantRequestID);
+            
+            // Extract M-Pesa receipt from metadata
+            let mpesaReceipt = null;
+            if (CallbackMetadata && CallbackMetadata.Item) {
+                const receiptItem = CallbackMetadata.Item.find(
+                    (item: any) => item.Name === 'MpesaReceiptNumber'
+                );
+                if (receiptItem) {
+                    mpesaReceipt = receiptItem.Value;
+                }
+            }
 
-        if (result.success) {
-            res.json({
-                message: 'Payment initiated successfully',
-                merchantRequestId: result.merchantRequestId,
-                checkoutRequestId: result.checkoutRequestId,
-                responseCode: result.responseCode,
-                responseDescription: result.responseDescription,
-                customerMessage: result.customerMessage
-            });
+            // ✅ Update purchase
+            purchase.payment_status = 'completed';
+            purchase.transaction_id = CheckoutRequestID;
+            purchase.mpesa_code = mpesaReceipt;
+            purchase.escrow_status = 'released';
+            purchase.escrow_released_at = new Date();
+            await purchase.save();
+
+            // ✅ Update guide stats
+            await Guide.increment('purchases', { where: { id: purchase.guide_id } });
+            await Guide.increment('downloads', { where: { id: purchase.guide_id } });
+
+            // ✅ Send email
+            const guide = await Guide.findByPk(purchase.guide_id);
+            const user = await User.findByPk(purchase.user_id);
+            
+            if (user && guide) {
+                const downloadLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/guides/download/${purchase.download_token}`;
+                
+                await emailService.sendEmail(
+                    user.email,
+                    `📚 Your Guide: ${guide.title} is Ready for Download`,
+                    `
+                        <h2>Payment Successful!</h2>
+                        <p>Dear ${user.first_name || 'Customer'},</p>
+                        <p>Your purchase of <strong>"${guide.title}"</strong> is complete.</p>
+                        <p><a href="${downloadLink}">Download your guide here</a></p>
+                        <p>M-Pesa Receipt: ${mpesaReceipt || 'N/A'}</p>
+                    `
+                );
+            }
+
+            res.json({ ResultCode: 0, ResultDesc: 'Success' });
         } else {
-            res.status(400).json({
-                error: result.error || 'Payment initiation failed'
-            });
+            // ❌ Payment failed
+            console.error('❌ Payment failed:', ResultDesc);
+            purchase.payment_status = 'failed';
+            await purchase.save();
+            res.json({ ResultCode: 0, ResultDesc: 'Failed' });
         }
-
     } catch (error) {
-        console.error('Payment initiation error:', error);
-        res.status(500).json({ error: 'Failed to initiate payment' });
+        console.error('❌ M-Pesa callback error:', error);
+        res.json({ ResultCode: 1, ResultDesc: 'Error processing callback' });
     }
 };
 
-// Check Payment Status
+// ============================================
+// CHECK PAYMENT STATUS (Frontend polls this)
+// ============================================
 exports.checkPaymentStatus = async (req, res) => {
     try {
-        const { checkoutRequestId } = req.params;
+        const { purchase_id } = req.params;
+        const user_id = req.user.id;
 
-        if (!checkoutRequestId) {
-            return res.status(400).json({ error: 'Checkout Request ID required' });
+        const purchase = await GuidePurchase.findOne({
+            where: { id: purchase_id, user_id }
+        });
+
+        if (!purchase) {
+            return res.status(404).json({ error: 'Purchase not found' });
         }
 
-        const result = await checkMpesaStatus(checkoutRequestId);
-
-        if (result.success) {
-            res.json({
-                status: 'completed',
-                resultCode: result.resultCode,
-                resultDesc: result.resultDesc,
-                mpesaReceipt: result.mpesaReceiptNumber,
-                amount: result.amount
-            });
-        } else {
-            res.status(400).json({
-                status: 'failed',
-                error: result.error || 'Status check failed'
-            });
-        }
-
+        res.json({
+            success: true,
+            payment_status: purchase.payment_status,
+            download_token: purchase.payment_status === 'completed' ? purchase.download_token : null,
+            guide: purchase.payment_status === 'completed' ? await Guide.findByPk(purchase.guide_id) : null
+        });
     } catch (error) {
-        console.error('Payment status check error:', error);
+        console.error('Check payment status error:', error);
         res.status(500).json({ error: 'Failed to check payment status' });
     }
 };

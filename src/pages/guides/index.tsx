@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, 
-  Search, 
-  Filter, 
+import {
+  BookOpen,
+  Search,
+  Filter,
   ChevronDown,
   Sparkles,
   Award,
@@ -47,7 +47,7 @@ export default function Guides() {
       const guidesData = response.data.guides || [];
       setGuides(guidesData);
       setFilteredGuides(guidesData);
-      
+
       // Extract unique categories
       const uniqueCategories = Array.from(new Set(guidesData.map((g: any) => g.category).filter(Boolean)));
       setCategories(uniqueCategories as string[]);
@@ -145,7 +145,7 @@ export default function Guides() {
             <motion.div
               key={i}
               className="absolute w-2 h-2 bg-white/10 rounded-full"
-              initial={{ 
+              initial={{
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * window.innerHeight,
               }}
@@ -282,14 +282,14 @@ export default function Guides() {
             )}
           </motion.div>
         ) : (
-          <div className={viewMode === 'grid' 
+          <div className={viewMode === 'grid'
             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
             : 'space-y-4'
           }>
             <AnimatePresence>
               {filteredGuides.map((guide: any, index: number) => {
                 const categoryColor = getCategoryColor(guide.category);
-                
+
                 return (
                   <motion.div
                     key={guide.id}
@@ -305,9 +305,9 @@ export default function Guides() {
                         {/* Cover Image */}
                         <div className={`relative overflow-hidden ${viewMode === 'grid' ? 'h-56' : 'h-48 w-56 flex-shrink-0'}`}>
                           {guide.cover_image ? (
-                            <img 
-                              src={guide.cover_image} 
-                              alt={guide.title} 
+                            <img
+                              src={guide.cover_image}
+                              alt={guide.title}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                             />
                           ) : (
@@ -316,7 +316,7 @@ export default function Guides() {
                             </div>
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          
+
                           {/* Badges */}
                           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                             {guide.is_featured && (
@@ -345,7 +345,7 @@ export default function Guides() {
                           <p className="text-gray-500 text-sm mt-1 line-clamp-2">
                             {guide.description}
                           </p>
-                          
+
                           {/* Meta Info */}
                           <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
                             <div className="flex items-center gap-1">
@@ -376,7 +376,7 @@ export default function Guides() {
                               )}
                             </div>
                             <div className="flex items-center gap-2">
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   // Wishlist functionality
@@ -385,7 +385,7 @@ export default function Guides() {
                               >
                                 <Heart className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   // Share functionality

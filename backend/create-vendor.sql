@@ -1,0 +1,2 @@
+INSERT INTO vendors (id, user_id, business_name, business_description, is_approved, is_active, status, created_at, updated_at) 
+VALUES (gen_random_uuid(), 'ce94da66-ebaf-449f-90a0-19f7fea55904', 'Zen Store', 'Vendor profile for zenmaster', true, true, 'approved', NOW(), NOW());

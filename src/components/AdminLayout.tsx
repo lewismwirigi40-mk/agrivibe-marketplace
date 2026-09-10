@@ -191,6 +191,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       badge: null,
     },
     {
+      name: "Live",
+      href: "/admin/live",
+      icon: Activity, // You can also use Zap, Eye, or Radio
+      badge: null,
+    },
+    {
       name: "Analytics",
       href: "/admin/analytics",
       icon: BarChart3,

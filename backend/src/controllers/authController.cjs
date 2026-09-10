@@ -661,3 +661,439 @@ exports.resetPassword = async (req, res) => {
         });
     }
 };
+// ============================================
+// ✅ TOTP (Google Authenticator) FUNCTIONS
+// ============================================
+
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
+
+// ============================================
+// SETUP TOTP - Generate Secret + QR Code
+// ============================================
+exports.setupTOTP = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // ✅ Only admin can setup TOTP
+        if (user.role !== 'admin') {
+            return res.status(403).json({ error: 'Only admin can enable 2FA' });
+        }
+
+        // Generate TOTP secret
+        const secret = speakeasy.generateSecret({
+            name: process.env.TOTP_APP_NAME || 'AgriVibe'
+        });
+
+        // Save secret temporarily (user.enable will confirm)
+        // We'll save it after verification
+
+        // Generate QR Code
+        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+        return res.json({
+            success: true,
+            secret: secret.base32,
+            qrCode: qrCodeUrl,
+            otpauth_url: secret.otpauth_url
+        });
+
+    } catch (error) {
+        console.error('❌ Setup TOTP error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to setup TOTP',
+            details: error.message
+        });
+    }
+};
+
+// ============================================
+// VERIFY TOTP - Verify and Enable
+// ============================================
+exports.verifyTOTP = async (req, res) => {
+    try {
+        const { secret, token } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        if (!secret || !token) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Secret and token are required' 
+            });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // ✅ Verify the token
+        const verified = speakeasy.totp.verify({
+            secret: secret,
+            encoding: 'base32',
+            token: token,
+            window: 1 // Allow 1 step before/after
+        });
+
+        if (!verified) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Invalid verification code' 
+            });
+        }
+
+        // ✅ Save secret and enable TOTP
+        await user.update({
+            totp_secret: secret,
+            totp_enabled: true,
+            totp_verified_at: new Date()
+        });
+
+        return res.json({
+            success: true,
+            message: 'TOTP enabled successfully',
+            totp_enabled: true
+        });
+
+    } catch (error) {
+        console.error('❌ Verify TOTP error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to verify TOTP',
+            details: error.message
+        });
+    }
+};
+
+// ============================================
+// DISABLE TOTP
+// ============================================
+exports.disableTOTP = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        await user.update({
+            totp_secret: null,
+            totp_enabled: false,
+            totp_verified_at: null
+        });
+
+        return res.json({
+            success: true,
+            message: 'TOTP disabled successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Disable TOTP error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to disable TOTP',
+            details: error.message
+        });
+    }
+};
+
+// ============================================
+// VALIDATE TOTP DURING LOGIN
+// ============================================
+exports.validateTOTP = async (req, res) => {
+    try {
+        const { email, token } = req.body;
+
+        if (!email || !token) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and TOTP code are required' 
+            });
+        }
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // ✅ Check if TOTP is enabled
+        if (!user.totp_enabled || !user.totp_secret) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'TOTP not enabled for this account' 
+            });
+        }
+
+        // ✅ Verify TOTP
+        const verified = speakeasy.totp.verify({
+            secret: user.totp_secret,
+            encoding: 'base32',
+            token: token,
+            window: 1
+        });
+
+        if (!verified) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Invalid TOTP code' 
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'TOTP verified'
+        });
+
+    } catch (error) {
+        console.error('❌ Validate TOTP error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to validate TOTP',
+            details: error.message
+        });
+    }
+};
+
+// ============================================
+// GET TOTP STATUS
+// ============================================
+exports.getTOTPStatus = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        return res.json({
+            success: true,
+            totp_enabled: user.totp_enabled || false,
+            totp_verified_at: user.totp_verified_at
+        });
+
+    } catch (error) {
+        console.error('❌ Get TOTP status error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Failed to get TOTP status',
+            details: error.message
+        });
+    }
+};
+// ============================================
+// ✅ ADMIN LOGIN (with TOTP Check)
+// ============================================
+exports.adminLogin = async (req, res) => {
+    console.log('🔥 ADMIN LOGIN CALLED');
+    console.log('📝 Email:', req.body.email);
+
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and password are required' 
+            });
+        }
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
+        }
+
+        // ✅ Check if admin
+        if (user.role !== 'admin') {
+            return res.status(403).json({ 
+                success: false,
+                error: 'Admin access required' 
+            });
+        }
+
+        // ✅ Check if account is locked
+        if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
+            const remaining = Math.ceil((new Date(user.lockout_until) - new Date()) / 60000);
+            return res.status(401).json({
+                success: false,
+                error: `Account locked. Try again in ${remaining} minutes.`
+            });
+        }
+
+        // ✅ Check password
+        const isPasswordValid = await user.comparePassword(password);
+        if (!isPasswordValid) {
+            const attempts = (user.login_attempts || 0) + 1;
+            const maxAttempts = parseInt(process.env.ADMIN_RATE_LIMIT_MAX) || 5;
+
+            if (attempts >= maxAttempts) {
+                const lockoutDuration = parseInt(process.env.ADMIN_RATE_LIMIT_WINDOW) || 900000;
+                await user.update({
+                    login_attempts: attempts,
+                    lockout_until: new Date(Date.now() + lockoutDuration)
+                });
+                return res.status(401).json({
+                    success: false,
+                    error: 'Too many failed attempts. Account locked for 15 minutes.'
+                });
+            }
+
+            await user.update({ login_attempts: attempts });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
+        }
+
+        // ✅ Reset login attempts on success
+        await user.update({ 
+            login_attempts: 0,
+            lockout_until: null,
+            last_login: new Date(),
+            last_login_ip: req.ip || req.connection.remoteAddress
+        });
+
+        // ✅ Check if TOTP is enabled
+        const requiresTOTP = user.totp_enabled && user.totp_secret;
+
+        return res.json({
+            success: true,
+            requiresTOTP: requiresTOTP || false,
+            message: requiresTOTP ? 'TOTP verification required' : 'Login successful',
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                totp_enabled: user.totp_enabled
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Admin login error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'Login failed',
+            message: error.message 
+        });
+    }
+};
+// ============================================
+// ✅ ADMIN TOTP VERIFICATION
+// ============================================
+exports.adminVerifyTOTP = async (req, res) => {
+    console.log('🔥 ADMIN TOTP VERIFICATION CALLED');
+    console.log('📝 Email:', req.body.email);
+
+    try {
+        const { email, token } = req.body;
+
+        if (!email || !token) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email and TOTP code are required' 
+            });
+        }
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'User not found' 
+            });
+        }
+
+        // ✅ Check if admin
+        if (user.role !== 'admin') {
+            return res.status(403).json({ 
+                success: false,
+                error: 'Admin access required' 
+            });
+        }
+
+        // ✅ Check if TOTP is enabled
+        if (!user.totp_enabled || !user.totp_secret) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'TOTP not enabled for this account' 
+            });
+        }
+
+        // ✅ Verify TOTP
+        const verified = speakeasy.totp.verify({
+            secret: user.totp_secret,
+            encoding: 'base32',
+            token: token,
+            window: 1
+        });
+
+        if (!verified) {
+            const attempts = (user.login_attempts || 0) + 1;
+            await user.update({ login_attempts: attempts });
+            
+            return res.status(400).json({ 
+                success: false,
+                error: 'Invalid TOTP code' 
+            });
+        }
+
+        // ✅ Generate JWT token
+        const jwtToken = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET || 'dev-secret',
+            { expiresIn: '7d' }
+        );
+
+        // ✅ Update last_active
+        await user.update({ 
+            last_active: new Date(),
+            login_attempts: 0
+        });
+
+        return res.json({
+            success: true,
+            message: 'Login successful',
+            token: jwtToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Admin TOTP verification error:', error);
+        return res.status(500).json({ 
+            success: false,
+            error: 'TOTP verification failed',
+            message: error.message 
+        });
+    }
+};
